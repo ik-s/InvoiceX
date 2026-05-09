@@ -8,9 +8,6 @@
 <style>
   @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
   body{font-family:"Inter",sans-serif}
-  .role-tab{color:#6b7280;background:transparent}
-  .role-tab:hover{color:#111827}
-  .active-tab{background:#2563eb!important;color:#fff!important;box-shadow:0 1px 4px rgba(37,99,235,.3)}
   @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
   @keyframes slideDown{from{opacity:1;max-height:120px;margin-bottom:12px;padding-top:16px;padding-bottom:16px}to{opacity:0;max-height:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0}}
   .alert-read{animation:slideDown .5s ease forwards;overflow:hidden;pointer-events:none}
@@ -24,17 +21,19 @@
 <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50">
   <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
     <div class="flex items-center">
-      <a href="mypage.html" class="text-blue-600 text-xl font-bold mr-3">InvoiceX</a>
+      <a href="role-select.html" class="text-blue-600 text-xl font-bold mr-3">InvoiceX</a>
       <div class="hidden sm:flex items-center ml-10 space-x-8 h-full">
-        <a href="mypage.html" class="text-blue-600 text-sm font-bold relative h-16 flex items-center border-b-2 border-blue-600">마이페이지</a>
+        <a href="#" class="text-blue-600 text-sm font-bold relative h-16 flex items-center border-b-2 border-blue-600">마이페이지</a>
         <a href="#" id="nav-rwa" class="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors h-16 flex items-center">RWA마켓</a>
       </div>
     </div>
     <div class="flex items-center gap-3">
       <div class="sm:hidden flex items-center gap-4 mr-2">
-        <a href="mypage.html" class="text-blue-600 text-xs font-bold">마이페이지</a>
+        <span class="text-blue-600 text-xs font-bold">마이페이지</span>
         <a href="#" id="nav-rwa-m" class="text-gray-500 text-xs font-medium">RWA마켓</a>
       </div>
+      <!-- 역할 배지 -->
+      <span id="role-badge" class="inline-flex items-center gap-1.5 text-xs font-semibold bg-blue-50 text-blue-600 rounded-full px-3 py-1"></span>
       <span class="inline-flex items-center gap-1.5 text-xs font-medium border border-gray-200 rounded-full px-3 py-1">
         <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>Connected<span class="text-gray-400 ml-0.5">Testnet</span>
       </span>
@@ -43,6 +42,12 @@
 </nav>
 
 <main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+
+  <!-- ===== 역할 선택으로 돌아가기 ===== -->
+  <a href="role-select.html" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-blue-600 font-medium mb-5 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+    역할 선택으로 돌아가기
+  </a>
 
   <!-- ===== PROFILE CARD ===== -->
   <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 mb-6">
@@ -71,18 +76,8 @@
     </div>
   </div>
 
-  <!-- ===== ROLE TABS ===== -->
-  <div class="flex justify-center mb-8">
-    <div class="inline-flex bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-      <button onclick="switchRole('funder')" id="tab-funder" class="role-tab active-tab rounded-full px-4 sm:px-5 py-2 text-sm font-semibold transition-all">자금 공급자</button>
-      <button onclick="switchRole('registrar')" id="tab-registrar" class="role-tab rounded-full px-4 sm:px-5 py-2 text-sm font-semibold transition-all">인보이스 등록자</button>
-      <button onclick="switchRole('payer')" id="tab-payer" class="role-tab rounded-full px-4 sm:px-5 py-2 text-sm font-semibold transition-all">대금 지급 기업</button>
-     
-      </div>
-  </div>
-
   <!-- ===== 자금 공급자 ===== -->
-  <div id="content-funder" class="role-content">
+  <div id="content-funder" class="role-content hidden">
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
       <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
         <p class="text-sm text-gray-500 mb-1">총 투자 예치금 (TVL)</p>
@@ -99,10 +94,10 @@
         </div>
       </div>
     </div>
-   <div class="flex items-center justify-between mb-4">
-  <h3 class="text-lg font-bold">최근 알림</h3>
-  <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
-</div>
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-lg font-bold">최근 알림</h3>
+      <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
+    </div>
     <div id="alerts-funder" class="flex flex-col gap-3">
       <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="수익금 지갑 정산 완료" data-body="투자하신 #INV-0035 자산의 배당금 450 RLUSD가 성공적으로 정산되었습니다." data-time="방금 전">
         <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">💰</span>
@@ -151,9 +146,9 @@
       </div>
     </div>
     <div class="flex items-center justify-between mb-4">
-  <h3 class="text-lg font-bold">최근 알림</h3>
-  <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
-</div>
+      <h3 class="text-lg font-bold">최근 알림</h3>
+      <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
+    </div>
     <div id="alerts-registrar" class="flex flex-col gap-3">
       <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="인보이스 심사 승인" data-body="#INV-0042 건이 Grade A로 최종 승인되었습니다." data-time="방금 전">
         <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">✅</span>
@@ -189,9 +184,9 @@
       </div>
     </div>
     <div class="flex items-center justify-between mb-4">
-  <h3 class="text-lg font-bold">최근 알림</h3>
-  <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
-</div>
+      <h3 class="text-lg font-bold">최근 알림</h3>
+      <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
+    </div>
     <div id="alerts-payer" class="flex flex-col gap-3">
       <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="협력사 인보이스 검토 요청" data-body="(주)스마트솔루션의 신규 대금 청구건이 등록되었습니다. 지급을 확약해주세요." data-time="3시간 전">
         <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">🔔</span>
@@ -219,26 +214,37 @@
 </div>
 
 <script>
-/* ===== Role switching ===== */
-const rwaLinks={funder:'rwamarket.html',registrar:'register.html',payer:'debt.html'};
-let currentRole='funder';
-function switchRole(r){
-  currentRole=r;
-  document.querySelectorAll('.role-tab').forEach(t=>t.classList.remove('active-tab'));
-  document.getElementById('tab-'+r).classList.add('active-tab');
-  document.querySelectorAll('.role-content').forEach(c=>c.classList.add('hidden'));
-  document.getElementById('content-'+r).classList.remove('hidden');
-  document.getElementById('nav-rwa').href=rwaLinks[r];
-  const m=document.getElementById('nav-rwa-m');if(m)m.href=rwaLinks[r];
-  const urlRole = new URLSearchParams(location.search).get('role');
-if(urlRole && ['funder','registrar','payer'].includes(urlRole)) switchRole(urlRole);
+/* ===== URL 파라미터로 역할 결정 ===== */
+const roleNames = { funder:'자금 공급자', registrar:'인보이스 등록자', payer:'대금 지급 기업' };
+const rwaLinks = { funder:'rwamarket.html', registrar:'register.html', payer:'debt.html' };
+const navLabels = { funder:'RWA마켓', registrar:'인보이스 RWA업무', payer:'대금지급 업무' };
+const urlRole = new URLSearchParams(location.search).get('role');
+const currentRole = (urlRole && ['funder','registrar','payer'].includes(urlRole)) ? urlRole : 'funder';
+
+// 역할에 맞는 콘텐츠만 표시
+document.getElementById('content-'+currentRole).classList.remove('hidden');
+
+// 역할 배지 표시
+document.getElementById('role-badge').textContent = roleNames[currentRole];
+
+// nav 링크 텍스트 + href 역할별 설정
+const navRwa = document.getElementById('nav-rwa');
+navRwa.href = rwaLinks[currentRole];
+navRwa.textContent = navLabels[currentRole];
+
+const rwaM = document.getElementById('nav-rwa-m');
+if(rwaM){
+  rwaM.href = rwaLinks[currentRole];
+  rwaM.textContent = navLabels[currentRole];
 }
 
 /* ===== Alert click → modal + 확인됨 + slide ===== */
+const readAlerts = [];
+
 document.addEventListener('click',function(e){
   const item=e.target.closest('.alert-item');
   if(!item)return;
- openAlertModal(item.dataset.title,item.dataset.body,item.dataset.time);
+  openAlertModal(item.dataset.title,item.dataset.body,item.dataset.time);
   readAlerts.unshift({ title: item.dataset.title, body: item.dataset.body, time: item.dataset.time, readAt: new Date().toLocaleTimeString('ko-KR') });
   const dot=item.querySelector('.red-dot');
   if(dot)dot.classList.add('dot-read');
@@ -381,13 +387,8 @@ function openHistoryModal(){
     ${rows}
     <button onclick="closeAnyModal()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition mt-4">닫기</button>`);
 }
-/* ===== 확인한 알림 저장 & 모달 ===== */
-const readAlerts = [];
 
-// 기존 alert 클릭 핸들러 안에서 slide 처리 전에 이 한 줄 추가
-// → openAlertModal 호출 바로 아래에 넣어줘
-// readAlerts.unshift({ title: item.dataset.title, body: item.dataset.body, time: item.dataset.time, readAt: new Date().toLocaleTimeString('ko-KR') });
-
+/* ===== 확인한 알림 모달 ===== */
 function openReadAlertsModal(){
   let rows;
   if(!readAlerts.length){
