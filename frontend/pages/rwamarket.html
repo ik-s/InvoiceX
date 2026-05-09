@@ -1,0 +1,152 @@
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RWA 마켓 — InvoiceX</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Pretendard:wght@400;500;600;700;800&display=swap");
+        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+        body { font-family: "Pretendard", "Inter", sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 min-w-0">
+
+    <!-- 네비게이션 -->
+    <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50">
+        <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+            <div class="flex items-center min-w-0">
+                <div class="text-blue-600 text-xl sm:text-2xl font-bold flex-shrink-0">InvoiceX</div>
+                <span class="bg-green-50 text-green-700 text-xs font-bold py-1 px-2 rounded-xl ml-2 sm:ml-3 flex-shrink-0 hidden sm:inline-block">자금 공급자</span>
+                <div class="flex items-center ml-6 sm:ml-12 lg:ml-24 space-x-3 sm:space-x-5">
+                    <a href="portfolio.html" class="text-gray-500 text-sm sm:text-base whitespace-nowrap hover:text-gray-800 transition-colors">포트폴리오</a>
+                    <a href="rwamarket.html" class="text-blue-600 text-sm sm:text-base font-bold whitespace-nowrap relative pb-1 border-b-2 border-blue-600">RWA 마켓</a>
+                    <a href="정산.html" class="text-gray-500 text-sm sm:text-base whitespace-nowrap hover:text-gray-800 transition-colors">정산 내역</a>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 border border-gray-200 rounded-lg py-1.5 px-3 flex-shrink-0 ml-4 bg-gray-50">
+                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span class="text-gray-700 text-xs sm:text-sm font-semibold">Testnet</span>
+                <span class="text-gray-400 text-xs sm:text-sm hidden sm:inline">rN7d...x3Kq</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 메인 -->
+    <main class="pt-28 sm:pt-32 pb-16 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-screen-xl mx-auto">
+
+            <!-- 헤더 -->
+<div class="mb-10 text-center">
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-1">RWA 마켓</h1>
+    <p class="text-sm sm:text-base text-gray-500">검증된 인보이스 기반 RWA 토큰에 RLUSD로 참여하세요.</p>
+</div>
+
+<!-- 필터 + 정렬 -->
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
+    <div class="flex items-center justify-center sm:justify-start space-x-2">
+                    <button class="py-2 px-4 rounded-lg bg-blue-600 text-white text-sm font-semibold cursor-pointer">전체</button>
+                    <button class="py-2 px-4 rounded-lg bg-white border border-gray-200 text-gray-600 text-sm font-medium cursor-pointer hover:border-gray-300 transition-colors">참여 가능</button>
+                    <button class="py-2 px-4 rounded-lg bg-white border border-gray-200 text-gray-600 text-sm font-medium cursor-pointer hover:border-gray-300 transition-colors">참여 완료</button>
+                </div>
+                <div class="flex items-center space-x-2 text-sm text-gray-500">
+                    <span>정렬:</span>
+                    <select class="border border-gray-200 rounded-lg py-1.5 px-3 bg-white text-gray-700 text-sm focus:outline-none focus:border-blue-400 cursor-pointer">
+                        <option>최신순</option>
+                        <option>수익률 높은순</option>
+                        <option>만기일 빠른순</option>
+                        <option>금액 높은순</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 카드 그리드 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+                <!-- Card 1 — Risk A -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all duration-200">
+                    <div class="flex items-center justify-between mb-5">
+                        <span class="text-xs font-bold py-1 px-2.5 rounded-full bg-green-50 text-green-700">Risk A</span>
+                        <span class="text-xs text-gray-400 font-mono">#INV-XXXX</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-0.5">발행 기업 1 → 바이어 기업 1</p>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-4">₩XX,XXX,XXX</p>
+                    <div class="h-px bg-gray-100 mb-4"></div>
+                    <div class="flex items-center justify-between text-sm mb-5">
+                        <div>
+                            <span class="text-gray-400">예상 수익률</span>
+                            <span class="text-blue-600 font-bold ml-1">X.X%</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">만기</span>
+                            <span class="text-gray-700 font-medium ml-1">YYYY.MM.DD</span>
+                        </div>
+                    </div>
+                    <a href="riskpassport.html" class="block w-full py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-semibold text-center hover:bg-blue-600 hover:text-white transition-colors duration-200">상세 보기</a>
+                </div>
+
+                <!-- Card 2 — Risk B -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all duration-200">
+                    <div class="flex items-center justify-between mb-5">
+                        <span class="text-xs font-bold py-1 px-2.5 rounded-full bg-yellow-50 text-yellow-700">Risk B</span>
+                        <span class="text-xs text-gray-400 font-mono">#INV-XXXX</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-0.5">발행 기업 2 → 바이어 기업 2</p>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-4">₩XX,XXX,XXX</p>
+                    <div class="h-px bg-gray-100 mb-4"></div>
+                    <div class="flex items-center justify-between text-sm mb-5">
+                        <div>
+                            <span class="text-gray-400">예상 수익률</span>
+                            <span class="text-blue-600 font-bold ml-1">X.X%</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">만기</span>
+                            <span class="text-gray-700 font-medium ml-1">YYYY.MM.DD</span>
+                        </div>
+                    </div>
+                    <a href="riskpassport.html" class="block w-full py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-semibold text-center hover:bg-blue-600 hover:text-white transition-colors duration-200">상세 보기</a>
+                </div>
+
+                <!-- Card 3 — Risk C -->
+                <div class="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md hover:border-gray-300 transition-all duration-200">
+                    <div class="flex items-center justify-between mb-5">
+                        <span class="text-xs font-bold py-1 px-2.5 rounded-full bg-red-50 text-red-600">Risk C</span>
+                        <span class="text-xs text-gray-400 font-mono">#INV-XXXX</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-0.5">발행 기업 3 → 바이어 기업 3</p>
+                    <p class="text-2xl sm:text-3xl font-extrabold text-gray-900 mt-2 mb-4">₩XX,XXX,XXX</p>
+                    <div class="h-px bg-gray-100 mb-4"></div>
+                    <div class="flex items-center justify-between text-sm mb-5">
+                        <div>
+                            <span class="text-gray-400">예상 수익률</span>
+                            <span class="text-blue-600 font-bold ml-1">X.X%</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-400">만기</span>
+                            <span class="text-gray-700 font-medium ml-1">YYYY.MM.DD</span>
+                        </div>
+                    </div>
+                    <a href="riskpassport.html" class="block w-full py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-semibold text-center hover:bg-blue-600 hover:text-white transition-colors duration-200">상세 보기</a>
+                </div>
+
+            </div>
+
+            <!-- 페이지네이션 -->
+            <div class="flex items-center justify-center mt-10 space-x-1">
+                <button class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <button class="w-9 h-9 flex items-center justify-center rounded-lg bg-blue-600 text-white text-sm font-bold cursor-pointer">1</button>
+                <button class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-600 text-sm font-medium hover:bg-gray-100 transition-colors cursor-pointer">2</button>
+                <button class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-600 text-sm font-medium hover:bg-gray-100 transition-colors cursor-pointer">3</button>
+                <button class="w-9 h-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 transition-colors cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                </button>
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>
