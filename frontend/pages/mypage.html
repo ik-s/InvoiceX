@@ -57,9 +57,8 @@
         <div>
           <h2 class="text-xl font-bold">(주)한빛테크</h2>
           <p class="text-sm text-gray-400 mt-0.5">ID: hanbit_tech_01 | rN7dKx9Qp...v3KqBmZ</p>
-          <div class="flex items-center gap-2 mt-2">
-            <a href="지갑연결.html" class="inline-flex items-center gap-1 text-xs font-semibold bg-green-500 text-white rounded-full px-3 py-1 hover:bg-green-600 transition">⊕ 지갑 연결</a>
-            <a href="kyb.html" class="inline-flex items-center text-xs font-semibold bg-blue-500 text-white rounded-full px-3 py-1 hover:bg-blue-600 transition">KYB 진행</a>
+          <div class="flex items-center gap-2 mt-3" id="status-buttons">
+            <!-- JS에서 상태에 따라 버튼 or 완료 뱃지 렌더링 -->
           </div>
         </div>
       </div>
@@ -236,6 +235,71 @@ const rwaM = document.getElementById('nav-rwa-m');
 if(rwaM){
   rwaM.href = rwaLinks[currentRole];
   rwaM.textContent = navLabels[currentRole];
+}
+
+/* ===== 지갑 연결 & KYB 상태 렌더링 ===== */
+let walletConnected = false;
+let kybVerified = false;
+
+function renderStatusButtons(){
+  const container = document.getElementById('status-buttons');
+  let html = '';
+
+  if(walletConnected){
+    html += `<span class="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600 bg-green-50 border border-green-200 rounded-full px-4 py-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      지갑 인증 완료
+    </span>`;
+  } else {
+    html += `<button onclick="connectWallet()" class="inline-flex items-center gap-2 text-sm font-bold bg-green-500 text-white rounded-lg px-6 py-2.5 hover:bg-green-600 transition shadow-sm">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/><path stroke-linecap="round" stroke-linejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101"/></svg>
+      지갑 연결
+    </button>`;
+  }
+
+  if(kybVerified){
+    html += `<span class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      KYB 인증 완료
+      <span class="bg-blue-600 text-white text-xs font-bold rounded px-1.5 py-0.5 ml-0.5">A</span>
+    </span>`;
+  } else {
+    html += `<button onclick="verifyKYB()" class="inline-flex items-center gap-2 text-sm font-bold bg-blue-500 text-white rounded-lg px-6 py-2.5 hover:bg-blue-600 transition shadow-sm">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      KYB 진행
+    </button>`;
+  }
+
+  container.innerHTML = html;
+}
+renderStatusButtons();
+
+function connectWallet(){
+  showModal(`
+    <div class="text-center py-4">
+      <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h3 class="text-lg font-bold mb-1">지갑 연결 완료</h3>
+      <p class="text-sm text-gray-500 mb-1">XRPL Testnet 지갑이 연결되었습니다.</p>
+      <p class="text-xs text-gray-400 mb-5">rN7dKx9Qp...v3KqBmZ</p>
+      <button onclick="walletConnected=true;renderStatusButtons();closeAnyModal()" class="w-full bg-green-500 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-green-600 transition">확인</button>
+    </div>`);
+}
+
+function verifyKYB(){
+  showModal(`
+    <div class="text-center py-4">
+      <div class="w-14 h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+        <svg class="w-7 h-7 text-blue-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      </div>
+      <h3 class="text-lg font-bold mb-1">KYB 인증 완료</h3>
+      <p class="text-sm text-gray-500 mb-1">(주)한빛테크의 기업 인증이 완료되었습니다.</p>
+      <div class="inline-flex items-center gap-1.5 bg-blue-50 border border-blue-200 rounded-full px-3 py-1 mb-5">
+        <span class="text-sm font-bold text-blue-600">Grade A</span>
+      </div>
+      <button onclick="kybVerified=true;renderStatusButtons();closeAnyModal()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition">확인</button>
+    </div>`);
 }
 
 /* ===== Alert click → modal + 확인됨 + slide ===== */
