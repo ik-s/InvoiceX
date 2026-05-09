@@ -1,43 +1,111 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>로그인 | InvoiceX</title>
-  <link rel="stylesheet" href="../assets/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceX - 로그인</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="auth-page">
-    <header class="auth-header">
-        <a href="../start.html" class="auth-logo">InvoiceX</a>
-    </header>
-  <main>
-    <article class="auth-card">
-      <section class="auth-panel">
-        <h1>로그인</h1>
-        <p>Invoice X 서비스 이용을 위해 로그인하세요.</p>
+
+<body class="min-h-screen bg-[#f6f8fc] font-sans text-[#171923]">
+  <!-- Header -->
+  <header class="flex h-[39px] w-full items-center justify-center border-b border-[#e5e8f0] bg-white">
+    <a
+      href="../start.html"
+      class="text-[14px] font-extrabold tracking-[-0.02em] text-[#2563eb] no-underline"
+    >
+      InvoiceX
+    </a>
+  </header>
+
+  <!-- Login Main -->
+  <main class="flex min-h-[calc(100vh-39px)] items-start justify-center px-6 pt-24 max-sm:pt-16">
+    <article class="w-[230px] rounded-xl border border-[#e1e5ee] bg-white px-[22px] py-[18px] shadow-[0_10px_28px_rgba(22,31,51,0.03)]">
+      <!-- Title -->
+      <section class="mb-[17px] text-center">
+        <h1 class="mb-[7px] text-[20px] font-extrabold leading-[1.2] tracking-[-0.04em] text-[#151923]">
+          로그인
+        </h1>
+        <p class="text-[9px] leading-[1.4] tracking-[-0.03em] text-[#7b8494]">
+          Invoice X 서비스 이용을 위해 로그인하세요.
+        </p>
       </section>
 
-      <form class="auth-form" action="#" method="post">
-        <div class="field-group">
-          <label for="email">이메일 주소</label>
-          <input id="email" name="email" type="email" placeholder="example@company.com" required>
+      <!-- Form -->
+      <form action="#" method="post" class="flex flex-col">
+        <div class="mb-[9px]">
+          <label
+            for="email"
+            class="mb-[5px] block text-[9px] font-bold tracking-[-0.03em] text-[#242936]"
+          >
+            이메일 주소
+          </label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="example@company.com"
+            required
+            class="h-[29px] w-full rounded-[5px] border border-[#d9dee8] bg-[#f9fafc] px-[9px] text-[9px] text-[#2c3340] outline-none placeholder:text-[#a5adbb] focus:border-[#536be8] focus:bg-white"
+          />
         </div>
-        <div class="field-group">
-          <label for="password">비밀번호</label>
-          <input id="password" name="password" type="password" placeholder="••••••••" required>
+
+        <div class="mb-[9px]">
+          <label
+            for="password"
+            class="mb-[5px] block text-[9px] font-bold tracking-[-0.03em] text-[#242936]"
+          >
+            비밀번호
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="••••••••"
+            required
+            class="h-[29px] w-full rounded-[5px] border border-[#d9dee8] bg-[#f9fafc] px-[9px] text-[9px] text-[#2c3340] outline-none placeholder:text-[#a5adbb] focus:border-[#536be8] focus:bg-white"
+          />
         </div>
-        <div class="form-options">
-          <label class="checkbox-label">
-            <input type="checkbox" id="remember" name="remember">
+
+        <!-- Options -->
+        <div class="mb-[15px] mt-[3px] flex items-center justify-between">
+          <label class="flex cursor-pointer items-center gap-1 text-[8px] text-[#7c8492]">
+            <input
+              type="checkbox"
+              id="remember"
+              name="remember"
+              class="m-0 h-[9px] w-[9px] accent-[#2563eb]"
+            />
             로그인 상태 유지
           </label>
-          <a href="#" class="forgot-password">비밀번호를 잊으셨나요?</a>
+
+          <a href="#" class="text-[8px] font-semibold text-[#4b5fe5] no-underline">
+            비밀번호를 잊으셨나요?
+          </a>
         </div>
-        <button class="btn btn-primary" type="submit">로그인하기</button>
-        <div class="form-divider">
-          <span>또는</span>
+
+        <!-- Login Button -->
+        <button
+          type="submit"
+          class="h-[30px] w-full rounded bg-[#4864e4] text-[10px] font-bold text-white transition duration-200 hover:bg-[#3e58d8]"
+        >
+          로그인하기
+        </button>
+
+        <!-- Divider -->
+        <div class="my-[14px] flex items-center gap-[9px]">
+          <div class="h-px flex-1 bg-[#e4e7ef]"></div>
+          <span class="text-[8px] text-[#a3aab7]">또는</span>
+          <div class="h-px flex-1 bg-[#e4e7ef]"></div>
         </div>
-        <p class="form-note">계정이 없으신가요? <a href="signup.html">회원가입</a></p>
+
+        <!-- Signup Link -->
+        <p class="m-0 text-center text-[8px] text-[#7d8594]">
+          계정이 없으신가요?
+          <a href="signup.html" class="font-bold text-[#4b5fe5] no-underline">
+            회원가입
+          </a>
+        </p>
       </form>
     </article>
   </main>
