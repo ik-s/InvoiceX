@@ -20,10 +20,23 @@
 
     <!-- Nav -->
     <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50">
-        <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-            <div class="flex items-center">
-                <div class="text-blue-600 text-xl font-bold mr-3">InvoiceX</div>
-                <span class="bg-indigo-50 text-indigo-700 text-xs font-bold py-1 px-2 rounded-md">대금 지급 기업</span>
+    <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+        <div class="flex items-center">
+            <!-- 로고 -->
+            <a href="mypage.html?role=payer" class="text-blue-600 text-xl font-bold mr-3 cursor-pointer no-underline">InvoiceX</a>
+
+            <!-- 역할 배지 -->
+            <div class="relative ml-3" id="roleSwitcher">
+                <button id="roleBadge" class="bg-purple-100 text-purple-600 text-xs font-bold px-3 py-1 rounded-full hover:bg-green-200 transition cursor-pointer">대금 지급 기업</button>
+                <div id="roleDropdown" class="absolute left-0 pt-1 hidden z-50" style="top:100%">
+                    <div class="bg-white border border-gray-200 rounded-xl shadow-lg py-2 w-44">
+                        <a href="rwamarket.html" data-role="funder" class="role-option block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 transition">자금 공급자</a>
+                        <a href="register.html" data-role="registrar" class="role-option block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 transition">인보이스 등록자</a>
+                        <a href="#" data-role="payer" class="role-option block px-4 py-2 text-sm text-blue-600 font-bold hover:bg-blue-50 transition">대금 지급 기업 ✓</a>
+                    </div>
+                </div>
+            </div>
+                
                 
                 <div class="hidden sm:flex items-center ml-10 space-x-8 h-full">
                     <!-- 홈 메뉴 삭제됨 -->
@@ -294,6 +307,7 @@
             });
         }
 
+        
         // 항목 선택
         function selectInvoice(id) {
             currentInvoiceId = id;
@@ -403,6 +417,17 @@
             renderList();
             selectInvoice(invoices[0].id);
         };
+          
+       
+          /* ===== 역할 드롭다운 ===== */
+        const switcher = document.getElementById('roleSwitcher');
+        const dropdown = document.getElementById('roleDropdown');
+        switcher.addEventListener('mouseenter', () => dropdown.classList.remove('hidden'));
+        switcher.addEventListener('mouseleave', () => dropdown.classList.add('hidden'));
+
+        // 현재 역할(payer) 클릭 막기
+        document.querySelector('.role-option[data-role="payer"]').addEventListener('click', e => e.preventDefault());
+ 
     </script>
 </body>
 </html>
