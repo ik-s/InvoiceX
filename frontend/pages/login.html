@@ -167,8 +167,12 @@
         return;
       }
 
-      // 로그인 후 지갑 연결 페이지로 이동
-      window.location.href = 'wallet-connect.html';
+      // 로그인 성공 처리
+      localStorage.setItem("ix_logged_in", "true");
+      localStorage.setItem("ix_user_role", role.value);
+
+    // 로그인 후 마이페이지로 이동
+      window.location.href = "mypage.html?role=" + role.value;
     });
 
     // 역할 선택 시각적 효과
