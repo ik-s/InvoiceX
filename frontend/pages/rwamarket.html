@@ -14,25 +14,32 @@
 </head>
 <body class="bg-gray-50 min-w-0">
 
-    <!-- 네비게이션 -->
     <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50">
-        <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-            <div class="flex items-center min-w-0">
-                <div class="text-blue-600 text-xl sm:text-2xl font-bold flex-shrink-0">InvoiceX</div>
-                <span class="bg-green-50 text-green-700 text-xs font-bold py-1 px-2 rounded-xl ml-2 sm:ml-3 flex-shrink-0 hidden sm:inline-block">자금 공급자</span>
-                <div class="flex items-center ml-6 sm:ml-12 lg:ml-24 space-x-3 sm:space-x-5">
-                    <a href="portfolio.html" class="text-gray-500 text-sm sm:text-base whitespace-nowrap hover:text-gray-800 transition-colors">포트폴리오</a>
-                    <a href="rwamarket.html" class="text-blue-600 text-sm sm:text-base font-bold whitespace-nowrap relative pb-1 border-b-2 border-blue-600">RWA 마켓</a>
-                    <a href="정산.html" class="text-gray-500 text-sm sm:text-base whitespace-nowrap hover:text-gray-800 transition-colors">정산 내역</a>
-                </div>
+    <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
+        <!-- 왼쪽: 로고 + 역할 배지 + 메뉴 -->
+        <div class="flex items-center min-w-0">
+            <a href="mypage.html?role=funder" class="text-blue-600 text-xl font-bold mr-3">InvoiceX</a>
+
+            <div class="relative ml-3" id="roleSwitcher">
+                <button id="roleBadge" class="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full hover:bg-green-200 transition cursor-pointer">자금 공급자</button>
+                <div id="roleDropdown" class="absolute left-0 pt-1 hidden z-50" style="top:100%"></div>
             </div>
-            <div class="flex items-center space-x-2 border border-gray-200 rounded-lg py-1.5 px-3 flex-shrink-0 ml-4 bg-gray-50">
-                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span class="text-gray-700 text-xs sm:text-sm font-semibold">Testnet</span>
-                <span class="text-gray-400 text-xs sm:text-sm hidden sm:inline">rN7d...x3Kq</span>
+
+            <div class="flex items-center ml-6 sm:ml-12 lg:ml-24 space-x-3 sm:space-x-5">
+                <a href="portfolio.html" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">포트폴리오</a>
+                <a href="rwamarket.html" class="text-blue-600 text-sm sm:text-base font-bold whitespace-nowrap relative pb-1 border-b-2 border-blue-600">RWA 마켓</a>
+                <a href="adjustment.html" class="text-gray-500 text-sm sm:text-base whitespace-nowrap">정산 내역</a>
             </div>
         </div>
-    </nav>
+
+        <!-- 오른쪽: 지갑 상태 -->
+        <div class="flex items-center space-x-2 border border-gray-200 rounded-md py-1 px-2 flex-shrink-0">
+            <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+            <span class="text-gray-800 text-xs sm:text-sm font-bold">Testnet</span>
+            <span class="text-gray-500 text-xs sm:text-sm hidden sm:inline">rN7d...x3Kq</span>
+        </div>
+    </div>
+</nav>
 
     <!-- 메인 -->
     <main class="pt-28 sm:pt-32 pb-16 px-4 sm:px-6 lg:px-8">
