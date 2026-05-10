@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceX Admin - Risk Passport</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563eb',
+            secondary: '#64748b',
+            accent: '#0f172a',
+            border: '#e5e8f0',
+            surface: '#ffffff',
+            background: '#f8fafc',
+            success: '#22c55e',
+            danger: '#ef4444'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f8fafc;
+      font-family: 'Inter', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="min-h-screen bg-[#f8fafc]">
+    <div class="mx-auto max-w-[1440px] px-6 py-8">
+      <header class="mb-8 flex flex-col gap-6 rounded-[24px] border border-[#e5e8f0] bg-white px-8 py-5 shadow-sm xl:flex-row xl:items-center xl:justify-between">
+        <div class="flex items-center gap-3">
+          <span class="text-[24px] font-extrabold text-[#2563eb]">InvoiceX</span>
+          <span class="text-[18px] font-semibold text-[#94a3b8]">Admin</span>
+        </div>
+
+        <nav class="flex items-center justify-center gap-10 text-[15px] font-semibold text-[#64748b]">
+          <a href="#" class="border-b-2 border-[#2563eb] pb-2 text-[#2563eb]">Risk Passport</a>
+          <a href="#" class="text-[#94a3b8] hover:text-[#2563eb]">KYB 검토</a>
+          <a href="#" class="text-[#94a3b8] hover:text-[#2563eb]">인보이스 검토</a>
+        </nav>
+
+        <div class="inline-flex items-center gap-2 rounded-full border border-[#e5e8f0] bg-white px-4 py-2">
+          <span class="h-2.5 w-2.5 rounded-full bg-[#22c55e]"></span>
+          <span class="text-[14px] font-semibold text-[#0f172a]">Master_Admin</span>
+        </div>
+      </header>
+
+      <section class="mb-8">
+        <h2 class="text-[24px] font-bold text-[#0f172a]">인보이스 발행 검토 대기열 <span class="text-[#2563eb]">4</span></h2>
+      </section>
+
+      <section class="mb-10 grid gap-4 lg:grid-cols-4">
+        <article class="invoice-card rounded-[20px] border border-[#2563eb] bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <span class="rounded-full bg-[#d1fae5] px-3 py-1 text-[11px] font-bold text-[#059669]">✓ 구매기업 승인 완료</span>
+            <span class="text-[12px] font-semibold text-[#94a3b8]">#INV-0042</span>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#0f172a]">(주)한빛테크</h3>
+          <p class="mt-5 text-[16px] font-bold text-[#2563eb] text-right">₩50,000,000</p>
+        </article>
+
+        <article class="invoice-card rounded-[20px] border border-[#e5e8f0] bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <span class="rounded-full bg-[#f8fafc] px-3 py-1 text-[11px] font-bold text-[#d97706]">⏳ 대금 지급 대기</span>
+            <span class="text-[12px] font-semibold text-[#94a3b8]">#INV-0041</span>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#475569]">(주)스마트솔루션</h3>
+          <p class="mt-5 text-[16px] font-bold text-[#475569] text-right">₩32,000,000</p>
+        </article>
+
+        <article class="invoice-card rounded-[20px] border border-[#e5e8f0] bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <span class="rounded-full bg-[#d1fae5] px-3 py-1 text-[11px] font-bold text-[#059669]">✓ 구매기업 승인 완료</span>
+            <span class="text-[12px] font-semibold text-[#94a3b8]">#INV-0038</span>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#475569]">(주)그린파츠</h3>
+          <p class="mt-5 text-[16px] font-bold text-[#475569] text-right">₩13,500,000</p>
+        </article>
+
+        <article class="invoice-card rounded-[20px] border border-[#e5e8f0] bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-center justify-between gap-3">
+            <span class="rounded-full bg-[#f8fafc] px-3 py-1 text-[11px] font-bold text-[#d97706]">⏳ 대금 지급 대기</span>
+            <span class="text-[12px] font-semibold text-[#94a3b8]">#INV-0035</span>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#475569]">(주)넥스트웨어</h3>
+          <p class="mt-5 text-[16px] font-bold text-[#475569] text-right">₩85,000,000</p>
+        </article>
+      </section>
+
+      <section class="rounded-[24px] border border-[#e5e8f0] bg-white p-8 shadow-sm">
+        <div class="mb-6">
+          <h1 class="text-[24px] font-bold text-[#0f172a]">#INV-0042 서류 검토 및 발급</h1>
+          <p class="mt-3 text-[15px] text-[#64748b] max-w-3xl">
+            대금 지급 기업(삼성전자)의 승인이 완료된 인보이스입니다. 서류 이상 여부를 확인하고 Risk Passport를 발행하세요.
+          </p>
+        </div>
+
+        <div class="rounded-[24px] border border-[#e5e8f0] bg-[#f1f5f9] p-12 text-center">
+          <p class="text-[16px] font-bold text-[#94a3b8]">[전자세금계산서 및 거래명세서 등 첨부 문서 원본 뷰어]</p>
+          <div class="mt-10 inline-flex items-center rounded-full border border-[#dbeafe] bg-white px-5 py-2 text-[14px] font-semibold text-[#475569]">
+            - 100%
+          </div>
+        </div>
+
+        <div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <button id="rejectBtn" class="h-[50px] min-w-[140px] rounded-[12px] border border-[#ef4444] bg-white px-6 text-[15px] font-bold text-[#ef4444] hover:bg-[#fee2e2]">
+            서류 반려
+          </button>
+          <button id="approveBtn" class="h-[50px] min-w-[200px] rounded-[12px] bg-[#2563eb] px-6 text-[15px] font-bold text-white hover:bg-[#1d4ed8]">
+            인보이스 승인
+          </button>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll('.invoice-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.invoice-card').forEach((item) => {
+          item.classList.remove('border-[#2563eb]', 'bg-[#ffffff]');
+        });
+        card.classList.add('border-[#2563eb]');
+      });
+    });
+
+    document.getElementById('rejectBtn')?.addEventListener('click', () => {
+      console.log('서류 반려 클릭');
+    });
+    document.getElementById('approveBtn')?.addEventListener('click', () => {
+      console.log('인보이스 승인 클릭');
+    });
+  </script>
+</body>
+</html>

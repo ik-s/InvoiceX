@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceX Admin - Risk Passport 설정</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563eb',
+            secondary: '#64748b',
+            accent: '#0f172a',
+            border: '#e5e8f0',
+            surface: '#ffffff',
+            background: '#f8fafc',
+            success: '#22c55e',
+            warning: '#d97706',
+            danger: '#ef4444'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f8fafc;
+      font-family: 'Inter', Pretendard, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="min-h-screen bg-[#f8fafc]">
+    <div class="mx-auto max-w-[1440px] px-6 py-8">
+      <header class="mb-8 rounded-[24px] bg-white px-8 py-5 shadow-sm border border-[#e5e8f0]">
+        <div class="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-[24px] font-extrabold text-[#2563eb]">InvoiceX</span>
+            <span class="text-[18px] font-semibold text-[#94a3b8]">Admin</span>
+          </div>
+
+          <nav class="flex items-center justify-center gap-10 text-[15px] font-semibold text-[#64748b]">
+            <a href="#" class="border-b-2 border-[#2563eb] pb-2 text-[#2563eb]">Risk Passport</a>
+            <a href="#" class="text-[#94a3b8] hover:text-[#2563eb]">KYB 검토</a>
+            <a href="#" class="text-[#94a3b8] hover:text-[#2563eb]">인보이스 검토</a>
+          </nav>
+
+          <div class="inline-flex items-center gap-2 rounded-full border border-[#e5e8f0] bg-white px-4 py-2 shadow-sm">
+            <span class="h-2.5 w-2.5 rounded-full bg-[#22c55e]"></span>
+            <span class="text-[14px] font-semibold text-[#0f172a]">Testnet</span>
+          </div>
+        </div>
+      </header>
+
+      <section class="mb-8">
+        <h2 class="text-[24px] font-bold text-[#0f172a]">
+          발급 대기열 <span class="text-[#2563eb]">3</span>
+        </h2>
+      </section>
+
+      <section class="mb-10 grid gap-4 xl:grid-cols-3">
+        <article class="rounded-[20px] border border-[#2563eb] bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <span class="rounded-full bg-[#ffedd5] px-3 py-1 text-[11px] font-bold text-[#d97706]">대기</span>
+            <span class="text-[12px] font-semibold text-[#94a3b8]">#INV-0042</span>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#0f172a]">(주)한빛테크</h3>
+          <div class="mt-5 flex items-center justify-between text-[14px] font-semibold text-[#2563eb]">
+            <span>설정 중</span>
+            <span>➔</span>
+          </div>
+        </article>
+
+        <article class="rounded-[20px] border border-[#e5e8f0] bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <span class="rounded-full bg-[#f8fafc] px-3 py-1 text-[11px] font-bold text-[#d97706]">대기</span>
+            <span class="text-[12px] font-semibold text-[#94a3b8]">#INV-0041</span>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#475569]">(주)스마트솔루션</h3>
+        </article>
+
+        <article class="rounded-[20px] border border-[#e5e8f0] bg-white p-6 shadow-sm">
+          <div class="mb-4 flex items-start justify-between gap-3">
+            <span class="rounded-full bg-[#f8fafc] px-3 py-1 text-[11px] font-bold text-[#d97706]">대기</span>
+            <span class="text-[12px] font-semibold text-[#94a3b8]">#INV-0038</span>
+          </div>
+          <h3 class="text-[18px] font-bold text-[#475569]">(주)그린파츠</h3>
+        </article>
+      </section>
+
+      <section class="rounded-[24px] border border-[#e5e8f0] bg-white p-8 shadow-sm">
+        <div class="mb-8">
+          <h1 class="text-[28px] font-bold text-[#0f172a]">Risk Passport 책정 및 발급</h1>
+          <p class="mt-3 max-w-2xl text-[15px] text-[#64748b]">
+            인보이스 데이터를 기반으로 투자자에게 공개될 리스크 등급과 수익 조건을 설정합니다.
+          </p>
+        </div>
+
+        <div class="grid gap-8 xl:grid-cols-[1fr_1fr]">
+          <div class="space-y-8">
+            <div class="rounded-[20px] border border-[#e5e8f0] bg-[#f8fafc] p-8">
+              <h2 class="text-[18px] font-bold text-[#0f172a] mb-6">기본 인보이스 정보</h2>
+              <div class="space-y-4">
+                <div class="flex justify-between items-center py-2 border-b border-[#e5e8f0]">
+                  <span class="text-[13px] text-[#94a3b8]">인보이스 번호</span>
+                  <span class="text-[18px] font-bold text-[#0f172a]">#INV-2026-0042</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-[#e5e8f0]">
+                  <span class="text-[13px] text-[#94a3b8]">발행/매출기업</span>
+                  <span class="text-[18px] font-bold text-[#0f172a]">(주)한빛테크</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-[#e5e8f0]">
+                  <span class="text-[13px] text-[#94a3b8]">지급/구매기업</span>
+                  <span class="text-[18px] font-bold text-[#0f172a]">삼성전자(주)</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-[#e5e8f0]">
+                  <span class="text-[13px] text-[#94a3b8]">원금액 (KRW)</span>
+                  <span class="text-[20px] font-bold text-[#0f172a]">₩50,000,000</span>
+                </div>
+                <div class="flex justify-between items-center py-2 border-b border-[#e5e8f0]">
+                  <span class="text-[13px] text-[#94a3b8]">만기일</span>
+                  <span class="text-[16px] font-bold text-[#0f172a]">2026.07.15 (D-71)</span>
+                </div>
+                <div class="flex justify-between items-center py-2">
+                  <span class="text-[13px] text-[#94a3b8]">지급 확인 상태</span>
+                  <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dcfce7] text-[#10b981] text-[12px] font-bold">Verified</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-[20px] border border-[#e5e8f0] bg-[#f8fafc] p-8">
+              <h2 class="text-[18px] font-bold text-[#0f172a] mb-6">과거 지불 이력 데이터 (Payer 기준)</h2>
+              <div class="space-y-4">
+                <div class="flex justify-between items-center py-3 border-b border-[#e5e8f0]">
+                  <span class="text-[14px] text-[#64748b]">과거 총 지급 횟수</span>
+                  <span class="text-[15px] font-bold text-[#0f172a]">12 회</span>
+                </div>
+                <div class="flex justify-between items-center py-3 border-b border-[#e5e8f0]">
+                  <span class="text-[14px] text-[#64748b]">지급 지연 횟수</span>
+                  <span class="text-[15px] font-bold text-[#ef4444]">0 회</span>
+                </div>
+                <div class="flex justify-between items-center py-3">
+                  <span class="text-[14px] text-[#64748b]">평균 정산 소요 시간 (만기일 대비)</span>
+                  <span class="text-[15px] font-bold text-[#2563eb]">- 2 일 (조기정산)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="space-y-8">
+            <div class="rounded-[20px] border border-[#e5e8f0] bg-[#f8fafc] p-8">
+              <h2 class="text-[18px] font-bold text-[#2563eb] mb-4">최종 리스크 등급 설정</h2>
+              <div class="grid grid-cols-3 gap-3 mb-6">
+                <button class="h-16 rounded-lg bg-[#2563eb] text-white text-[22px] font-bold hover:bg-[#1d4ed8] transition-colors">
+                  Grade A
+                </button>
+                <button class="h-16 rounded-lg border-2 border-[#e5e8f0] bg-white text-[#cbd5e1] text-[22px] font-bold hover:border-[#2563eb] hover:text-[#2563eb] transition-colors">
+                  B
+                </button>
+                <button class="h-16 rounded-lg border-2 border-[#e5e8f0] bg-white text-[#cbd5e1] text-[22px] font-bold hover:border-[#2563eb] hover:text-[#2563eb] transition-colors">
+                  C
+                </button>
+              </div>
+            </div>
+
+            <div class="rounded-[20px] border border-[#e5e8f0] bg-[#f8fafc] p-8">
+              <h2 class="text-[18px] font-bold text-[#0f172a] mb-6">수익률 및 할인율 입력</h2>
+              <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value="3.2"
+                    class="flex-1 h-12 rounded-lg border border-[#d1d5db] bg-white px-4 text-[18px] font-bold text-[#0f172a] outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20"
+                  />
+                  <span class="text-[15px] text-[#94a3b8]">% (예상 수익률)</span>
+                </div>
+                <div class="flex items-center gap-3">
+                  <input
+                    type="number"
+                    step="0.1"
+                    value="2.8"
+                    class="flex-1 h-12 rounded-lg border border-[#d1d5db] bg-white px-4 text-[18px] font-bold text-[#0f172a] outline-none focus:border-[#2563eb] focus:ring-2 focus:ring-[#2563eb]/20"
+                  />
+                  <span class="text-[15px] text-[#94a3b8]">% (할인율)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-[20px] border border-[#e5e8f0] bg-[#2563eb] p-8 text-center">
+              <button class="w-full text-[20px] font-bold text-white hover:bg-[#1d4ed8] transition-colors py-4">
+                Risk Passport & RWA 발급
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</body>
+</html>
