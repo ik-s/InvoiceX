@@ -19,8 +19,8 @@ const authenticateToken = (req, res, next) => {
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ message: "유효하지 않거나 만료된 토큰입니다." });
-        
-        req.user = user; 
+
+        req.user = user;
         next(); // 검사 통과 -> 다음 API로 넘어가기
     });
 };
@@ -28,10 +28,10 @@ const authenticateToken = (req, res, next) => {
 // 1. 회원가입 API (그대로 유지)
 app.post('/api/auth/signup', async (req, res) => {
     const { email, password, user_name, role_type, company_name, business_number, company_type } = req.body;
-    
+
     const { data: company, error: compErr } = await supabase
         .from('companies')
-        .insert([{ company_name, business_number, company_type, kyb_status: 'NOT_STARTED' }])
+        .insert([{ company_name, business_number, company_type, kyb_status: 'NOT_SUBMITTED' }])
         .select().single();
     if (compErr) return res.status(500).json({ error: "기업 생성 실패", details: compErr });
 
@@ -54,7 +54,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
 
     const token = jwt.sign(
-        { userId: user.user_id, role: user.role_type, companyId: user.company_id }, 
+        { userId: user.user_id, role: user.role_type, companyId: user.company_id },
         process.env.JWT_SECRET, { expiresIn: '24h' }
     );
     res.json({ message: "로그인 성공", token });
@@ -78,11 +78,12 @@ app.get('/api/me/route', authenticateToken, async (req, res) => {
     res.json({ role: user.role_type, redirect_to: targetPage });
 });
 
+
 // 4. 내 마이페이지 정보 조회 API (토큰 보안 적용)
 
 app.get('/api/me/mypage', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
-    
+
     const { data: userInfo, error: userErr } = await supabase
         .from('users')
         .select(`user_name, email, role_type, companies ( company_name, kyb_status, badge_status )`)
@@ -101,6 +102,8 @@ app.get('/api/me/mypage', authenticateToken, async (req, res) => {
         has_badge: userInfo.companies?.badge_status,
         is_wallet_connected: !!wallet,
         wallet_address: wallet ? wallet.wallet_address : null,
+
+        // wallet 데이터가 있으면 DB에서 가져온 실제 잔액 변수를 띄워주고, 없으면 "0.00"을 띄워라
         rlusd_balance: wallet ? wallet.rlusd_balance : "0.00"
     });
 });
