@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceX - KYB 기업 인증</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      font-family: "Inter", "Pretendard", sans-serif;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-[#F6F7FB] text-slate-900">
+
+  <!-- Header -->
+  <header class="h-14 border-b border-slate-200 bg-white">
+    <div class="mx-auto flex h-full max-w-6xl items-center justify-between px-6">
+
+      <!-- Logo -->
+      <div class="text-xl font-extrabold text-[#4C5FEA]">
+        InvoiceX
+      </div>
+
+      <!-- Navigation -->
+      <nav class="hidden items-center gap-10 text-sm font-medium text-slate-400 md:flex">
+        <a href="#" class="hover:text-[#4C5FEA]">홈</a>
+        <a href="#" class="text-[#4C5FEA]">인보이스 등록</a>
+        <a href="#" class="hover:text-[#4C5FEA]">인보이스 승인</a>
+        <a href="#" class="hover:text-[#4C5FEA]">정산</a>
+        <a href="#" class="hover:text-[#4C5FEA]">RWA마켓</a>
+      </nav>
+
+      <!-- Wallet Info -->
+      <div class="flex items-center rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold text-slate-700">
+        <span class="mr-2 h-2 w-2 rounded-full bg-emerald-400"></span>
+        Testnet
+        <span class="ml-2 text-slate-400">rh7d...x3Kq</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="mx-auto max-w-6xl px-6 py-12">
+
+    <!-- Page Title -->
+    <section class="text-center">
+      <h1 class="text-3xl font-extrabold tracking-tight text-slate-900">
+        KYB 기업 인증
+      </h1>
+      <p class="mt-3 text-base text-slate-500">
+        안전한 RWA 거래를 위해 기업 인증을 진행해 주세요.
+      </p>
+    </section>
+
+    <!-- Stepper -->
+    <section class="mx-auto mt-10 max-w-xl">
+      <div class="relative flex items-start justify-between">
+
+        <!-- 전체 회색 막대 -->
+        <div 
+          class="absolute top-4 h-[2px] bg-slate-200"
+          style="left: 16px; right: 16px;"
+        ></div>
+
+        <!-- 파란 진행 막대: 기본정보에서 서류 업로드까지만 -->
+        <div 
+          class="absolute top-4 h-[2px] bg-[#4C5FEA]"
+          style="left: 16px; width: calc(50% - 16px);"
+        ></div>
+
+        <!-- Step 1 -->
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full bg-[#4C5FEA] text-sm font-bold text-white">
+            ✓
+          </div>
+          <p class="mt-2 text-xs font-semibold text-[#4C5FEA]">
+            기본정보
+          </p>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full border-4 border-[#4C5FEA] bg-white">
+            <div class="h-3 w-3 rounded-full bg-[#4C5FEA]"></div>
+          </div>
+          <p class="mt-2 text-xs font-semibold text-[#4C5FEA]">
+            서류 업로드
+          </p>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="relative z-10 flex flex-col items-center">
+          <div class="flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white"></div>
+          <p class="mt-2 text-xs font-semibold text-slate-300">
+            심사 및 완료
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Content Card -->
+    <section class="mt-8 rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+
+      <div class="grid gap-10 lg:grid-cols-[1.25fr_1fr]">
+
+        <!-- Left: Upload Area -->
+        <div>
+          <h2 class="text-lg font-extrabold text-slate-900">
+            기업 서류 제출
+          </h2>
+
+          <!-- Upload 1 -->
+          <div class="mt-7">
+            <label class="mb-3 block text-sm font-bold text-slate-900">
+              사업자등록증 사본
+            </label>
+
+            <button
+              type="button"
+              class="upload-box flex h-14 w-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400 transition hover:border-[#4C5FEA] hover:bg-indigo-50"
+              data-target="businessFile"
+            >
+              PDF, JPG, PNG 파일 업로드 (최대 10 MB)
+            </button>
+
+            <input 
+              id="businessFile" 
+              type="file" 
+              class="hidden" 
+              accept=".pdf,.jpg,.jpeg,.png" 
+            />
+
+            <div 
+              id="businessFileName" 
+              class="mt-2 hidden rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-semibold text-[#4C5FEA]"
+            ></div>
+          </div>
+
+          <!-- Upload 2 -->
+          <div class="mt-6">
+            <label class="mb-3 block text-sm font-bold text-slate-900">
+              법인인감증명서 <span class="text-slate-500">(최근 3개월 이내)</span>
+            </label>
+
+            <button
+              type="button"
+              class="upload-box flex h-14 w-full items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-sm text-slate-400 transition hover:border-[#4C5FEA] hover:bg-indigo-50"
+              data-target="sealFile"
+            >
+              파일을 드래그 하거나 클릭하여 선택하세요.
+            </button>
+
+            <input 
+              id="sealFile" 
+              type="file" 
+              class="hidden" 
+              accept=".pdf,.jpg,.jpeg,.png" 
+            />
+
+            <div 
+              id="sealFileName" 
+              class="mt-2 hidden rounded-lg border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-semibold text-[#4C5FEA]"
+            ></div>
+          </div>
+
+          <!-- Already Uploaded File -->
+          <div class="mt-6">
+            <label class="mb-3 block text-sm font-bold text-slate-900">
+              법인등기부등본 <span class="text-slate-500">(전부사항증명서)</span>
+            </label>
+
+            <div 
+                id="registeredFile" 
+                class="flex items-center justify-between rounded-lg border border-blue-200 px-5 py-5"
+                style="background-color: #BFDBFE;"
+            >
+              <div class="text-sm font-bold text-[#4C5FEA]">
+                company_reg_doc_final.pdf
+              </div>
+
+              <div class="flex items-center gap-3 text-sm text-slate-400">
+                <span>842 KB</span>
+                <button 
+                  id="deleteRegisteredFile" 
+                  type="button"
+                  class="hover:text-red-500"
+                >
+                  삭제
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Notice Box -->
+        <aside class="self-start rounded-xl border border-blue-200 bg-blue-50/70 p-6">
+          <div class="flex items-center gap-2">
+            <div class="flex h-5 w-5 items-center justify-center rounded bg-blue-200 text-xs font-bold text-blue-700">
+              i
+            </div>
+            <h3 class="text-sm font-extrabold text-blue-900">
+              인증 안내사항
+            </h3>
+          </div>
+
+          <ul class="mt-6 space-y-5 text-sm leading-relaxed text-blue-800">
+            <li class="flex gap-2">
+              <span>•</span>
+              <span>
+                모든 서류는 식별이 가능하도록 선명하게 스캔하여 업로드해주세요.
+              </span>
+            </li>
+
+            <li class="flex gap-2">
+              <span>•</span>
+              <span>
+                제출된 서류는 영업일 기준 1~3일 이내에 검토가 완료됩니다.
+              </span>
+            </li>
+
+            <li class="flex gap-2">
+              <span>•</span>
+              <span>
+                인증 과정에서 추가 서류 요청이 발생할 수 있습니다.
+              </span>
+            </li>
+          </ul>
+
+          <button 
+            type="button"
+            class="mt-8 w-full rounded-lg border border-blue-200 bg-white py-4 text-sm font-extrabold text-blue-800 transition hover:bg-blue-100"
+          >
+            도움말 센터 방문하기
+          </button>
+        </aside>
+
+      </div>
+
+      <!-- Buttons: Center Aligned -->
+      <div class="mt-8 flex justify-center gap-3">
+        <button
+          id="submitBtn"
+          type="button"
+          class="w-[340px] rounded-lg bg-[#2563EB] px-6 py-4 text-sm font-extrabold text-white transition hover:bg-[#1D4ED8]"
+        >
+          인증 요청하기
+        </button>
+
+        <button
+          type="button"
+          class="w-[150px] rounded-lg border border-slate-300 bg-white px-6 py-4 text-sm font-extrabold text-slate-600 transition hover:bg-slate-50"
+        >
+          이전 단계
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    // 파일 업로드 버튼 클릭 시 input file 열기
+    const uploadBoxes = document.querySelectorAll(".upload-box");
+
+    uploadBoxes.forEach((box) => {
+      const inputId = box.dataset.target;
+      const input = document.getElementById(inputId);
+      const fileNameBox = document.getElementById(inputId + "Name");
+
+      box.addEventListener("click", () => {
+        input.click();
+      });
+
+      input.addEventListener("change", () => {
+        const file = input.files[0];
+
+        if (!file) return;
+
+        const fileSizeKB = Math.round(file.size / 1024);
+
+        fileNameBox.classList.remove("hidden");
+        fileNameBox.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span>${file.name}</span>
+            <span class="text-slate-400">${fileSizeKB} KB</span>
+          </div>
+        `;
+
+        box.classList.add("hidden");
+      });
+    });
+
+    // 기존 업로드 파일 삭제
+    const deleteRegisteredFile = document.getElementById("deleteRegisteredFile");
+    const registeredFile = document.getElementById("registeredFile");
+
+    deleteRegisteredFile.addEventListener("click", () => {
+      registeredFile.remove();
+    });
+
+    // 인증 요청 버튼
+    const submitBtn = document.getElementById("submitBtn");
+
+    submitBtn.addEventListener("click", () => {
+      alert("KYB 인증 요청이 접수되었습니다.");
+    });
+  </script>
+
+</body>
+</html>

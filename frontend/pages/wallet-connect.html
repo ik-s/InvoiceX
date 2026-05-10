@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceX Wallet Connect</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body {
+      font-family: "Inter", "Pretendard", sans-serif;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-white text-gray-900">
+  <main class="flex min-h-screen justify-center px-4 pt-24">
+    <section class="w-full max-w-[390px] text-center">
+
+      <!-- Logo -->
+      <h1 class="text-3xl font-extrabold tracking-wide text-[#4C5FEA]">
+        InvoiceX<span class="text-gray-300">.</span>
+      </h1>
+
+      <p class="mt-2 text-[13px] text-gray-400">
+        XRPL 기반 인보이스 RWA 금융망 금융 플랫폼
+      </p>
+
+      <!-- Wallet Card -->
+      <div class="mt-8 rounded-3xl border border-gray-200 bg-white px-5 py-5 text-left shadow-[0_8px_24px_rgba(0,0,0,0.06)]">
+
+        <h2 class="mb-4 text-lg font-bold text-gray-900">
+          지갑을 연결하세요
+        </h2>
+
+        <!-- Main Wallet -->
+        <button
+          class="wallet-option selected-wallet flex w-full items-center justify-between rounded-xl bg-[#4C5FEA] px-4 py-3 text-white transition"
+          data-wallet="XRPL Testnet Wallet"
+        >
+          <div class="flex items-center gap-4">
+            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 font-bold">
+              X
+            </div>
+
+            <div>
+              <p class="text-sm font-bold">XRPL Testnet Wallet</p>
+              <p class="mt-1 text-xs text-white/70">Testnet 환경에서 바로 연결</p>
+            </div>
+          </div>
+        </button>
+
+        <!-- Divider -->
+        <div class="my-4 flex items-center gap-3">
+          <div class="h-px flex-1 bg-gray-200"></div>
+          <span class="text-xs text-gray-400">기타 지갑</span>
+          <div class="h-px flex-1 bg-gray-200"></div>
+        </div>
+
+        <!-- Wallet List -->
+        <div class="space-y-3">
+
+          <button
+            class="wallet-option flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 transition hover:border-[#4C5FEA] hover:bg-gray-50"
+            data-wallet="GemWallet"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#D88A25] text-sm font-bold text-white">
+                G
+              </div>
+              <p class="text-sm font-bold text-gray-800">GemWallet</p>
+            </div>
+            <span class="text-gray-300">›</span>
+          </button>
+
+          <button
+            class="wallet-option flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 transition hover:border-[#4C5FEA] hover:bg-gray-50"
+            data-wallet="Crossmark"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#6D63D8] text-sm font-bold text-white">
+                X
+              </div>
+              <p class="text-sm font-bold text-gray-800">Crossmark</p>
+            </div>
+            <span class="text-gray-300">›</span>
+          </button>
+
+          <button
+            class="wallet-option flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 transition hover:border-[#4C5FEA] hover:bg-gray-50"
+            data-wallet="XUMM / Xaman"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#4C5FEA] text-sm font-bold text-white">
+                X
+              </div>
+              <p class="text-sm font-bold text-gray-800">XUMM / Xaman</p>
+            </div>
+            <span class="text-gray-300">›</span>
+          </button>
+
+          <button
+            class="wallet-option flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-3 transition hover:border-[#4C5FEA] hover:bg-gray-50"
+            data-wallet="WalletConnect"
+          >
+            <div class="flex items-center gap-4">
+              <div class="flex h-9 w-9 items-center justify-center rounded-lg bg-[#5A86E8] text-sm font-bold text-white">
+                W
+              </div>
+              <p class="text-sm font-bold text-gray-800">WalletConnect</p>
+            </div>
+            <span class="text-gray-300">›</span>
+          </button>
+        </div>
+
+        <!-- Terms -->
+        <p class="mt-5 text-center text-[11px] leading-5 text-gray-300">
+          지갑을 연결하면 InvoiceX의 서비스 약관 및 개인정보<br />
+          보호 정책에 동의하는 것으로 간주됩니다.
+        </p>
+
+        <!-- Result Message -->
+        <p id="connectMessage" class="mt-3 hidden text-center text-xs font-semibold text-[#4C5FEA]"></p>
+      </div>
+
+      <!-- Footer -->
+      <p class="mt-5 text-xs text-gray-300">
+        XRPL Testnet 환경에서 운영됩니다 · InvoiceX MVP
+      </p>
+    </section>
+  </main>
+
+  <script>
+    const walletButtons = document.querySelectorAll(".wallet-option");
+    const message = document.getElementById("connectMessage");
+
+    walletButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        const walletName = button.dataset.wallet;
+
+        walletButtons.forEach((btn) => {
+          btn.classList.remove("ring-2", "ring-[#4C5FEA]", "bg-gray-50");
+        });
+
+        button.classList.add("ring-2", "ring-[#4C5FEA]", "bg-gray-50");
+
+        message.classList.remove("hidden");
+        message.textContent = `${walletName} 연결을 시도합니다...`;
+
+        // 실제 지갑 연결 API는 여기에서 호출하면 됨
+        // 예: connectXamanWallet();
+        // 예: connectGemWallet();
+        // 예: connectWalletConnect();
+      });
+    });
+  </script>
+</body>
+</html>
