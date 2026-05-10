@@ -223,7 +223,7 @@
         </aside>
       </div>
 
-      <!-- 하단 버튼: 흰색 박스 내부에 포함 -->
+      <!-- 하단 버튼 -->
       <div class="mt-[44px] flex justify-center gap-[8px]">
         <button
           id="submitBtn"
@@ -305,11 +305,13 @@
       registryBox.classList.add("border-[#E2E8F0]", "bg-[#F8FAFC]", "border-dashed");
     });
 
-    // 버튼 이벤트
+    // 인증 요청 버튼 이벤트
     document.getElementById("submitBtn").addEventListener("click", () => {
-      alert("기업 인증 요청이 제출되었습니다.");
+      localStorage.setItem("ix_kyb_verified", "true");
+      location.href = "mypage.html?role=" + (new URLSearchParams(location.search).get("role") || "funder");
     });
 
+    // 이전 단계 버튼 이벤트
     document.getElementById("prevBtn").addEventListener("click", () => {
       alert("이전 단계로 이동합니다.");
     });

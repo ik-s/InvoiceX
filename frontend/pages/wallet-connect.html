@@ -233,7 +233,7 @@
       localStorage.setItem("invoiceXWallet", JSON.stringify(data));
     }
 
-    function renderConnectedWallet(data) {
+    function renderConnectedWallet(data, shouldRedirect = false) {
       walletStatus.classList.remove("hidden");
 
       statusTitle.textContent = "지갑 연결 완료";
@@ -243,6 +243,11 @@
 
       showMessage(`${data.walletName} 연결이 완료되었습니다.`, "success");
       saveWalletConnection(data);
+
+      if (shouldRedirect) {
+        localStorage.setItem("ix_wallet_connected", "true");
+        location.href = "mypage.html?role=" + (new URLSearchParams(location.search).get("role") || "funder");
+      }
     }
 
     function renderDisconnectedWallet() {
@@ -252,6 +257,7 @@
       statusNetwork.textContent = "";
 
       localStorage.removeItem("invoiceXWallet");
+      localStorage.removeItem("ix_wallet_connected");
       showMessage("지갑 연결이 해제되었습니다.", "info");
     }
 
@@ -293,7 +299,7 @@
         walletName: "XRPL Testnet Wallet",
         address,
         network: "XRPL Testnet",
-      });
+      }, true);
     }
 
     async function connectGemWallet() {
@@ -334,7 +340,7 @@
         walletName: "GemWallet",
         address,
         network,
-      });
+      }, true);
     }
 
     async function connectCrossmark() {
@@ -361,7 +367,7 @@
         walletName: "Crossmark",
         address,
         network: "XRPL",
-      });
+      }, true);
     }
 
     async function connectXaman() {
@@ -384,7 +390,7 @@
             walletName: "XUMM / Xaman",
             address: account,
             network: "XRPL",
-          });
+          }, true);
         });
 
         xamanClient.on("logout", () => {
@@ -418,7 +424,7 @@
         walletName: "EVM Wallet",
         address: accounts[0],
         network: `Chain ID ${chainId}`,
-      });
+      }, true);
     }
 
     async function handleWalletConnect(walletType, button) {
