@@ -88,20 +88,20 @@
           </div>
           <div class="grid w-full gap-3 sm:grid-cols-4 xl:w-[520px]">
             <div class="rounded-lg bg-[#eff6ff] px-4 py-3">
-              <p class="text-[11px] font-bold text-[#64748b]">AI 검토 완료</p>
-              <p class="mt-1 text-[22px] font-extrabold text-[#2563eb]">4</p>
+              <p class="text-[11px] font-bold text-[#64748b]">발행 완료</p>
+              <p id="doneCount" class="mt-1 text-[22px] font-extrabold text-[#2563eb]">0</p>
             </div>
             <div class="rounded-lg bg-[#f0fdf4] px-4 py-3">
               <p class="text-[11px] font-bold text-[#64748b]">발행 후보</p>
-              <p class="mt-1 text-[22px] font-extrabold text-[#16a34a]">2</p>
+              <p id="readyCount" class="mt-1 text-[22px] font-extrabold text-[#16a34a]">2</p>
             </div>
             <div class="rounded-lg bg-[#fff7ed] px-4 py-3">
               <p class="text-[11px] font-bold text-[#64748b]">확인 필요</p>
-              <p class="mt-1 text-[22px] font-extrabold text-[#d97706]">1</p>
+              <p id="reviewCount" class="mt-1 text-[22px] font-extrabold text-[#d97706]">1</p>
             </div>
             <div class="rounded-lg bg-[#fef2f2] px-4 py-3">
               <p class="text-[11px] font-bold text-[#64748b]">발행 보류</p>
-              <p class="mt-1 text-[22px] font-extrabold text-[#ef4444]">1</p>
+              <p id="blockedCount" class="mt-1 text-[22px] font-extrabold text-[#ef4444]">1</p>
             </div>
           </div>
         </div>
@@ -118,13 +118,17 @@
           <button
             class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
             data-filter="blocked">발행 보류</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="done">발행 완료</button>
         </div>
 
         <div class="mt-4 flex items-stretch gap-2">
           <button id="queuePrev" type="button"
             class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
             aria-label="이전 인보이스 요청">&lsaquo;</button>
-          <div id="caseQueue" class="queue-scroll flex flex-1 gap-3 overflow-x-auto overflow-y-hidden scroll-smooth"></div>
+          <div id="caseQueue" class="queue-scroll flex flex-1 gap-3 overflow-x-auto overflow-y-hidden scroll-smooth">
+          </div>
           <button id="queueNext" type="button"
             class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
             aria-label="다음 인보이스 요청">&rsaquo;</button>
@@ -195,7 +199,7 @@
           <section class="panel mb-8 p-5">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <h3 class="text-[18px] font-extrabold">Risk Passport 초안</h3>
+                <h3 class="text-[18px] font-extrabold">Risk Passport</h3>
               </div>
               <div class="flex flex-wrap gap-2">
                 <span id="riskGradeBadge" class="w-fit rounded-full px-4 py-2 text-[13px] font-bold"></span>
@@ -243,6 +247,7 @@
           status: "발행 후보",
           statusTone: "ready",
           filter: "ready",
+          passportIssued: false,
           riskGrade: "A",
           subtitle: "Buyer Confirmation과 인보이스 OCR 금액이 모두 일치한 요청입니다.",
           summary: "KYB 승인 기업의 인보이스 원본, Buyer 지급 확인, 금액, 만기일이 일치합니다. Agent는 Risk Passport 확정과 Invoice RWA 발행 승인을 추천합니다.",
@@ -261,6 +266,7 @@
           status: "확인 필요",
           statusTone: "review",
           filter: "review",
+          passportIssued: false,
           riskGrade: "B",
           subtitle: "인보이스 원본은 일치하지만 Buyer Confirmation이 아직 없습니다.",
           summary: "KYB는 승인 상태입니다. 다만 Buyer 지급 확인이 완료되지 않아 Risk Passport 확정과 Invoice RWA 발행 승인은 보류해야 합니다.",
@@ -279,6 +285,7 @@
           status: "발행 후보",
           statusTone: "ready",
           filter: "ready",
+          passportIssued: false,
           riskGrade: "A",
           subtitle: "Buyer 확인은 완료됐고 품목명 축약 메모만 남은 요청입니다.",
           summary: "Buyer Confirmation과 금액은 일치합니다. 발주서의 품목명이 축약되어 Verifier Memo에 근거를 남긴 뒤 발행할 수 있습니다.",
@@ -297,6 +304,7 @@
           status: "발행 보류",
           statusTone: "blocked",
           filter: "blocked",
+          passportIssued: false,
           riskGrade: "C",
           subtitle: "금액 불일치와 Buyer Confirmation 미완료로 발행할 수 없는 요청입니다.",
           summary: "등록 금액과 OCR 금액이 다르고 Buyer Confirmation도 완료되지 않았습니다. Risk Passport 확정과 Invoice RWA 발행 승인은 보류해야 합니다.",
@@ -311,7 +319,8 @@
       const toneClasses = {
         ready: "bg-[#dcfce7] text-[#16a34a]",
         review: "bg-[#ffedd5] text-[#d97706]",
-        blocked: "bg-[#fee2e2] text-[#ef4444]"
+        blocked: "bg-[#fee2e2] text-[#ef4444]",
+        done: "bg-[#dbeafe] text-[#2563eb]"
       };
       const checkTone = {
         PASS: "bg-[#dcfce7] text-[#16a34a]",
@@ -329,6 +338,23 @@
 
       function visibleCases() {
         return Object.entries(cases).filter(([, item]) => activeFilter === "all" || item.filter === activeFilter);
+      }
+
+      function renderStats() {
+        const items = Object.values(cases);
+        document.getElementById("doneCount").textContent = items.filter((item) => item.filter === "done").length;
+        document.getElementById("readyCount").textContent = items.filter((item) => item.filter === "ready").length;
+        document.getElementById("reviewCount").textContent = items.filter((item) => item.filter === "review").length;
+        document.getElementById("blockedCount").textContent = items.filter((item) => item.filter === "blocked").length;
+      }
+
+      function setActiveFilter(nextFilter) {
+        activeFilter = nextFilter;
+        document.querySelectorAll(".filter-btn").forEach((button) => {
+          button.className = button.dataset.filter === activeFilter
+            ? "filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white"
+            : "filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]";
+        });
       }
 
       function updateQueueButtons() {
@@ -426,10 +452,11 @@
         document.getElementById("verifierMemo").value = "";
         document.getElementById("humanConfirm").checked = false;
         document.getElementById("approveRwaBtn").disabled = true;
+        document.getElementById("issuePassportBtn").textContent = item.passportIssued ? "Risk Passport 발급 완료" : "Risk Passport 확정";
 
         const passportState = document.getElementById("passportState");
         const riskGradeBadge = document.getElementById("riskGradeBadge");
-        const stateLabel = item.statusTone === "ready" ? "초안 확정 가능" : item.statusTone === "review" ? "확인 후 확정" : "발행 보류";
+        const stateLabel = item.statusTone === "ready" ? "초안 확정 가능" : item.statusTone === "review" ? "확인 후 확정" : item.statusTone === "done" ? "발행 완료" : "발행 보류";
         riskGradeBadge.textContent = `Risk Grade ${item.riskGrade}`;
         riskGradeBadge.className = `w-fit rounded-full px-4 py-2 text-[13px] font-bold ${gradeTone[item.riskGrade]}`;
         passportState.textContent = stateLabel;
@@ -444,11 +471,7 @@
 
       document.querySelectorAll(".filter-btn").forEach((button) => {
         button.addEventListener("click", () => {
-          activeFilter = button.dataset.filter;
-          document.querySelectorAll(".filter-btn").forEach((item) => {
-            item.className = "filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]";
-          });
-          button.className = "filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white";
+          setActiveFilter(button.dataset.filter);
           if (!visibleCases().some(([key]) => key === selectedCaseKey)) selectedCaseKey = visibleCases()[0]?.[0] || "hanbit";
           renderQueue();
           renderCase();
@@ -467,18 +490,40 @@
       });
       document.getElementById("caseQueue").addEventListener("scroll", updateQueueButtons);
       window.addEventListener("resize", updateQueueButtons);
-      document.getElementById("rerunAiBtn").addEventListener("click", () => alert(`${cases[selectedCaseKey].id} Agent 재검토를 실행했습니다. 데모에서는 현재 결과를 유지합니다.`));
+      document.getElementById("rerunAiBtn").addEventListener("click", (event) => {
+        event.currentTarget.textContent = "검토 중...";
+        event.currentTarget.className = "h-[38px] rounded-lg border border-[#fed7aa] bg-[#fff7ed] px-3 text-[12px] font-bold text-[#d97706]";
+        alert("Agent에게 Invoice 재검토를 요청합니다.");
+      });
       document.getElementById("issuePassportBtn").addEventListener("click", () => {
         const item = cases[selectedCaseKey];
         if (item.statusTone === "blocked") {
           alert("필수 조건 미충족으로 Risk Passport를 확정할 수 없습니다.");
           return;
         }
-        alert(`${item.id} Risk Passport가 확정되었습니다. (데모)`);
+        item.passportIssued = true;
+        document.getElementById("issuePassportBtn").textContent = "Risk Passport 발급 완료";
+        alert(`${item.id} Risk Passport가 확정되었습니다.`);
       });
-      document.getElementById("approveRwaBtn").addEventListener("click", () => alert(`${cases[selectedCaseKey].id} Invoice RWA 발행을 최종 승인했습니다. (데모)`));
-      document.getElementById("requestSupplementBtn").addEventListener("click", () => alert(`${cases[selectedCaseKey].id} 보완 요청이 생성되었습니다. Admin Memo를 함께 저장하세요. (데모)`));
+      document.getElementById("approveRwaBtn").addEventListener("click", () => {
+        const item = cases[selectedCaseKey];
+        if (!item.passportIssued) {
+          alert("Risk Passport를 발급해주세요.");
+          return;
+        }
+        item.status = "발행 완료";
+        item.statusTone = "done";
+        item.filter = "done";
+        item.gates = [["Risk Passport", "done", "발급 완료"], ["Invoice RWA", "done", "발행 승인 완료"]];
+        setActiveFilter("done");
+        renderStats();
+        renderQueue();
+        renderCase();
+        alert(`${item.id} Invoice RWA 발행을 최종 승인했습니다.`);
+      });
+      document.getElementById("requestSupplementBtn").addEventListener("click", () => alert(`${cases[selectedCaseKey].id} 보완 요청이 생성되었습니다. Admin Memo를 함께 저장하세요.`));
 
+      renderStats();
       renderQueue();
       renderCase();
     </script>
