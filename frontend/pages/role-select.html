@@ -4,189 +4,65 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>역할 선택 - InvoiceX</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 <style>
-  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-  body{font-family:"Inter",sans-serif}
-  .role-card{transition:all .2s ease}
-  .role-card:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(37,99,235,.12);border-color:#2563eb}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-  .fade-up{animation:fadeUp .5s ease forwards;opacity:0}
-  .fade-up:nth-child(1){animation-delay:.1s}
-  .fade-up:nth-child(2){animation-delay:.2s}
-  .fade-up:nth-child(3){animation-delay:.3s}
+  body { font-family: "Pretendard", sans-serif; -webkit-font-smoothing: antialiased; letter-spacing: -0.02em; }
+  .role-card { transition: all .25s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; border: 2px solid transparent; }
+  .role-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(37,99,235,0.08); border-color: #2563eb; }
+  
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(20px) } to { opacity: 1; transform: translateY(0) } }
+  .fade-up { animation: fadeUp 0.5s ease forwards; opacity: 0; }
+  .delay-1 { animation-delay: 0.1s; }
+  .delay-2 { animation-delay: 0.2s; }
+  .delay-3 { animation-delay: 0.3s; }
 </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-900">
+<body class="bg-gray-50 min-h-screen flex flex-col justify-center items-center p-6">
 
-<!-- ===== TOP NAV (심플) ===== -->
-<nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50">
-  <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-    <span class="text-blue-600 text-xl font-bold">InvoiceX</span>
-    <span class="inline-flex items-center gap-1.5 text-xs font-medium border border-gray-200 rounded-full px-3 py-1">
-      <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>Connected<span class="text-gray-400 ml-0.5">Testnet</span>
-    </span>
-  </div>
-</nav>
+  <div class="max-w-4xl w-full">
+    <div class="text-center mb-16 fade-up">
+      <h1 class="text-blue-600 text-4xl font-extrabold mb-4 tracking-tighter">InvoiceX</h1>
+      <p class="text-gray-500 font-bold text-lg">진행하실 역할을 선택해 주세요.</p>
+    </div>
 
-<main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16">
-
-  <!-- 헤더 -->
-  <div class="text-center mb-12">
-    <h1 class="text-2xl sm:text-3xl font-extrabold mb-2">역할을 선택해주세요</h1>
-    <p class="text-sm sm:text-base text-gray-500">InvoiceX에서 사용할 역할을 선택하면 맞춤 대시보드로 이동합니다.</p>
-  </div>
-
-  <!-- 역할 카드 3개 -->
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-5xl mx-auto">
-
-    <!-- 자금 공급자 -->
-    <a href="mypage.html?role=funder" class="role-card fade-up bg-white rounded-2xl border-2 border-gray-100 p-8 sm:p-10 text-center cursor-pointer block">
-      <div class="w-20 h-20 rounded-2xl bg-blue-50 flex items-center justify-center mx-auto mb-6">
-        <span class="text-5xl">💰</span>
-      </div>
-      <h3 class="text-xl font-bold mb-3">자금 공급자</h3>
-      <p class="text-base text-gray-500 leading-relaxed">RWA 마켓에서 인보이스에 투자하고 안정적인 수익을 받으세요.</p>
-      <div class="mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600">
-        시작하기
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-      </div>
-    </a>
-
-    <!-- 인보이스 등록자 -->
-    <a href="mypage.html?role=registrar" class="role-card fade-up bg-white rounded-2xl border-2 border-gray-100 p-8 sm:p-10 text-center cursor-pointer block">
-      <div class="w-20 h-20 rounded-2xl bg-green-50 flex items-center justify-center mx-auto mb-6">
-        <span class="text-5xl">📄</span>
-      </div>
-      <h3 class="text-xl font-bold mb-3">인보이스 등록자</h3>
-      <p class="text-base text-gray-500 leading-relaxed">매출채권을 토큰화하여 조기 자금 확보를 받으세요.</p>
-      <div class="mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600">
-        시작하기
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-      </div>
-    </a>
-
-    <!-- 대금 지급 기업 -->
-    <a href="mypage.html?role=payer" class="role-card fade-up bg-white rounded-2xl border-2 border-gray-100 p-8 sm:p-10 text-center cursor-pointer block">
-      <div class="w-20 h-20 rounded-2xl bg-purple-50 flex items-center justify-center mx-auto mb-6">
-        <span class="text-5xl">🏢</span>
-      </div>
-      <h3 class="text-xl font-bold mb-3">대금 지급 기업</h3>
-      <p class="text-base text-gray-500 leading-relaxed">협력사 인보이스를 확인하고 에스크로로 안전하게 지급하세요.</p>
-      <div class="mt-6 inline-flex items-center gap-1.5 text-base font-semibold text-blue-600">
-        시작하기
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
-      </div>
-    </a>
-
-  </div>
-
-  <!-- ===== 회원 정보 (클릭 시 상세 팝업) ===== -->
-  <div onclick="openCompanyModal()" class="max-w-5xl mx-auto mt-10 bg-white rounded-2xl border border-gray-100 shadow-sm p-5 sm:p-6 cursor-pointer hover:border-blue-200 hover:shadow-md transition-all">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-lg font-bold text-gray-500 flex-shrink-0">H</div>
-        <div class="min-w-0">
-          <p class="text-sm font-bold text-gray-900">(주)한빛테크</p>
-          <p class="text-xs text-gray-400 mt-0.5 truncate">ID: hanbit_tech_01 · rN7dKx9Qp...v3KqBmZ</p>
-          <div class="flex items-center gap-2 mt-1.5">
-            <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600 bg-green-50 rounded-full px-2.5 py-0.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>지갑 연결됨
-            </span>
-            <span class="inline-flex items-center text-xs font-medium text-blue-600 bg-blue-50 rounded-full px-2.5 py-0.5">KYB 인증완료</span>
-          </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div onclick="location.href='mypage.html?role=funder'" class="role-card bg-white rounded-3xl p-8 shadow-sm fade-up delay-1">
+        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 011-18 0z"/></svg>
         </div>
+        <h3 class="text-xl font-bold mb-3">자금공급자</h3>
+        <p class="text-gray-400 text-sm leading-relaxed font-medium">매출채권에 투자하여 수익을 창출하고 자산을 관리합니다.</p>
       </div>
-      <svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+
+      <div onclick="location.href='mypage.html?role=registrar'" class="role-card bg-white rounded-3xl p-8 shadow-sm fade-up delay-2">
+        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3">인보이스 등록자</h3>
+        <p class="text-gray-400 text-sm leading-relaxed font-medium">채권을 등록하고 조기 현금화를 통해 유동성을 확보합니다.</p>
+      </div>
+
+      <div onclick="location.href='mypage.html?role=payer'" class="role-card bg-white rounded-3xl p-8 shadow-sm fade-up delay-3">
+        <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mb-6">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+        </div>
+        <h3 class="text-xl font-bold mb-3">대금지급기업</h3>
+        <p class="text-gray-400 text-sm leading-relaxed font-medium">매입 채무를 확인하고 투명하게 대금을 정산합니다.</p>
+      </div>
+    </div>
+
+    <div class="mt-16 text-center fade-up delay-3">
+        <p class="text-xs font-bold text-gray-300 uppercase tracking-widest mb-4">Demo Testing Option</p>
+        <div class="flex justify-center gap-4">
+            <button onclick="location.href='mypage.html?kyb=false'" class="text-xs font-bold text-gray-400 hover:text-red-400 transition">KYB 미인증 화면 테스트 ↗</button>
+        </div>
     </div>
   </div>
 
-</main>
-
-<!-- ===== MODAL ===== -->
-<div id="modalOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden" style="backdrop-filter:blur(4px)">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative" style="animation:fadeUp .25s ease">
-    <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-
-    <!-- 기업 헤더 -->
-    <div class="flex items-center gap-4 mb-6">
-      <div class="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-500 flex-shrink-0">H</div>
-      <div>
-        <h3 class="text-lg font-bold">(주)한빛테크</h3>
-        <p class="text-xs text-gray-400 mt-0.5">ID: hanbit_tech_01</p>
-      </div>
-    </div>
-
-    <!-- 사업 분야 -->
-    <div class="mb-5">
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">주요 사업 분야</p>
-      <div class="flex flex-wrap gap-2">
-        <span class="text-xs font-medium bg-gray-100 text-gray-700 rounded-full px-3 py-1">IT · 소프트웨어 개발</span>
-        <span class="text-xs font-medium bg-gray-100 text-gray-700 rounded-full px-3 py-1">블록체인 솔루션</span>
-        <span class="text-xs font-medium bg-gray-100 text-gray-700 rounded-full px-3 py-1">핀테크</span>
-      </div>
-    </div>
-
-    <!-- 담당자 정보 -->
-    <div class="mb-5">
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">담당자 정보</p>
-      <div class="bg-gray-50 rounded-xl p-4 space-y-2.5 text-sm">
-        <div class="flex justify-between"><span class="text-gray-500">담당자명</span><span class="font-semibold">김현진</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">직책</span><span class="font-semibold">재무팀 팀장</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">연락처</span><span class="font-semibold">010-1234-5678</span></div>
-        <div class="flex justify-between"><span class="text-gray-500">이메일</span><span class="font-semibold text-blue-600">hjkim@hanbittech.co.kr</span></div>
-      </div>
-    </div>
-
-    <!-- KYB 인증 상태 -->
-    <div class="mb-6">
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">KYB 인증</p>
-      <div class="bg-green-50 border border-green-200 rounded-xl p-4">
-        <div class="flex items-center justify-between mb-2">
-          <div class="flex items-center gap-2">
-            <svg class="w-5 h-5 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-            <span class="text-sm font-bold text-green-700">인증 완료</span>
-          </div>
-          <span class="text-xs font-semibold text-green-600 bg-green-100 rounded-full px-2.5 py-0.5">Grade A</span>
-        </div>
-        <div class="space-y-1.5 text-sm">
-          <div class="flex justify-between"><span class="text-gray-500">사업자등록번호</span><span class="font-semibold">123-45-67890</span></div>
-          <div class="flex justify-between"><span class="text-gray-500">인증일</span><span class="font-semibold">2025.03.15</span></div>
-          <div class="flex justify-between"><span class="text-gray-500">유효기간</span><span class="font-semibold">2026.03.15</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 지갑 정보 -->
-    <div class="mb-6">
-      <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">지갑 주소</p>
-      <div class="bg-gray-50 rounded-xl p-3 flex items-center justify-between">
-        <code class="text-xs text-gray-600">rN7dKx9Qp...v3KqBmZ</code>
-        <span class="inline-flex items-center gap-1 text-xs font-medium text-green-600">
-          <span class="w-1.5 h-1.5 rounded-full bg-green-500 inline-block"></span>Connected
-        </span>
-      </div>
-    </div>
-
-    <button onclick="closeModal()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition">닫기</button>
-  </div>
-</div>
-
-<footer class="text-center py-6">
-  <p class="text-xs text-gray-400">© 2025 InvoiceX. All rights reserved.</p>
-</footer>
-
-<script>
-function openCompanyModal(){
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
-function closeModal(){
-  document.getElementById('modalOverlay').classList.add('hidden');
-}
-document.getElementById('modalOverlay').addEventListener('click',function(e){
-  if(e.target===this) closeModal();
-});
-</script>
+  <footer class="mt-20 text-gray-300 text-xs font-bold">
+    &copy; 2026 InvoiceX Corp. All rights reserved.
+  </footer>
 
 </body>
 </html>

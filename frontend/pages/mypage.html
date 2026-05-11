@@ -1,507 +1,293 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>마이페이지 - InvoiceX</title>
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-<style>
-  @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
-  body{font-family:"Inter",sans-serif}
-  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes slideDown{from{opacity:1;max-height:120px;margin-bottom:12px;padding-top:16px;padding-bottom:16px}to{opacity:0;max-height:0;margin-bottom:0;padding-top:0;padding-bottom:0;border-width:0}}
-  .alert-read{animation:slideDown .5s ease forwards;overflow:hidden;pointer-events:none}
-  .red-dot{width:8px;height:8px;border-radius:50%;background:#ef4444;flex-shrink:0}
-  .dot-read{background:#d1d5db!important}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceX - 통합 대시보드</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body { font-family: "Pretendard", sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; letter-spacing: -0.02em; background-color: #f8fafc; }
+        
+        .font-bold { font-weight: 600 !important; }
+        .font-medium { font-weight: 500 !important; }
+        
+        @keyframes slideDown { from { opacity: 1; max-height: 100px; padding: 16px; margin-bottom: 8px; } to { opacity: 0; max-height: 0; padding: 0; margin-bottom: 0; border-width: 0; } }
+        .alert-read { animation: slideDown .4s ease forwards; overflow: hidden; pointer-events: none; }
+        .red-dot { width: 5px; height: 5px; border-radius: 50%; background: #ef4444; flex-shrink: 0; }
+        
+        .rwa-slider { display: flex; overflow-x: auto; gap: 1rem; padding-bottom: 0.5rem; scroll-behavior: smooth; scroll-snap-type: x mandatory; }
+        .rwa-card { flex: 0 0 280px; scroll-snap-align: start; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid #e5e7eb; }
+        .rwa-card:hover { transform: translateY(-3px); border-color: #3b82f6; box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.08); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+
+        .saas-card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen text-gray-900">
+<body class="text-gray-900">
 
-<!-- ===== TOP NAV ===== -->
-<nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50">
-  <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-    <div class="flex items-center">
-      <span class="text-blue-600 text-xl font-bold mr-3">InvoiceX</span>
-      <div class="hidden sm:flex items-center ml-10 space-x-8 h-full">
-        <a href="#" class="text-blue-600 text-sm font-bold relative h-16 flex items-center border-b-2 border-blue-600">마이페이지</a>
-        <a href="#" id="nav-rwa" class="text-gray-500 hover:text-gray-900 text-sm font-medium transition-colors h-16 flex items-center">RWA마켓</a>
-      </div>
+    <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-50 h-14 flex items-center">
+        <div class="max-w-7xl mx-auto w-full flex items-center justify-between px-6">
+            <div class="flex items-center space-x-10">
+                <div class="text-blue-600 text-2xl font-bold cursor-pointer" onclick="location.href='mypage.html'">InvoiceX</div>
+                <div id="nav-menu" class="hidden md:flex space-x-8 text-sm font-bold text-gray-500">
+                </div>
+            </div>
+            
+            <button onclick="location.href='role-select.html'" class="text-xs font-bold text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
+                로그아웃
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <main class="pt-20 pb-16 max-w-7xl mx-auto px-6">
+        
+        <section class="saas-card p-6 mb-8 flex items-center justify-between animate-fade-up">
+            <div class="flex items-center gap-5">
+                <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900 mb-1">InvoiceX</h1>
+                    <div id="kyb-status" class="text-gray-400 text-xs font-medium flex items-center gap-1.5 uppercase"></div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <span id="role-badge" class="bg-blue-600 text-white px-8 h-11 inline-flex items-center justify-center rounded-xl text-sm font-medium shadow-sm">역할</span>
+                <button onclick="location.href='kyb.html'" class="bg-gray-900 hover:bg-black text-white px-8 h-11 inline-flex items-center justify-center rounded-xl text-sm font-medium transition gap-2 shadow-md">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    지갑 연결
+                </button>
+            </div>
+        </section>
+
+        <div id="main-content" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <div class="lg:col-span-8 space-y-8">
+                    <div id="rwa-section">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-bold text-gray-900 uppercase tracking-wider">진행 중인 RWA</h2>
+                            <div class="flex gap-1">
+                                <button onclick="scrollRWA(-296)" class="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg></button>
+                                <button onclick="scrollRWA(296)" class="w-7 h-7 rounded-full border border-gray-200 flex items-center justify-center text-gray-400 hover:bg-gray-100 transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+                            </div>
+                        </div>
+                        <div id="rwa-slider" class="rwa-slider no-scrollbar"></div>
+                    </div>
+
+                    <div class="saas-card overflow-hidden">
+                        <div class="flex border-b border-gray-100 bg-gray-50 px-1" id="tab-headers"></div>
+                        <div id="tab-content" class="p-8"></div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-4">
+                    <div class="saas-card sticky top-20 overflow-hidden shadow-sm">
+                        <div class="px-5 py-4 border-b border-gray-50 flex justify-between items-center">
+                            <h2 class="text-lg font-bold text-gray-900 uppercase tracking-wider">최신 알림</h2>
+                            <button onclick="openReadHistory()" class="text-xs font-medium text-gray-400 hover:text-blue-600 transition">알림확인</button>
+                        </div>
+                        <div id="alert-list" class="divide-y divide-gray-50 min-h-[300px]"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="kyb-notice" class="hidden saas-card p-16 text-center mt-8 max-w-xl mx-auto">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">기업 인증이 필요합니다</h2>
+            <p class="text-sm text-gray-500 font-medium mb-8 leading-relaxed">InvoiceX의 모든 기능을 이용하시려면<br>기업 인증(KYB)을 먼저 완료해 주세요.</p>
+            <button onclick="window.location.href='kyb.html'" class="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition">KYB 인증 시작하기</button>
+        </div>
+    </main>
+
+    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-40 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div id="modal-container" class="bg-white w-full max-w-sm rounded-2xl p-8 shadow-2xl transform transition-all scale-95 opacity-0 duration-300"></div>
     </div>
-    <div class="flex items-center gap-3">
-      <div class="sm:hidden flex items-center gap-4 mr-2">
-        <span class="text-blue-600 text-xs font-bold">마이페이지</span>
-        <a href="#" id="nav-rwa-m" class="text-gray-500 text-xs font-medium">RWA마켓</a>
-      </div>
-      <!-- 역할 배지 (클릭 시 드롭다운) -->
-      <div class="relative">
-        <button onclick="toggleRoleDropdown()" id="role-badge" class="inline-flex items-center gap-1.5 text-xs font-semibold bg-blue-50 text-blue-600 rounded-full px-3 py-1 cursor-pointer hover:bg-blue-100 transition">
-        </button>
-        <!-- 드롭다운 -->
-        <div id="role-dropdown" class="hidden absolute right-0 top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg py-1.5 w-36 z-50">
-          <button onclick="openRoleChangeModal()" class="w-full text-left px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition flex items-center gap-2">
-            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-            역할 변경
-          </button>
-        </div>
-      </div>
-      <span class="inline-flex items-center gap-1.5 text-xs font-medium border border-gray-200 rounded-full px-3 py-1">
-        <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>Connected<span class="text-gray-400 ml-0.5">Testnet</span>
-      </span>
-    </div>
-  </div>
-</nav>
 
-<!-- ===== 역할 변경 모달 ===== -->
-<div id="roleChangeOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden" style="backdrop-filter:blur(4px)">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 p-6 relative" style="animation:fadeUp .25s ease">
-    <button onclick="closeRoleChangeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-    <h3 class="text-lg font-bold mb-1">역할 변경</h3>
-    <p class="text-sm text-gray-500 mb-5">변경할 역할을 선택하면 해당 마이페이지로 이동합니다.</p>
-    <div class="flex flex-col gap-3" id="role-change-options"></div>
-  </div>
-</div>
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const role = params.get('role') || 'funder';
+        const isKyb = params.get('kyb') !== 'false';
 
-<main class="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+        const ROLE_DATA = {
+            funder: { label: '자금공급자', nav: [{n:'마이페이지', l:'mypage.html?role=funder'}, {n:'RWA 마켓', l:'rwamarket.html'}], tabs: ['포트폴리오', '정산 내역'] },
+            registrar: { label: '인보이스 등록자', nav: [{n:'마이페이지', l:'mypage.html?role=registrar'}, {n:'인보이스 등록', l:'register.html'}], tabs: ['대금 수령', '등록 현황'] },
+            payer: { label: '대금지급기업', nav: [{n:'마이페이지', l:'mypage.html?role=payer'}, {n:'인보이스 확인', l:'invoice.html'}, {n:'대금지급', l:'payment.html'}], tabs: ['채무 현황', '지급 스케줄'] }
+        };
 
-  <!-- ===== PROFILE CARD ===== -->
-  <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 sm:p-8 mb-6">
-    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-      <div class="flex items-center gap-4">
-        <div class="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-500 flex-shrink-0">H</div>
-        <div>
-          <h2 class="text-xl font-bold">(주)한빛테크</h2>
-          <p class="text-sm text-gray-400 mt-0.5">ID: hanbit_tech_01 | rN7dKx9Qp...v3KqBmZ</p>
-          <div class="flex items-center gap-2 mt-3" id="status-buttons">
-            <!-- JS에서 상태에 따라 버튼 or 완료 뱃지 렌더링 -->
-          </div>
-        </div>
-      </div>
-      <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div class="sm:text-right">
-          <p class="text-xs text-blue-500 font-medium">보유 RLUSD 잔액</p>
-          <p class="text-3xl sm:text-4xl font-extrabold">245,800 <span class="text-base font-semibold text-gray-500">RLUSD</span></p>
-        </div>
-        <div class="flex items-center gap-2">
-          <button onclick="openWithdrawModal()" class="bg-blue-600 text-white text-sm font-semibold rounded-lg px-5 py-2.5 hover:bg-blue-700 transition">출금</button>
-          <button onclick="openHistoryModal()" class="border border-gray-300 text-sm font-semibold rounded-lg px-5 py-2.5 hover:bg-gray-50 transition">내역 확인</button>
-        </div>
-      </div>
-    </div>
-  </div>
+        let alerts = [
+            { id: 1, title: "정산 완료 안내", content: "인보이스 #INV-0042 건의 정산이 지갑으로 완료되었습니다.", time: "방금 전" },
+            { id: 2, title: "신규 RWA 등록", content: "투자 마켓에 '현대자동차 공급망 매출채권' 상품이 새롭게 등록되었습니다.", time: "2시간 전" }
+        ];
+        let historyAlerts = [];
 
-  <!-- ===== 자금 공급자 ===== -->
-  <div id="content-funder" class="role-content hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <p class="text-sm text-gray-500 mb-1">총 투자 예치금 (TVL)</p>
-        <div class="flex items-end justify-between">
-          <p class="text-3xl font-extrabold">45,000 <span class="text-base font-semibold text-gray-400">RLUSD</span></p>
-          <span class="text-sm font-semibold text-blue-600 cursor-pointer hover:underline">3개 자산 운용중</span>
-        </div>
-      </div>
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <p class="text-sm text-gray-500 mb-1">예상 총 수익금 (만기 기준)</p>
-        <div class="flex items-end justify-between">
-          <p class="text-3xl font-extrabold text-green-500">+1,450 <span class="text-base font-semibold text-gray-400">RLUSD</span></p>
-          <span class="text-sm font-semibold text-gray-600">평균 APY 3.2%</span>
-        </div>
-      </div>
-    </div>
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-bold">최근 알림</h3>
-      <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
-    </div>
-    <div id="alerts-funder" class="flex flex-col gap-3">
-      <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="수익금 지갑 정산 완료" data-body="투자하신 #INV-0035 자산의 배당금 450 RLUSD가 성공적으로 정산되었습니다." data-time="방금 전">
-        <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">💰</span>
-          <div><p class="font-semibold text-sm">수익금 지갑 정산 완료</p><p class="text-xs text-gray-400 mt-0.5">투자하신 #INV-0035 자산의 배당금 450 RLUSD가 성공적으로 정산되었습니다.</p></div>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-4">방금 전</span>
-      </div>
-      <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="우량 기업 신규 마켓 등록" data-body="삼성전자(주)가 지급 확약한 Grade A 등급의 인보이스가 마켓에 등록되었습니다." data-time="어제">
-        <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">🚀</span>
-          <div><p class="font-semibold text-sm">우량 기업 신규 마켓 등록</p><p class="text-xs text-gray-400 mt-0.5">삼성전자(주)가 지급 확약한 Grade A 등급의 인보이스가 마켓에 등록되었습니다.</p></div>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-4">어제</span>
-      </div>
-      <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="투자 자산 만기 도래 안내" data-body="현재 보유 중인 RWA 자산의 만기 정산이 7일 후 진행될 예정입니다." data-time="2일 전">
-        <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">📦</span>
-          <div><p class="font-semibold text-sm">투자 자산 만기 도래 안내</p><p class="text-xs text-gray-400 mt-0.5">현재 보유 중인 RWA 자산의 만기 정산이 7일 후 진행될 예정입니다.</p></div>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-4">2일 전</span>
-      </div>
-    </div>
-  </div>
+        function init() {
+            const config = ROLE_DATA[role];
+            document.getElementById('role-badge').innerText = config.label;
+            
+            if (isKyb) {
+                document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>KYB 인증 완료`;
+                document.getElementById('main-content').classList.remove('hidden');
+                renderNav(config.nav);
+                renderAlerts();
+                if(role !== 'payer') renderRWA(); else document.getElementById('rwa-section').style.display='none';
+                renderTabs(config.tabs);
+            } else {
+                document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>인증 미완료`;
+                document.getElementById('kyb-notice').classList.remove('hidden');
+            }
+        }
 
-  <!-- ===== 인보이스 등록자 ===== -->
-  <div id="content-registrar" class="role-content hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <p class="text-sm text-gray-500 font-semibold mb-3">Risk Passport</p>
-        <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
-          <p class="text-xs font-semibold text-green-600 mb-1">📊 리스크 등급</p>
-          <p class="text-3xl font-extrabold text-green-500">Grade A</p>
-          <p class="text-xs text-gray-500 mt-1">지급 역사, 기업 신용도, 거래 안정성을 종합 판단한 결과입니다.</p>
-        </div>
-        <p class="text-sm font-semibold text-gray-700 mb-2">🏦 지급 이력</p>
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between"><span class="text-gray-500">과거 지급 이력</span><span class="font-semibold text-blue-600">12회 정상 지급</span></div>
-          <div class="flex justify-between"><span class="text-gray-500">지급 지연 이력</span><span class="font-bold">0회</span></div>
-          <div class="flex justify-between"><span class="text-gray-500">평균 자산 효일</span><span class="font-semibold text-blue-600">만기일 -2일</span></div>
-        </div>
-      </div>
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <p class="text-sm text-gray-500 mb-1">진행 중인 RWA (Escrow)</p>
-        <div class="flex items-end justify-between">
-          <p class="text-3xl font-extrabold">₩15,000,000</p>
-          <span class="text-sm font-semibold text-blue-600 cursor-pointer hover:underline">3건 심사중</span>
-        </div>
-      </div>
-    </div>
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-bold">최근 알림</h3>
-      <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
-    </div>
-    <div id="alerts-registrar" class="flex flex-col gap-3">
-      <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="인보이스 심사 승인" data-body="#INV-0042 건이 Grade A로 최종 승인되었습니다." data-time="방금 전">
-        <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">✅</span>
-          <div><p class="font-semibold text-sm">인보이스 심사 승인</p><p class="text-xs text-gray-400 mt-0.5">#INV-0042 건이 Grade A로 최종 승인되었습니다.</p></div>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-4">방금 전</span>
-      </div>
-      <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="RWA 토큰화 및 마켓 등록 완료" data-body="승인된 인보이스가 마켓에 성공적으로 등록되어 펀딩이 시작되었습니다." data-time="1시간 전">
-        <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">🚀</span>
-          <div><p class="font-semibold text-sm">RWA 토큰화 및 마켓 등록 완료</p><p class="text-xs text-gray-400 mt-0.5">승인된 인보이스가 마켓에 성공적으로 등록되어 펀딩이 시작되었습니다.</p></div>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-4">1시간 전</span>
-      </div>
-    </div>
-  </div>
+        function renderNav(list) {
+            document.getElementById('nav-menu').innerHTML = list.map(m => 
+                `<a href="${m.l}" class="hover:text-blue-600 transition ${m.n==='마이페이지'?'text-blue-600 font-bold':'font-medium'}">${m.n}</a>`
+            ).join('');
+        }
 
-  <!-- ===== 대금 지급 기업 ===== -->
-  <div id="content-payer" class="role-content hidden">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-        <p class="text-sm text-gray-500 mb-1">미결제 채무액 (예정금액)</p>
-        <div class="flex items-end justify-between">
-          <p class="text-3xl font-extrabold">₩120,500,000</p>
-          <span class="text-sm font-semibold text-red-500">결제 대기 4건</span>
-        </div>
-      </div>
-      <div class="bg-white rounded-2xl border-2 border-blue-400 shadow-sm p-6">
-        <p class="text-sm text-gray-500 mb-1">누적 조기지불 절감액</p>
-        <div class="flex items-end justify-between">
-          <p class="text-3xl font-extrabold text-green-500">₩2,505,000</p>
-          <span class="text-sm font-semibold text-blue-600 cursor-pointer hover:underline">할인 적용 혜택</span>
-        </div>
-      </div>
-    </div>
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-lg font-bold">최근 알림</h3>
-      <button onclick="openReadAlertsModal()" class="text-xs text-blue-600 font-semibold hover:underline">확인한 알림 보기</button>
-    </div>
-    <div id="alerts-payer" class="flex flex-col gap-3">
-      <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="협력사 인보이스 검토 요청" data-body="(주)스마트솔루션의 신규 대금 청구건이 등록되었습니다. 지급을 확약해주세요." data-time="3시간 전">
-        <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">🔔</span>
-          <div><p class="font-semibold text-sm">협력사 인보이스 검토 요청</p><p class="text-xs text-gray-400 mt-0.5">(주)스마트솔루션의 신규 대금 청구건이 등록되었습니다. 지급을 확약해주세요.</p></div>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-4">3시간 전</span>
-      </div>
-      <div class="alert-item bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center justify-between cursor-pointer hover:bg-blue-50 hover:bg-opacity-40 transition" data-title="대금 지급 현황 (에스크로)" data-body="#INV-0038 건에 대한 ₩15,000,000 결제가 스마트 컨트랙트를 통해 정상 실행되었습니다." data-time="어제">
-        <div class="flex items-center gap-3"><span class="red-dot"></span><span class="text-2xl">💳</span>
-          <div><p class="font-semibold text-sm">대금 지급 현황 (에스크로)</p><p class="text-xs text-gray-400 mt-0.5">#INV-0038 건에 대한 ₩15,000,000 결제가 스마트 컨트랙트를 통해 정상 실행되었습니다.</p></div>
-        </div>
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-4">어제</span>
-      </div>
-    </div>
-  </div>
+        function renderAlerts() {
+            const list = document.getElementById('alert-list');
+            if(!alerts.length) { list.innerHTML = `<p class="text-center py-16 text-gray-400 font-bold text-sm">새로운 알림이 없습니다.</p>`; return; }
+            list.innerHTML = alerts.map(a => `
+                <div id="alert-${a.id}" class="p-5 bg-white hover:bg-gray-50 transition cursor-pointer flex items-start gap-3" onclick="clickAlert(${a.id})">
+                    <div class="red-dot mt-1.5"></div>
+                    <div class="flex-1">
+                        <p class="text-sm font-bold text-gray-900 mb-1 leading-tight">${a.title}</p>
+                        <p class="text-xs text-gray-500 truncate">${a.content}</p>
+                        <span class="text-xs text-gray-400 font-medium mt-1.5 block">${a.time}</span>
+                    </div>
+                </div>`).join('');
+        }
 
-</main>
+        function clickAlert(id) {
+            const el = document.getElementById(`alert-${id}`); el.classList.add('alert-read');
+            const data = alerts.find(x => x.id === id);
+            setTimeout(() => {
+                historyAlerts.push(data); alerts = alerts.filter(x => x.id !== id);
+                renderAlerts(); openInfoModal(data.title, data.content);
+            }, 500);
+        }
 
-<!-- ===== MODAL SHELL ===== -->
-<div id="modalOverlay" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 hidden" style="backdrop-filter:blur(4px)">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 p-6 relative" style="animation:fadeUp .25s ease">
-    <button onclick="closeAnyModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-    <div id="modalContent"></div>
-  </div>
-</div>
+        function renderRWA() {
+            const slider = document.getElementById('rwa-slider');
+            const rwas = [
+                { id: 'INV-0042', title: '삼성전자 매출채권', d: 'D-45', p: '75%', a: '8.5%' },
+                { id: 'INV-0035', title: '현대자동차 부품대금', d: 'D-29', p: '50%', a: '7.2%' },
+                { id: 'INV-0088', title: 'LG디스플레이 공급망', d: 'D-12', p: '90%', a: '9.1%' }
+            ];
+            slider.innerHTML = rwas.map(i => `
+                <div class="rwa-card bg-white p-5 rounded-2xl cursor-pointer flex-shrink-0" onclick="openRWADetail('${i.id}', '${i.title}', '${i.a}')">
+                    <div class="flex justify-between items-start mb-3">
+                        <span class="text-xs font-medium text-gray-400">#${i.id}</span>
+                        <span class="text-blue-600 text-sm font-bold">${i.d}</span>
+                    </div>
+                    <h3 class="font-bold text-base text-gray-900 mb-3">${i.title}</h3>
+                    <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden mb-2"><div class="bg-blue-600 h-full" style="width:${i.p}"></div></div>
+                    <p class="text-xs text-gray-400 font-medium">수익률 <span class="font-bold">${i.a}</span></p>
+                </div>`).join('');
+        }
+        function scrollRWA(amt) { document.getElementById('rwa-slider').scrollBy({ left: amt, behavior: 'smooth' }); }
 
-<script>
-/* ===== URL 파라미터로 역할 결정 ===== */
-const roleNames = { funder:'자금 공급자', registrar:'인보이스 등록자', payer:'대금 지급 기업' };
-const rwaLinks = { funder:'rwamarket.html', registrar:'register.html', payer:'debt.html' };
-const navLabels = { funder:'RWA마켓', registrar:'인보이스 RWA업무', payer:'대금지급 업무' };
-const urlRole = new URLSearchParams(location.search).get('role');
-const currentRole = (urlRole && ['funder','registrar','payer'].includes(urlRole)) ? urlRole : 'funder';
+        function renderTabs(tabs) {
+            document.getElementById('tab-headers').innerHTML = tabs.map((t, i) => `
+                <button id="tab-btn-${i}" onclick="switchTab(${i})" class="flex-1 py-4 text-sm font-bold transition ${i===0?'text-blue-600 border-b-2 border-blue-600 bg-white':'text-gray-400 bg-gray-50 font-medium'}">${t}</button>
+            `).join('');
+            switchTab(0);
+        }
 
-// 역할에 맞는 콘텐츠만 표시
-document.getElementById('content-'+currentRole).classList.remove('hidden');
+        function switchTab(idx) {
+            document.querySelectorAll('[id^="tab-btn-"]').forEach((btn, i) => {
+                if(i === idx) btn.className = "flex-1 py-4 text-sm text-blue-600 border-b-2 border-blue-600 bg-white font-bold transition";
+                else btn.className = "flex-1 py-4 text-sm text-gray-400 bg-gray-50 font-medium hover:text-gray-600 transition";
+            });
 
-// 역할 배지 표시 (화살표 포함)
-const badge = document.getElementById('role-badge');
-badge.innerHTML = roleNames[currentRole] + ' <svg class="w-3 h-3 ml-0.5" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>';
+            const content = document.getElementById('tab-content');
+            
+            if (role === 'funder') {
+                if (idx === 0) {
+                    content.innerHTML = `
+                        <div class="grid grid-cols-2 gap-6 mb-8 font-bold">
+                            <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100"><p class="text-sm text-gray-400 mb-2 uppercase font-medium">출금 가능 잔액</p><p class="text-4xl text-gray-900 tracking-tighter">50,155 <span class="text-base font-medium text-gray-400">RLUSD</span></p></div>
+                            <div class="p-6 bg-blue-50 rounded-2xl border border-blue-100"><p class="text-sm text-blue-600 mb-2 uppercase font-medium">누적 실현 수익</p><p class="text-3xl text-blue-700 tracking-tighter">+ 1,240 <span class="text-base font-medium text-blue-400">RLUSD</span></p></div>
+                        </div>
+                        <div class="mb-8"><h4 class="font-bold text-sm text-gray-400 mb-3 uppercase tracking-widest">📊 나의 투자 업종 비중</h4><div class="flex h-2.5 rounded-full overflow-hidden"><div class="bg-gray-900 w-[60%]"></div><div class="bg-blue-600 w-[30%]"></div><div class="bg-gray-200 w-[10%]"></div></div><div class="flex gap-4 mt-2.5 text-xs font-medium text-gray-400 uppercase"><span>● IT/반도체 60%</span><span>● 자동차 30%</span><span>● 기타 10%</span></div></div>
+                        <button onclick="openActionModal('withdraw')" class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition shadow-md shadow-blue-100">지갑으로 출금하기</button>`;
+                } else {
+                    content.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-sm font-medium"><thead class="text-gray-400 text-xs uppercase border-b border-gray-100 font-bold"><tr><th class="pb-3">항목</th><th class="pb-3 text-right">상태/금액</th></tr></thead><tbody class="divide-y divide-gray-50 text-gray-800"><tr><td class="py-4">삼성전자 #0042</td><td class="py-4 text-right text-blue-600 font-bold">+ 12,000 RLUSD</td></tr><tr><td class="py-4">현대차 #0021</td><td class="py-4 text-right text-blue-600 font-bold">+ 8,500 RLUSD</td></tr></tbody></table></div>`;
+                }
+            } else if (role === 'registrar') {
+                if (idx === 0) {
+                    content.innerHTML = `
+                        <div class="border border-gray-100 bg-gray-50 p-6 rounded-2xl mb-6">
+                            <p class="text-sm font-bold text-gray-400 mb-4 uppercase tracking-widest text-center">대금 수령 예상 상세</p>
+                            <div class="flex justify-between items-center text-sm font-bold border-b border-gray-200 pb-3 mb-3"><span>인보이스 원금</span><span>₩50,000,000</span></div>
+                            <div class="flex justify-between items-center text-sm font-medium border-b border-gray-200 pb-3 mb-3"><span>할인료 및 수수료</span><span class="text-red-500 font-bold">- ₩1,000,000</span></div>
+                            <div class="flex justify-between items-center font-bold text-base"><span>실 수령 예정액</span><span class="text-3xl text-blue-600">₩49,000,000</span></div>
+                        </div>
+                        <div class="p-6 border border-blue-200 rounded-2xl flex justify-between items-center shadow-sm bg-white"><div><p class="font-bold text-base text-gray-900">삼성전자 외 1건</p><p class="text-xs text-gray-400 font-medium mt-0.5">즉시 현금화 가능</p></div><button class="bg-blue-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-blue-700 transition">수령 실행</button></div>`;
+                } else {
+                    content.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-sm font-medium"><thead class="text-gray-400 text-xs uppercase border-b border-gray-100 font-bold"><tr><th class="pb-3">등록 건</th><th class="pb-3 text-right">상태</th></tr></thead><tbody class="divide-y divide-gray-50 text-gray-800"><tr><td class="py-4">LG전자 #0192</td><td class="py-4 text-right text-gray-500 font-bold">심사 대기</td></tr></tbody></table></div>`;
+                }
+            } else if (role === 'payer') {
+                if (idx === 0) {
+                    content.innerHTML = `
+                        <div class="flex items-center justify-between p-6 bg-red-50 border border-red-100 rounded-2xl mb-8">
+                            <div><h3 class="text-red-600 font-bold text-base">⚠️ 지급 기일 임박</h3><p class="text-sm font-medium text-red-400 mt-0.5">7일 이내 만기가 도래하는 채무가 있습니다.</p></div>
+                            <div class="text-right text-red-600 font-bold"><p class="text-sm uppercase mb-0.5 font-medium">미결제액</p><p class="text-3xl tracking-tighter">₩50,000,000</p></div>
+                        </div>
+                        <div class="p-6 border border-gray-100 rounded-2xl"><h4 class="font-bold text-sm text-gray-400 mb-5 uppercase tracking-widest">주요 협력사 채무 비중</h4><div class="space-y-4"><div class="flex justify-between text-sm font-medium mb-1"><span class="text-gray-900">(주)한빛테크</span><span class="text-gray-400">40%</span></div><div class="w-full bg-gray-100 h-1.5 rounded-full"><div class="bg-blue-600 h-full w-[40%]"></div></div><div class="flex justify-between text-sm font-medium mb-1"><span class="text-gray-900">기타 협력사</span><span class="text-gray-400">60%</span></div><div class="w-full bg-gray-100 h-1.5 rounded-full"><div class="bg-gray-300 h-full w-[60%]"></div></div></div></div>`;
+                } else {
+                    content.innerHTML = `<div class="overflow-x-auto"><table class="w-full text-left text-sm font-medium"><thead class="text-gray-400 text-xs uppercase border-b border-gray-100 font-bold"><tr><th class="pb-3">지급 대상</th><th class="pb-3 text-right">예정일/금액</th></tr></thead><tbody class="divide-y divide-gray-50 text-gray-800"><tr><td class="py-4">(주)한빛테크</td><td class="py-4 text-right text-red-600 font-bold">D-3 / ₩20,000,000</td></tr><tr><td class="py-4">기타 협력사</td><td class="py-4 text-right text-gray-600 font-bold">D-15 / ₩30,000,000</td></tr></tbody></table></div>`;
+                }
+            }
+        }
 
-// nav 링크 텍스트 + href 역할별 설정
-const navRwa = document.getElementById('nav-rwa');
-navRwa.href = rwaLinks[currentRole];
-navRwa.textContent = navLabels[currentRole];
+        function openActionModal(type) {
+            const con = document.getElementById('modal-container');
+            if(type === 'withdraw') {
+                con.innerHTML = `<h3 class="text-xl font-bold mb-6 text-center text-gray-900">출금 실행</h3><div class="bg-gray-50 p-6 rounded-2xl mb-6 border border-gray-100 text-center font-bold"><p class="text-sm text-gray-400 mb-1.5 uppercase font-medium">출금 예정 금액</p><p class="text-3xl text-blue-600 tracking-tighter">50,155 <span class="text-lg font-medium">RLUSD</span></p></div><div class="flex gap-3"><button onclick="closeModal()" class="flex-1 py-3.5 bg-gray-100 text-gray-500 rounded-xl text-base font-bold">취소</button><button onclick="executeAction()" class="flex-1 py-3.5 bg-blue-600 text-white rounded-xl text-base font-bold transition hover:bg-blue-700">출금 완료</button></div>`;
+                showModal();
+            }
+        }
 
-const rwaM = document.getElementById('nav-rwa-m');
-if(rwaM){
-  rwaM.href = rwaLinks[currentRole];
-  rwaM.textContent = navLabels[currentRole];
-}
-
-/* ===== 역할 변경 드롭다운 & 모달 ===== */
-function toggleRoleDropdown(){
-  document.getElementById('role-dropdown').classList.toggle('hidden');
-}
-// 바깥 클릭 시 드롭다운 닫기
-document.addEventListener('click',function(e){
-  if(!e.target.closest('#role-badge') && !e.target.closest('#role-dropdown')){
-    document.getElementById('role-dropdown').classList.add('hidden');
-  }
-});
-
-function openRoleChangeModal(){
-  document.getElementById('role-dropdown').classList.add('hidden');
-  const roleIcons = { funder:'💰', registrar:'📄', payer:'🏢' };
-  const roleDescs = { funder:'RWA 마켓에서 인보이스에 투자', registrar:'매출채권을 토큰화하여 조기 자금 확보', payer:'협력사 인보이스 확인 및 에스크로 지급' };
-  const container = document.getElementById('role-change-options');
-  let html = '';
-  ['funder','registrar','payer'].forEach(role => {
-    const isCurrent = role === currentRole;
-    html += `<button onclick="${isCurrent ? '' : "location.href='mypage.html?role="+role+"'"}" class="flex items-center gap-4 p-4 rounded-xl border-2 ${isCurrent ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-blue-300 hover:bg-blue-50'} transition text-left w-full">
-      <div class="w-12 h-12 rounded-xl ${isCurrent ? 'bg-blue-100' : 'bg-gray-100'} flex items-center justify-center text-2xl flex-shrink-0">${roleIcons[role]}</div>
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          <p class="text-sm font-bold">${roleNames[role]}</p>
-          ${isCurrent ? '<span class="text-xs font-semibold text-blue-600 bg-blue-100 rounded px-1.5 py-0.5">현재</span>' : ''}
-        </div>
-        <p class="text-xs text-gray-500 mt-0.5">${roleDescs[role]}</p>
-      </div>
-      ${isCurrent ? '' : '<svg class="w-5 h-5 text-gray-300 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>'}
-    </button>`;
-  });
-  container.innerHTML = html;
-  document.getElementById('roleChangeOverlay').classList.remove('hidden');
-}
-
-function closeRoleChangeModal(){
-  document.getElementById('roleChangeOverlay').classList.add('hidden');
-}
-document.getElementById('roleChangeOverlay').addEventListener('click',function(e){
-  if(e.target===this) closeRoleChangeModal();
-});
-
-/* ===== 지갑 연결 & KYB 상태 렌더링 ===== */
-let walletConnected = localStorage.getItem('ix_wallet_connected') === 'true';
-let kybVerified = localStorage.getItem('ix_kyb_verified') === 'true';
-
-function renderStatusButtons(){
-  const container = document.getElementById('status-buttons');
-  let html = '';
-
-  if(walletConnected){
-    html += `<span class="inline-flex items-center gap-1.5 text-sm font-semibold text-green-600 bg-green-50 border border-green-200 rounded-full px-4 py-1.5">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-      지갑 인증 완료
-    </span>`;
-  } else {
-    html += `<a href="wallet-connect.html?role=${currentRole}" class="inline-flex items-center gap-2 text-sm font-bold bg-green-500 text-white rounded-lg px-6 py-2.5 hover:bg-green-600 transition shadow-sm">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101"/><path stroke-linecap="round" stroke-linejoin="round" d="M10.172 13.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.102 1.101"/></svg>
-      지갑 연결
-    </a>`;
-  }
-
-  if(kybVerified){
-    html += `<span class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-      KYB 인증 완료
-      <span class="bg-blue-600 text-white text-xs font-bold rounded px-1.5 py-0.5 ml-0.5">A</span>
-    </span>`;
-  } else {
-    html += `<a href="kyb.html?role=${currentRole}" class="inline-flex items-center gap-2 text-sm font-bold bg-blue-500 text-white rounded-lg px-6 py-2.5 hover:bg-blue-600 transition shadow-sm">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-      KYB 진행
-    </a>`;
-  }
-
-  container.innerHTML = html;
-}
-renderStatusButtons();
-
-/* ===== Alert click → modal + 확인됨 + slide ===== */
-const readAlerts = [];
-
-document.addEventListener('click',function(e){
-  const item=e.target.closest('.alert-item');
-  if(!item)return;
-  openAlertModal(item.dataset.title,item.dataset.body,item.dataset.time);
-  readAlerts.unshift({ title: item.dataset.title, body: item.dataset.body, time: item.dataset.time, readAt: new Date().toLocaleTimeString('ko-KR') });
-  const dot=item.querySelector('.red-dot');
-  if(dot)dot.classList.add('dot-read');
-  setTimeout(()=>{
-    item.classList.add('alert-read');
-    item.addEventListener('animationend',()=>item.remove());
-  },600);
-});
-
-/* ===== Modal helpers ===== */
-function showModal(html){
-  document.getElementById('modalContent').innerHTML=html;
-  document.getElementById('modalOverlay').classList.remove('hidden');
-}
-function closeAnyModal(){document.getElementById('modalOverlay').classList.add('hidden')}
-document.getElementById('modalOverlay').addEventListener('click',function(e){if(e.target===this)closeAnyModal()});
-
-/* ===== Alert detail ===== */
-function openAlertModal(t,b,tm){
-  showModal(`
-    <h3 class="text-lg font-bold mb-2">${t}</h3>
-    <p class="text-sm text-gray-500 leading-relaxed mb-3">${b}</p>
-    <p class="text-xs text-gray-400 mb-4">${tm}</p>
-    <div class="flex items-center gap-2 text-xs text-green-600 font-semibold mb-5">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>확인됨
-    </div>
-    <button onclick="closeAnyModal()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition">닫기</button>
-  `);
-}
-
-/* ===== 출금 ===== */
-function openWithdrawModal(){
-  const saved=JSON.parse(localStorage.getItem('ix_accounts')||'[]');
-  if(saved.length>0){
-    let opts=saved.map((a,i)=>`
-      <label class="flex items-center gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-blue-50 transition mb-2">
-        <input type="radio" name="selAcct" value="${i}" class="accent-blue-600" ${i===0?'checked':''}>
-        <div><p class="text-sm font-semibold">${a.bank} ${a.number}</p><p class="text-xs text-gray-400">${a.holder}</p></div>
-      </label>`).join('');
-    showModal(`
-      <h3 class="text-lg font-bold mb-1">출금 요청</h3>
-      <p class="text-xs text-gray-400 mb-4">정산 계좌를 선택하거나 새로 입력하세요.</p>
-      <div class="mb-3">${opts}</div>
-      <button onclick="showNewAccountForm()" class="text-sm text-blue-600 font-semibold hover:underline mb-4 block">+ 새 계좌 입력</button>
-      <div class="border-t border-gray-100 pt-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">출금 금액 (RLUSD)</label>
-        <input id="wdAmount" type="number" placeholder="금액 입력" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4">
-        <button onclick="submitWithdraw()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition">출금 요청</button>
-      </div>`);
-  } else {
-    showNewAccountForm();
-  }
-}
-
-function showNewAccountForm(){
-  showModal(`
-    <h3 class="text-lg font-bold mb-1">정산 계좌 등록</h3>
-    <p class="text-xs text-gray-400 mb-4">출금받을 계좌 정보를 입력하세요.</p>
-    <label class="block text-sm font-medium text-gray-700 mb-1">은행명</label>
-    <select id="acctBank" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <option>국민은행</option><option>신한은행</option><option>하나은행</option><option>우리은행</option><option>카카오뱅크</option><option>토스뱅크</option><option>기업은행</option><option>농협은행</option>
-    </select>
-    <label class="block text-sm font-medium text-gray-700 mb-1">계좌번호</label>
-    <input id="acctNum" type="text" placeholder="'-' 없이 입력" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
-    <label class="block text-sm font-medium text-gray-700 mb-1">예금주</label>
-    <input id="acctHolder" type="text" placeholder="예금주명" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
-    <div class="border-t border-gray-100 pt-4 mt-2">
-      <label class="block text-sm font-medium text-gray-700 mb-1">출금 금액 (RLUSD)</label>
-      <input id="wdAmountNew" type="number" placeholder="금액 입력" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500">
-      <button onclick="saveAccountAndWithdraw()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition">계좌 등록 및 출금 요청</button>
-    </div>`);
-}
-
-function saveAccountAndWithdraw(){
-  const bank=document.getElementById('acctBank').value;
-  const number=document.getElementById('acctNum').value.trim();
-  const holder=document.getElementById('acctHolder').value.trim();
-  const amount=document.getElementById('wdAmountNew').value.trim();
-  if(!number||!holder){alert('계좌 정보를 모두 입력해주세요.');return;}
-  if(!amount||Number(amount)<=0){alert('출금 금액을 입력해주세요.');return;}
-  const saved=JSON.parse(localStorage.getItem('ix_accounts')||'[]');
-  saved.push({bank,number,holder});
-  localStorage.setItem('ix_accounts',JSON.stringify(saved));
-  addHistory(amount,bank,number,holder);
-  showSuccess(bank,number,holder,amount);
-}
-
-function submitWithdraw(){
-  const amount=document.getElementById('wdAmount').value.trim();
-  if(!amount||Number(amount)<=0){alert('출금 금액을 입력해주세요.');return;}
-  const sel=document.querySelector('input[name="selAcct"]:checked');
-  if(!sel){alert('계좌를 선택해주세요.');return;}
-  const a=JSON.parse(localStorage.getItem('ix_accounts')||'[]')[sel.value];
-  addHistory(amount,a.bank,a.number,a.holder);
-  showSuccess(a.bank,a.number,a.holder,amount);
-}
-
-function showSuccess(bank,number,holder,amount){
-  showModal(`
-    <div class="text-center py-4">
-      <div class="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-        <svg class="w-7 h-7 text-green-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
-      </div>
-      <h3 class="text-lg font-bold mb-1">출금 요청 완료</h3>
-      <p class="text-sm text-gray-500">${bank} ${number}</p>
-      <p class="text-sm text-gray-500 mb-1">예금주: ${holder}</p>
-      <p class="text-2xl font-extrabold text-blue-600 my-3">${Number(amount).toLocaleString()} RLUSD</p>
-      <p class="text-xs text-gray-400 mb-5">영업일 기준 1~2일 내 입금됩니다.</p>
-      <button onclick="closeAnyModal()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition">확인</button>
-    </div>`);
-}
-
-/* ===== 출금 내역 ===== */
-function addHistory(amt,bank,num,holder){
-  const h=JSON.parse(localStorage.getItem('ix_withdraw_history')||'[]');
-  h.unshift({amount:Number(amt),bank,number:num,holder,date:new Date().toLocaleString('ko-KR'),status:'처리중'});
-  localStorage.setItem('ix_withdraw_history',JSON.stringify(h));
-}
-
-function openHistoryModal(){
-  const h=JSON.parse(localStorage.getItem('ix_withdraw_history')||'[]');
-  let rows;
-  if(!h.length){
-    rows='<p class="text-sm text-gray-400 text-center py-8">출금 내역이 없습니다.</p>';
-  } else {
-    rows=`<div class="space-y-3 max-h-80 overflow-y-auto pr-1">${h.map(x=>`
-      <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-        <div>
-          <p class="text-sm font-semibold">${x.bank} ${x.number}</p>
-          <p class="text-xs text-gray-400">${x.date}</p>
-        </div>
-        <div class="text-right">
-          <p class="text-sm font-bold text-blue-600">${x.amount.toLocaleString()} RLUSD</p>
-          <span class="text-xs font-medium ${x.status==='처리중'?'text-yellow-500':'text-green-500'}">${x.status}</span>
-        </div>
-      </div>`).join('')}</div>`;
-  }
-  showModal(`
-    <h3 class="text-lg font-bold mb-4">출금 내역</h3>
-    ${rows}
-    <button onclick="closeAnyModal()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition mt-4">닫기</button>`);
-}
-
-/* ===== 확인한 알림 모달 ===== */
-function openReadAlertsModal(){
-  let rows;
-  if(!readAlerts.length){
-    rows='<p class="text-sm text-gray-400 text-center py-8">확인한 알림이 없습니다.</p>';
-  } else {
-    rows=`<div class="space-y-3 max-h-80 overflow-y-auto pr-1">${readAlerts.map(a=>`
-      <div class="p-3 bg-gray-50 rounded-lg">
-        <div class="flex items-center justify-between mb-1">
-          <p class="text-sm font-semibold">${a.title}</p>
-          <span class="text-xs text-green-500 font-medium">확인됨</span>
-        </div>
-        <p class="text-xs text-gray-400">${a.body}</p>
-        <p class="text-xs text-gray-300 mt-1">${a.time} · 확인: ${a.readAt}</p>
-      </div>`).join('')}</div>`;
-  }
-  showModal(`
-    <h3 class="text-lg font-bold mb-4">확인한 알림</h3>
-    ${rows}
-    <button onclick="closeAnyModal()" class="w-full bg-blue-600 text-white text-sm font-semibold rounded-lg py-2.5 hover:bg-blue-700 transition mt-4">닫기</button>`);
-}
-</script>
+        function executeAction() { 
+            closeModal(); 
+            setTimeout(() => { openInfoModal("처리 완료", "정상적으로 반영되었습니다."); }, 300); 
+        }
+        
+        function openInfoModal(t, c) { 
+            const con = document.getElementById('modal-container'); 
+            con.innerHTML = `<h3 class="text-xl font-bold text-blue-600 mb-4">${t}</h3><div class="bg-gray-50 p-5 rounded-xl mb-6 text-base text-gray-700 font-medium">${c}</div><button onclick="closeModal()" class="w-full py-3.5 bg-blue-600 text-white rounded-xl text-base font-bold">확인</button>`; 
+            showModal(); 
+        }
+        
+        function openRWADetail(id, title, apy) { 
+            const con = document.getElementById('modal-container'); 
+            con.innerHTML = `<h3 class="text-xl font-bold mb-5">${title}</h3><div class="space-y-3 mb-6 bg-gray-50 p-5 rounded-xl text-sm"><div class="flex justify-between border-b pb-2.5 font-medium"><span class="text-gray-400">ID</span><span class="font-bold text-gray-900">#${id}</span></div><div class="flex justify-between text-blue-600 font-medium"><span>예상 수익률</span><span class="font-bold">${apy}</span></div></div><button onclick="closeModal()" class="w-full py-3.5 bg-gray-900 text-white rounded-xl text-base font-bold">닫기</button>`; 
+            showModal(); 
+        }
+        
+        function openReadHistory() { 
+            const con = document.getElementById('modal-container'); 
+            con.innerHTML = `<h3 class="text-xl font-bold mb-5">확인한 알림</h3><div class="space-y-2.5 mb-6">${historyAlerts.length?historyAlerts.map(a=>`<div class="p-3 bg-gray-50 rounded-lg text-sm font-medium text-gray-800">${a.title}</div>`).join(''):'<p class="text-center py-8 text-gray-400 text-sm font-medium">내역이 없습니다.</p>'}</div><button onclick="closeModal()" class="w-full py-3 bg-gray-100 font-bold text-gray-700 rounded-lg text-base">닫기</button>`; 
+            showModal(); 
+        }
+        
+        function showModal() { 
+            const o = document.getElementById('modal-overlay'), c = document.getElementById('modal-container'); 
+            o.classList.remove('hidden'); 
+            setTimeout(() => { c.classList.remove('scale-95', 'opacity-0'); c.classList.add('scale-100', 'opacity-100'); }, 10); 
+        }
+        
+        function closeModal() { 
+            const c = document.getElementById('modal-container'); 
+            c.classList.remove('scale-100', 'opacity-100'); c.classList.add('scale-95', 'opacity-0'); 
+            setTimeout(() => { document.getElementById('modal-overlay').classList.add('hidden'); }, 200); 
+        }
+        
+        window.onload = init;
+    </script>
 </body>
 </html>
