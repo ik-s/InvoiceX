@@ -108,3 +108,86 @@ app.get('/api/me/mypage', authenticateToken, async (req, res) => {
 app.listen(process.env.PORT, () => {
     console.log(`백엔드 서버 구동이 완료되었습니다. 포트: ${process.env.PORT}`);
 });
+
+// 5. 지갑 연결 API (내 지갑 주소 DB에 저장하기)
+app.post('/api/wallet/connect', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { wallet_address } = req.body;
+
+    if (!wallet_address) return res.status(400).json({ message: "지갑 주소를 보내주세요" });
+
+    // 1. 이미 이 유저의 지갑이 DB에 있는지 확인
+    const { data: existingWallet } = await supabase
+        .from('wallets')
+        .select('*')
+        .eq('owner_id', userId)
+        .single();
+
+    let resultData;
+    let resultError;
+
+    if (existingWallet) {
+        // 2. 이미 지갑이 있으면 주소만 '업데이트'
+        const { data, error } = await supabase
+            .from('wallets')
+            .update({ wallet_address: wallet_address })
+            .eq('owner_id', userId)
+            .select();
+        resultData = data; resultError = error;
+    } else {
+        // 3. 지갑이 없으면 '새로 생성' (초기 잔액 0원)
+        const { data, error } = await supabase
+            .from('wallets')
+            .insert([{ owner_id: userId, wallet_address: wallet_address, rlusd_balance: 0.00 }])
+            .select();
+        resultData = data; resultError = error;
+    }
+
+    if (resultError) return res.status(500).json({ error: "지갑 연결 실패", details: resultError });
+    res.json({ message: "지갑 연결 성공!", wallet: resultData[0] });
+});
+
+// 6. KYB 인증 신청 API (상태를 PENDING으로 변경)
+app.post('/api/kyb/submit', authenticateToken, async (req, res) => {
+    const companyId = req.user.companyId;
+
+    if (!companyId) return res.status(400).json({ message: "소속된 기업 정보가 없습니다." });
+
+    // companies 테이블의 kyb_status를 'PENDING'으로 업데이트
+    const { data: company, error } = await supabase
+        .from('companies')
+        .update({ kyb_status: 'PENDING' })
+        .eq('company_id', companyId)
+        .select().single();
+
+    if (error) return res.status(500).json({ error: "KYB 신청 실패", details: error });
+    res.json({ message: "KYB 인증 신청이 완료되었습니다. 관리자 검토를 기다려주세요.", company });
+});
+
+// 7. 관리자 KYB 검토 API (ADMIN 전용)
+app.post('/api/admin/kyb/review', authenticateToken, async (req, res) => {
+    const role = req.user.role; // 토큰에서 내 역할 꺼내기
+    const { target_company_id, action } = req.body; // action은 'APPROVED' 또는 'REJECTED'
+
+    // 관리자가 아니면 접근 제한
+    if (role !== 'ADMIN') {
+        return res.status(403).json({ message: "접근 권한이 없습니다. 오직 관리자만 승인할 수 있습니다." });
+    }
+
+    if (action !== 'APPROVED' && action !== 'REJECTED') {
+        return res.status(400).json({ message: "action 값은 'APPROVED' 또는 'REJECTED'여야 합니다." });
+    }
+
+    // 승인(APPROVED)이면 인증 뱃지도 true, 거절이면 false
+    const badgeStatus = (action === 'APPROVED');
+
+    // 해당 기업의 상태 업데이트
+    const { data: company, error } = await supabase
+        .from('companies')
+        .update({ kyb_status: action, badge_status: badgeStatus })
+        .eq('company_id', target_company_id)
+        .select().single();
+
+    if (error) return res.status(500).json({ error: "KYB 검토 처리 실패", details: error });
+    res.json({ message: `기업 KYB 상태가 ${action}로 변경되었습니다!`, company });
+});
