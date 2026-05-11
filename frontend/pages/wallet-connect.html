@@ -3,195 +3,421 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>InvoiceX - 지갑 연결</title>
+  <title>InvoiceX - 지갑 연결 팝업</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- XRPL / Wallet SDKs -->
+  <!-- Pretendard -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+  />
+
+  <!-- XRPL Testnet -->
   <script src="https://unpkg.com/xrpl/build/xrpl-latest-min.js"></script>
+
+  <!-- GemWallet -->
   <script src="https://unpkg.com/@gemwallet/api@3.7.0/umd/gemwallet-api.js"></script>
+
+  <!-- XUMM / Xaman -->
   <script src="https://xumm.app/assets/cdn/xumm.min.js"></script>
+
+  <style>
+    * {
+      font-family: "Pretendard", sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    body {
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .heading-1 {
+      font-size: 30px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .heading-2 {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .body-main {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    .data-small {
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+  </style>
 </head>
 
-<body class="min-h-screen bg-[#f6f8fc] font-sans text-[#171923]">
+<body class="min-h-screen bg-[#f6f8fc] text-[#171923]">
 
-  <!-- Wallet Connect Main -->
-  <main class="flex min-h-[calc(100vh-39px)] items-center justify-center px-6 py-24 max-sm:py-16">
-    <article class="w-full max-w-[500px]">
-      <!-- Title Section -->
-      <section class="mb-8 text-center">
-        <h1 class="mb-3 text-[28px] font-extrabold tracking-tight text-[#2563eb]">
-          InvoiceX
-        </h1>
+  <!-- 예시 페이지: 실제로는 다른 페이지에 있는 연결 버튼이라고 보면 됨 -->
+  <main class="flex min-h-screen items-center justify-center px-6">
+    <section class="w-full max-w-[460px] rounded-2xl border border-[#e1e5ee] bg-white p-8 text-center shadow-sm">
+      <h1 class="heading-1 mb-3 text-[#4f63e6]">
+        InvoiceX
+      </h1>
 
-        <p class="mb-8 text-[14px] tracking-tight text-[#9aa3b2]">
-          XRPL 기반 인보이스 RWA 금융 금융 플랫폼
-        </p>
-      </section>
-
-      <!-- Wallet Selection Card -->
-      <article class="rounded-2xl border border-[#e1e5ee] bg-white px-8 py-8 shadow-[0_10px_28px_rgba(22,31,51,0.03)]">
-        <!-- Card Title -->
-        <h2 class="mb-6 text-center text-[18px] font-bold tracking-tight text-[#151923]">
-          지갑을 연결하세요
-        </h2>
-
-        <!-- Wallet Options -->
-        <div class="flex flex-col gap-3">
-          <!-- XRPL Testnet Wallet -->
-          <button
-            type="button"
-            data-wallet="xrpl-testnet"
-            class="group flex items-center gap-4 rounded-xl bg-[#2563eb] px-4 py-4 text-white transition-all duration-200 hover:bg-[#1d4ed8] hover:shadow-[0_8px_16px_rgba(37,99,235,0.3)] active:bg-[#1e40af]"
-          >
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-lg font-bold">
-              X
-            </div>
-
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-bold">XRPL Testnet Wallet</div>
-              <div class="text-[12px] opacity-80">Testnet 환경에서 바로 연결</div>
-            </div>
-
-            <svg class="h-5 w-5 opacity-60 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
-
-          <!-- Divider -->
-          <div class="my-1 text-center text-[11px] text-[#a3aab7]">
-            기타 지갑
-          </div>
-
-          <!-- GemWallet -->
-          <button
-            type="button"
-            data-wallet="gemwallet"
-            class="group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
-          >
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#ffa500] text-lg font-bold text-white">
-              G
-            </div>
-
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-bold">GemWallet</div>
-            </div>
-
-            <svg class="h-5 w-5 text-[#a3aab7] transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
-
-          <!-- Crossmark -->
-          <button
-            type="button"
-            data-wallet="crossmark"
-            class="group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
-          >
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#6366f1] text-lg font-bold text-white">
-              ✕
-            </div>
-
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-bold">Crossmark</div>
-            </div>
-
-            <svg class="h-5 w-5 text-[#a3aab7] transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
-
-          <!-- XUMM / Xaman -->
-          <button
-            type="button"
-            data-wallet="xumm"
-            class="group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
-          >
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#2563eb] text-lg font-bold text-white">
-              X
-            </div>
-
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-bold">XUMM / Xaman</div>
-            </div>
-
-            <svg class="h-5 w-5 text-[#a3aab7] transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
-
-          <!-- WalletConnect / EVM -->
-          <button
-            type="button"
-            data-wallet="walletconnect"
-            class="group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05)]"
-          >
-            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#3b99fc] text-lg font-bold text-white">
-              W
-            </div>
-
-            <div class="flex-1 text-left">
-              <div class="text-[14px] font-bold">WalletConnect</div>
-            </div>
-
-            <svg class="h-5 w-5 text-[#a3aab7] transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-          </button>
-        </div>
-
-        <!-- Wallet Connection Status -->
-        <div id="walletStatus" class="mt-5 hidden rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-4">
-          <div class="flex items-start justify-between gap-4">
-            <div>
-              <p id="statusTitle" class="text-[13px] font-extrabold text-[#1d4ed8]">
-                지갑 연결 완료
-              </p>
-
-              <p id="statusWallet" class="mt-1 text-[12px] font-semibold text-[#334155]"></p>
-              <p id="statusAddress" class="mt-1 break-all text-[12px] text-[#64748b]"></p>
-              <p id="statusNetwork" class="mt-1 text-[12px] text-[#64748b]"></p>
-            </div>
-
-            <button
-              id="disconnectWallet"
-              type="button"
-              class="shrink-0 rounded-lg border border-[#bfdbfe] bg-white px-3 py-2 text-[11px] font-bold text-[#2563eb] hover:bg-[#dbeafe]"
-            >
-              연결 해제
-            </button>
-          </div>
-        </div>
-
-        <p id="walletMessage" class="mt-3 hidden text-center text-[12px] font-semibold"></p>
-
-        <!-- Footer Text -->
-        <p class="mt-6 text-center text-[11px] leading-relaxed text-[#a3aab7]">
-          지갑을 연결하면 InvoiceX의 서비스 약관 및 개인정보<br> 
-          보호 정책에 동의하는 것으로 간주됩니다.
-        </p>
-      </article>
-
-      <!-- Bottom Footer -->
-      <p class="mt-6 text-center text-[12px] text-[#7d8594]">
-        <span class="text-[#a3aab7]">XRPL Testnet 환경에서 운영됩니다 · InvoiceX MVP </span>
+      <p class="body-main mb-8 text-[#94a3b8]">
+        XRPL 기반 인보이스 RWA 공급망 금융 플랫폼
       </p>
-    </article>
+
+      <!-- 다른 페이지에 있는 연결 버튼 -->
+      <button
+        id="openWalletModal"
+        type="button"
+        class="w-full rounded-xl bg-[#4f63e6] px-5 py-4 text-[15px] font-bold text-white transition hover:bg-[#4357d8]"
+      >
+        연결
+      </button>
+
+      <!-- 현재 페이지에 작게 표시되는 연결 상태 -->
+      <div
+        id="mainWalletStatus"
+        class="mt-5 hidden rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-4 text-left"
+      >
+        <p class="text-[13px] font-bold text-[#1d4ed8]">
+          연결된 지갑
+        </p>
+        <p id="mainWalletName" class="mt-1 text-[12px] font-bold text-[#334155]"></p>
+        <p id="mainWalletAddress" class="mt-1 break-all text-[12px] text-[#334155]"></p>
+        <p id="mainWalletNetwork" class="mt-1 text-[12px] text-[#64748b]"></p>
+      </div>
+    </section>
   </main>
 
-  <script>
+  <!-- Wallet Select Modal -->
+  <div
+    id="walletModal"
+    class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 px-4 py-6"
+  >
+    <section class="relative flex max-h-[82vh] w-full max-w-[390px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+      <!-- Close Button -->
+      <button
+        id="closeWalletModal"
+        type="button"
+        class="absolute right-5 top-5 z-10 flex h-8 w-8 items-center justify-center rounded-full text-[#94a3b8] transition hover:bg-[#f1f5f9] hover:text-[#334155]"
+        aria-label="지갑 연결 팝업 닫기"
+      >
+        ✕
+      </button>
+
+      <!-- Scroll Area -->
+      <div class="overflow-y-auto px-5 pb-6 pt-7">
+
+        <!-- Logo -->
+        <div class="mb-7 text-center">
+          <h1 class="heading-1 text-[#4f63e6]">
+            InvoiceX
+          </h1>
+          <p class="body-main mt-3 text-[#94a3b8]">
+            XRPL 기반 인보이스 RWA 공급망 금융 플랫폼
+          </p>
+        </div>
+
+        <!-- Wallet Card -->
+        <div class="rounded-2xl border border-[#e1e5ee] bg-white px-5 py-5 shadow-[0_10px_28px_rgba(22,31,51,0.04)]">
+          <h2 class="heading-2 mb-5 text-[#151923]">
+            지갑을 연결하세요
+          </h2>
+
+          <div class="flex flex-col gap-3">
+
+            <!-- XRPL Testnet Wallet -->
+            <button
+              type="button"
+              data-wallet="xrpl-testnet"
+              class="wallet-button group flex items-center gap-4 rounded-xl bg-[#4f63e6] px-4 py-4 text-white transition-all duration-200 hover:bg-[#4357d8] active:bg-[#3749bd]"
+            >
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 text-[18px] font-bold">
+                X
+              </div>
+
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-bold">
+                  XRPL Testnet Wallet
+                </div>
+                <div class="text-[12px] font-medium opacity-80">
+                  Testnet 환경에서 바로 연결
+                </div>
+              </div>
+            </button>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-3 py-1">
+              <div class="h-px flex-1 bg-[#e5e8f0]"></div>
+              <span class="text-[11px] font-bold text-[#a3aab7]">
+                기타 지갑
+              </span>
+              <div class="h-px flex-1 bg-[#e5e8f0]"></div>
+            </div>
+
+            <!-- GemWallet -->
+            <button
+              type="button"
+              data-wallet="gemwallet"
+              class="wallet-button group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc]"
+            >
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#e49b31] text-[15px] font-bold text-white">
+                G
+              </div>
+
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-bold">
+                  GemWallet
+                </div>
+                <div class="text-[12px] font-medium text-[#94a3b8]">
+                  XRPL 확장 지갑 연결
+                </div>
+              </div>
+
+              <span class="text-[#cbd5e1]">›</span>
+            </button>
+
+            <!-- Crossmark -->
+            <button
+              type="button"
+              data-wallet="crossmark"
+              class="wallet-button group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc]"
+            >
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#6b5ff0] text-[18px] font-bold text-white">
+                ×
+              </div>
+
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-bold">
+                  Crossmark
+                </div>
+                <div class="text-[12px] font-medium text-[#94a3b8]">
+                  XRPL 브라우저 지갑 연결
+                </div>
+              </div>
+
+              <span class="text-[#cbd5e1]">›</span>
+            </button>
+
+            <!-- XUMM / Xaman -->
+            <button
+              type="button"
+              data-wallet="xaman"
+              class="wallet-button group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc]"
+            >
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#4f63e6] text-[18px] font-bold text-white">
+                X
+              </div>
+
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-bold">
+                  XUMM / Xaman
+                </div>
+                <div class="text-[12px] font-medium text-[#94a3b8]">
+                  QR 또는 앱으로 연결
+                </div>
+              </div>
+
+              <span class="text-[#cbd5e1]">›</span>
+            </button>
+
+            <!-- WalletConnect / EVM -->
+            <button
+              type="button"
+              data-wallet="walletconnect"
+              class="wallet-button group flex items-center gap-4 rounded-xl border border-[#e1e5ee] bg-white px-4 py-4 text-[#151923] transition-all duration-200 hover:border-[#d9dee8] hover:bg-[#f9fafc]"
+            >
+              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-[#5d8ded] text-[16px] font-bold text-white">
+                W
+              </div>
+
+              <div class="flex-1 text-left">
+                <div class="text-[14px] font-bold">
+                  WalletConnect
+                </div>
+                <div class="text-[12px] font-medium text-[#94a3b8]">
+                  viem으로 EVM 지갑 연결
+                </div>
+              </div>
+
+              <span class="text-[#cbd5e1]">›</span>
+            </button>
+          </div>
+
+          <!-- Message -->
+          <p id="walletMessage" class="mt-4 hidden text-center text-[12px] font-bold"></p>
+
+          <!-- Terms -->
+          <p class="mt-6 text-center text-[11px] font-medium leading-relaxed text-[#c2c8d3]">
+            지갑을 연결하면 InvoiceX의 서비스 약관 및 개인정보<br />
+            보호 정책에 동의하는 것으로 간주됩니다.
+          </p>
+        </div>
+
+        <p class="mt-5 text-center text-[12px] font-medium text-[#a3aab7]">
+          XRPL Testnet 환경에서 운영됩니다 · InvoiceX MVP
+        </p>
+      </div>
+    </section>
+  </div>
+
+  <!-- Wallet Result Modal -->
+  <div
+    id="walletResultModal"
+    class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/40 px-4 py-6"
+  >
+    <section class="relative w-full max-w-[380px] rounded-2xl bg-white px-6 py-7 shadow-2xl">
+      
+      <!-- Close Button -->
+      <button
+        id="closeResultModal"
+        type="button"
+        class="absolute right-5 top-5 flex h-8 w-8 items-center justify-center rounded-full text-[#94a3b8] transition hover:bg-[#f1f5f9] hover:text-[#334155]"
+        aria-label="지갑 연결 결과 팝업 닫기"
+      >
+        ✕
+      </button>
+
+      <!-- Success Icon -->
+      <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-[#eff6ff]">
+        <svg class="h-8 w-8 text-[#2563eb]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>
+        </svg>
+      </div>
+
+      <!-- Title -->
+      <div class="mb-5 text-center">
+        <h2 class="heading-2 text-[#151923]">
+          지갑 연결 완료
+        </h2>
+        <p class="body-main mt-2 text-[#7d8594]">
+          InvoiceX에서 지갑 정보를 확인했어요.
+        </p>
+      </div>
+
+      <!-- Result Info -->
+      <div class="rounded-xl border border-[#dbeafe] bg-[#eff6ff] px-4 py-4">
+        <div class="mb-3">
+          <p class="text-[11px] font-bold text-[#64748b]">
+            연결 지갑
+          </p>
+          <p id="resultWalletName" class="mt-1 text-[13px] font-bold text-[#1d4ed8]"></p>
+        </div>
+
+        <div class="mb-3">
+          <p class="text-[11px] font-bold text-[#64748b]">
+            지갑 주소
+          </p>
+          <p id="resultWalletAddress" class="mt-1 break-all text-[12px] font-medium text-[#334155]"></p>
+        </div>
+
+        <div>
+          <p class="text-[11px] font-bold text-[#64748b]">
+            네트워크
+          </p>
+          <p id="resultWalletNetwork" class="mt-1 text-[12px] font-medium text-[#334155]"></p>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="mt-6 flex gap-3">
+        <button
+          id="disconnectFromResult"
+          type="button"
+          class="h-11 flex-1 rounded-lg border border-[#bfdbfe] bg-white text-[13px] font-bold text-[#2563eb] transition hover:bg-[#eff6ff]"
+        >
+          연결 해제
+        </button>
+
+        <button
+          id="confirmResultModal"
+          type="button"
+          class="h-11 flex-1 rounded-lg bg-[#2563eb] text-[13px] font-bold text-white transition hover:bg-[#1d4ed8]"
+        >
+          확인
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <script type="module">
+    import { createWalletClient, custom } from "https://esm.sh/viem@2.48.11";
+    import { EthereumProvider } from "https://esm.sh/@walletconnect/ethereum-provider@2";
+
+    /*
+      실제 구현 시 아래 두 값을 실제 발급값으로 바꿔야 함.
+      - XAMAN_API_KEY: Xaman Developer Console에서 발급
+      - WALLETCONNECT_PROJECT_ID: Reown Dashboard에서 발급
+    */
     const XAMAN_API_KEY = "YOUR_XAMAN_API_KEY";
+    const WALLETCONNECT_PROJECT_ID = "YOUR_WALLETCONNECT_PROJECT_ID";
 
-    const walletButtons = document.querySelectorAll("button[data-wallet]");
-    const walletStatus = document.getElementById("walletStatus");
-    const statusTitle = document.getElementById("statusTitle");
-    const statusWallet = document.getElementById("statusWallet");
-    const statusAddress = document.getElementById("statusAddress");
-    const statusNetwork = document.getElementById("statusNetwork");
+    const openWalletModal = document.getElementById("openWalletModal");
+    const closeWalletModal = document.getElementById("closeWalletModal");
+    const walletModal = document.getElementById("walletModal");
+
+    const walletResultModal = document.getElementById("walletResultModal");
+    const closeResultModal = document.getElementById("closeResultModal");
+    const confirmResultModal = document.getElementById("confirmResultModal");
+    const disconnectFromResult = document.getElementById("disconnectFromResult");
+
+    const resultWalletName = document.getElementById("resultWalletName");
+    const resultWalletAddress = document.getElementById("resultWalletAddress");
+    const resultWalletNetwork = document.getElementById("resultWalletNetwork");
+
+    const walletButtons = document.querySelectorAll(".wallet-button");
     const walletMessage = document.getElementById("walletMessage");
-    const disconnectWallet = document.getElementById("disconnectWallet");
 
+    const mainWalletStatus = document.getElementById("mainWalletStatus");
+    const mainWalletName = document.getElementById("mainWalletName");
+    const mainWalletAddress = document.getElementById("mainWalletAddress");
+    const mainWalletNetwork = document.getElementById("mainWalletNetwork");
+
+    let evmWalletClient = null;
+    let walletConnectProvider = null;
     let xamanClient = null;
+    let connectedWallet = null;
+
+    const chainNames = {
+      1: "Ethereum Mainnet",
+      11155111: "Sepolia Testnet",
+      137: "Polygon",
+      80002: "Polygon Amoy",
+      8453: "Base",
+      84532: "Base Sepolia",
+      42161: "Arbitrum One",
+      421614: "Arbitrum Sepolia",
+      10: "Optimism",
+      11155420: "Optimism Sepolia"
+    };
+
+    function openModal() {
+      walletModal.classList.remove("hidden");
+      walletModal.classList.add("flex");
+    }
+
+    function closeModal() {
+      walletModal.classList.add("hidden");
+      walletModal.classList.remove("flex");
+    }
+
+    function openResultModal() {
+      walletResultModal.classList.remove("hidden");
+      walletResultModal.classList.add("flex");
+    }
+
+    function closeWalletResultModal() {
+      walletResultModal.classList.add("hidden");
+      walletResultModal.classList.remove("flex");
+    }
 
     function shortenAddress(address) {
       if (!address) return "";
@@ -201,6 +427,7 @@
 
     function showMessage(message, type = "info") {
       walletMessage.textContent = message;
+
       walletMessage.classList.remove(
         "hidden",
         "text-[#2563eb]",
@@ -220,45 +447,23 @@
     function setButtonLoading(button, isLoading) {
       if (!button) return;
 
+      button.disabled = isLoading;
+
       if (isLoading) {
-        button.disabled = true;
         button.classList.add("opacity-70", "cursor-wait");
       } else {
-        button.disabled = false;
         button.classList.remove("opacity-70", "cursor-wait");
       }
     }
 
     function saveWalletConnection(data) {
       localStorage.setItem("invoiceXWallet", JSON.stringify(data));
+      localStorage.setItem("ix_wallet_connected", "true");
     }
 
-    function renderConnectedWallet(data, shouldRedirect = false) {
-      walletStatus.classList.remove("hidden");
-
-      statusTitle.textContent = "지갑 연결 완료";
-      statusWallet.textContent = data.walletName;
-      statusAddress.textContent = `주소: ${data.address} (${shortenAddress(data.address)})`;
-      statusNetwork.textContent = `네트워크: ${data.network || "확인 불가"}`;
-
-      showMessage(`${data.walletName} 연결이 완료되었습니다.`, "success");
-      saveWalletConnection(data);
-
-      if (shouldRedirect) {
-        localStorage.setItem("ix_wallet_connected", "true");
-        location.href = "mypage.html?role=" + (new URLSearchParams(location.search).get("role") || "funder");
-      }
-    }
-
-    function renderDisconnectedWallet() {
-      walletStatus.classList.add("hidden");
-      statusWallet.textContent = "";
-      statusAddress.textContent = "";
-      statusNetwork.textContent = "";
-
+    function removeWalletConnection() {
       localStorage.removeItem("invoiceXWallet");
       localStorage.removeItem("ix_wallet_connected");
-      showMessage("지갑 연결이 해제되었습니다.", "info");
     }
 
     function normalizeGemResponse(response, key) {
@@ -279,6 +484,79 @@
       return null;
     }
 
+    function renderMainWalletStatus(data) {
+      mainWalletStatus.classList.remove("hidden");
+      mainWalletName.textContent = data.walletName;
+      mainWalletAddress.textContent = `주소: ${data.address}`;
+      mainWalletNetwork.textContent = `네트워크: ${data.network || "확인 불가"}`;
+    }
+
+    function renderResultModal(data) {
+      resultWalletName.textContent = data.walletName;
+      resultWalletAddress.textContent = `${data.address} (${shortenAddress(data.address)})`;
+      resultWalletNetwork.textContent = data.network || "확인 불가";
+
+      openResultModal();
+    }
+
+    function renderConnectedWallet(data, showResultPopup = true) {
+      connectedWallet = data;
+
+      saveWalletConnection(data);
+      renderMainWalletStatus(data);
+
+      showMessage(`${data.walletName} 연결이 완료되었습니다.`, "success");
+
+      window.dispatchEvent(
+        new CustomEvent("invoiceXWalletConnected", {
+          detail: data
+        })
+      );
+
+      if (showResultPopup) {
+        closeModal();
+        renderResultModal(data);
+      }
+    }
+
+    async function renderDisconnectedWallet() {
+      connectedWallet = null;
+      evmWalletClient = null;
+
+      if (walletConnectProvider) {
+        try {
+          await walletConnectProvider.disconnect();
+        } catch (error) {
+          console.warn("WalletConnect disconnect skipped:", error);
+        }
+
+        walletConnectProvider = null;
+      }
+
+      if (xamanClient) {
+        try {
+          xamanClient.logout();
+        } catch (error) {
+          console.warn("Xaman logout skipped:", error);
+        }
+      }
+
+      mainWalletStatus.classList.add("hidden");
+
+      mainWalletName.textContent = "";
+      mainWalletAddress.textContent = "";
+      mainWalletNetwork.textContent = "";
+
+      resultWalletName.textContent = "";
+      resultWalletAddress.textContent = "";
+      resultWalletNetwork.textContent = "";
+
+      removeWalletConnection();
+      closeWalletResultModal();
+
+      showMessage("지갑 연결이 해제되었습니다.", "info");
+    }
+
     async function connectXrplTestnet() {
       if (!window.xrpl) {
         throw new Error("xrpl.js 라이브러리를 불러오지 못했습니다.");
@@ -287,32 +565,48 @@
       showMessage("XRPL Testnet 지갑을 생성하고 있습니다...", "info");
 
       const client = new xrpl.Client("wss://s.altnet.rippletest.net:51233");
-      await client.connect();
 
-      const fundResult = await client.fundWallet();
-      await client.disconnect();
+      try {
+        await client.connect();
 
-      const address = fundResult.wallet.classicAddress;
+        const fundResult = await client.fundWallet();
+        const wallet = fundResult.wallet;
 
-      renderConnectedWallet({
-        walletType: "xrpl-testnet",
-        walletName: "XRPL Testnet Wallet",
-        address,
-        network: "XRPL Testnet",
-      }, true);
+        if (!wallet || !wallet.classicAddress) {
+          throw new Error("XRPL Testnet 지갑 주소를 생성하지 못했습니다.");
+        }
+
+        renderConnectedWallet({
+          walletType: "xrpl-testnet",
+          walletName: "XRPL Testnet Wallet",
+          address: wallet.classicAddress,
+          network: "XRPL Testnet"
+        });
+      } finally {
+        try {
+          await client.disconnect();
+        } catch (error) {
+          console.warn("XRPL client disconnect skipped:", error);
+        }
+      }
     }
 
     async function connectGemWallet() {
       const gemApi =
-        window.gemWalletApi ||
         window.GemWalletApi ||
+        window.gemWalletApi ||
         window.gemwalletApi;
 
       if (!gemApi) {
         throw new Error("GemWallet API를 찾을 수 없습니다. GemWallet 확장 프로그램을 설치했는지 확인해주세요.");
       }
 
-      const installedResponse = await gemApi.isInstalled();
+      showMessage("GemWallet 연결을 확인하고 있습니다...", "info");
+
+      const installedResponse = gemApi.isInstalled
+        ? await gemApi.isInstalled()
+        : await gemApi.isConnected();
+
       const isInstalled =
         installedResponse?.result?.isInstalled ??
         installedResponse?.isInstalled ??
@@ -325,10 +619,15 @@
       const addressResponse = await gemApi.getAddress();
       const networkResponse = await gemApi.getNetwork();
 
-      const address = normalizeGemResponse(addressResponse, "address");
+      const address =
+        normalizeGemResponse(addressResponse, "address") ||
+        normalizeGemResponse(addressResponse, "publicAddress");
+
       const network =
         normalizeGemResponse(networkResponse, "network") ||
-        networkResponse?.result?.chain ||
+        normalizeGemResponse(networkResponse, "name") ||
+        networkResponse?.result?.network ||
+        networkResponse?.result?.name ||
         "XRPL";
 
       if (!address) {
@@ -339,35 +638,58 @@
         walletType: "gemwallet",
         walletName: "GemWallet",
         address,
-        network,
-      }, true);
+        network
+      });
     }
 
     async function connectCrossmark() {
-      const sdk = window.xrpl?.crossmark;
+      showMessage("Crossmark 지갑 연결을 요청하고 있습니다...", "info");
+
+      const sdk =
+        window.xrpl?.crossmark ||
+        window.crossmark ||
+        window.Crossmark;
 
       if (!sdk) {
         throw new Error("Crossmark 확장 프로그램을 찾을 수 없습니다.");
       }
 
-      const signInResult = await sdk.methods.signInAndWait();
+      const signIn =
+        sdk.methods?.signInAndWait ||
+        sdk.async?.signInAndWait ||
+        sdk.signInAndWait;
+
+      if (!signIn) {
+        throw new Error("Crossmark signInAndWait 메서드를 찾을 수 없습니다.");
+      }
+
+      const result = await signIn.call(
+        sdk.methods || sdk.async || sdk
+      );
 
       const address =
-        signInResult?.response?.data?.address ||
-        signInResult?.response?.address ||
-        signInResult?.response?.data?.account ||
-        signInResult?.response?.account;
+        result?.response?.data?.address ||
+        result?.response?.data?.account ||
+        result?.response?.address ||
+        result?.response?.account ||
+        result?.data?.address ||
+        result?.address;
 
       if (!address) {
         throw new Error("Crossmark 주소를 가져오지 못했습니다. 지갑 승인 상태를 확인해주세요.");
       }
 
+      const network =
+        result?.response?.data?.network ||
+        result?.response?.network ||
+        "XRPL";
+
       renderConnectedWallet({
         walletType: "crossmark",
         walletName: "Crossmark",
         address,
-        network: "XRPL",
-      }, true);
+        network
+      });
     }
 
     async function connectXaman() {
@@ -379,18 +701,25 @@
         throw new Error("Xaman SDK를 불러오지 못했습니다.");
       }
 
+      showMessage("Xaman QR 또는 앱에서 로그인을 승인해주세요.", "info");
+
       if (!xamanClient) {
         xamanClient = new Xumm(XAMAN_API_KEY);
 
         xamanClient.on("success", async () => {
           const account = await xamanClient.user.account;
 
+          if (!account) {
+            showMessage("Xaman 계정 주소를 가져오지 못했습니다.", "error");
+            return;
+          }
+
           renderConnectedWallet({
-            walletType: "xumm",
+            walletType: "xaman",
             walletName: "XUMM / Xaman",
             address: account,
-            network: "XRPL",
-          }, true);
+            network: "XRPL"
+          });
         });
 
         xamanClient.on("logout", () => {
@@ -398,39 +727,99 @@
         });
       }
 
-      showMessage("Xaman QR 또는 앱에서 로그인을 승인해주세요.", "info");
       xamanClient.authorize();
     }
 
-    async function connectEvmWallet() {
-      if (!window.ethereum) {
-        throw new Error("브라우저 EVM 지갑을 찾을 수 없습니다. MetaMask 같은 지갑을 설치해주세요.");
+    async function connectWalletConnectWithViem() {
+      if (WALLETCONNECT_PROJECT_ID === "YOUR_WALLETCONNECT_PROJECT_ID") {
+        throw new Error("WalletConnect 연결을 위해 WALLETCONNECT_PROJECT_ID를 실제 Project ID로 바꿔주세요.");
       }
 
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
+      showMessage("WalletConnect QR 연결을 준비하고 있습니다...", "info");
+
+      walletConnectProvider = await EthereumProvider.init({
+        projectId: WALLETCONNECT_PROJECT_ID,
+        showQrModal: true,
+        optionalChains: [
+          1,
+          11155111,
+          137,
+          80002,
+          8453,
+          84532,
+          42161,
+          421614,
+          10,
+          11155420
+        ],
+        metadata: {
+          name: "InvoiceX",
+          description: "XRPL based Invoice RWA Platform",
+          url: window.location.origin,
+          icons: [
+            "https://avatars.githubusercontent.com/u/37784886"
+          ]
+        }
       });
 
-      const chainId = await window.ethereum.request({
-        method: "eth_chainId",
-      });
+      const accounts = await walletConnectProvider.enable();
 
       if (!accounts || !accounts[0]) {
-        throw new Error("EVM 지갑 주소를 가져오지 못했습니다.");
+        throw new Error("WalletConnect 주소를 가져오지 못했습니다.");
       }
+
+      evmWalletClient = createWalletClient({
+        transport: custom(walletConnectProvider)
+      });
+
+      const chainId = await evmWalletClient.getChainId();
+      const networkName = chainNames[chainId] || `Chain ID ${chainId}`;
 
       renderConnectedWallet({
         walletType: "walletconnect",
-        walletName: "EVM Wallet",
+        walletName: "WalletConnect / EVM Wallet",
         address: accounts[0],
-        network: `Chain ID ${chainId}`,
-      }, true);
+        chainId,
+        network: networkName
+      });
+
+      walletConnectProvider.on("accountsChanged", function(accounts) {
+        if (!accounts || accounts.length === 0) {
+          renderDisconnectedWallet();
+          return;
+        }
+
+        if (connectedWallet?.walletType === "walletconnect") {
+          renderConnectedWallet({
+            ...connectedWallet,
+            address: accounts[0]
+          });
+        }
+      });
+
+      walletConnectProvider.on("chainChanged", function(chainId) {
+        const numericChainId =
+          typeof chainId === "string" && chainId.startsWith("0x")
+            ? parseInt(chainId, 16)
+            : Number(chainId);
+
+        if (connectedWallet?.walletType === "walletconnect") {
+          renderConnectedWallet({
+            ...connectedWallet,
+            chainId: numericChainId,
+            network: chainNames[numericChainId] || `Chain ID ${numericChainId}`
+          });
+        }
+      });
+
+      walletConnectProvider.on("disconnect", function() {
+        renderDisconnectedWallet();
+      });
     }
 
     async function handleWalletConnect(walletType, button) {
       try {
         setButtonLoading(button, true);
-        showMessage("지갑 연결을 요청하고 있습니다...", "info");
 
         if (walletType === "xrpl-testnet") {
           await connectXrplTestnet();
@@ -438,10 +827,10 @@
           await connectGemWallet();
         } else if (walletType === "crossmark") {
           await connectCrossmark();
-        } else if (walletType === "xumm") {
+        } else if (walletType === "xaman") {
           await connectXaman();
         } else if (walletType === "walletconnect") {
-          await connectEvmWallet();
+          await connectWalletConnectWithViem();
         } else {
           throw new Error("지원하지 않는 지갑입니다.");
         }
@@ -453,38 +842,51 @@
       }
     }
 
-    walletButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        const walletType = button.getAttribute("data-wallet");
+    openWalletModal.addEventListener("click", openModal);
 
-        button.style.transform = "scale(0.98)";
-        setTimeout(() => {
-          button.style.transform = "scale(1)";
-        }, 100);
+    closeWalletModal.addEventListener("click", closeModal);
 
-        handleWalletConnect(walletType, button);
-      });
+    closeResultModal.addEventListener("click", closeWalletResultModal);
+
+    confirmResultModal.addEventListener("click", closeWalletResultModal);
+
+    disconnectFromResult.addEventListener("click", function() {
+      renderDisconnectedWallet();
     });
 
-    disconnectWallet.addEventListener("click", () => {
-      if (xamanClient) {
-        try {
-          xamanClient.logout();
-        } catch (error) {
-          console.warn(error);
-        }
+    walletModal.addEventListener("click", function(event) {
+      if (event.target === walletModal) {
+        closeModal();
       }
+    });
 
-      renderDisconnectedWallet();
+    walletResultModal.addEventListener("click", function(event) {
+      if (event.target === walletResultModal) {
+        closeWalletResultModal();
+      }
+    });
+
+    window.addEventListener("keydown", function(event) {
+      if (event.key === "Escape") {
+        closeModal();
+        closeWalletResultModal();
+      }
+    });
+
+    walletButtons.forEach(function(button) {
+      button.addEventListener("click", function() {
+        const walletType = button.getAttribute("data-wallet");
+        handleWalletConnect(walletType, button);
+      });
     });
 
     const savedWallet = localStorage.getItem("invoiceXWallet");
 
     if (savedWallet) {
       try {
-        renderConnectedWallet(JSON.parse(savedWallet));
+        renderConnectedWallet(JSON.parse(savedWallet), false);
       } catch (error) {
-        localStorage.removeItem("invoiceXWallet");
+        removeWalletConnection();
       }
     }
   </script>
