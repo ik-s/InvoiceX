@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InvoiceX Admin - Invoice Review</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #f6f8fb;
+        color: #0f172a;
+        font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      .panel {
+        border: 1px solid #e5e8f0;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+
+      .field {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 8px;
+        border: 1px solid #dbe2ef;
+        padding: 10px 12px;
+        outline: none;
+        background: #fff;
+        color: #0f172a;
+      }
+
+      .field:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+
+      .queue-scroll {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .queue-scroll::-webkit-scrollbar {
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="border-b border-[#e5e8f0] bg-white">
+      <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-6 py-4">
+        <div class="flex items-center gap-6">
+          <a href="start.html" class="text-[24px] font-extrabold text-[#2563eb]">InvoiceX</a>
+          <nav class="flex flex-wrap gap-2 text-[13px] font-bold">
+            <a href="admin-kyb-review.html"
+              class="rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[#475569] hover:bg-[#f8fafc]">KYB
+              Review</a>
+            <a href="admin-risk-agent.html" class="rounded-lg bg-[#2563eb] px-4 py-2 text-white">Invoice Review</a>
+          </nav>
+        </div>
+        <span class="hidden text-[22px] font-extrabold text-[#2563eb] sm:inline-flex">Admin</span>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-[1440px] px-6 py-5">
+      <section class="panel p-5">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p class="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2563eb]">Invoice Queue</p>
+            <h1 class="mt-1 text-[28px] font-extrabold">인보이스 검증 대기열</h1>
+          </div>
+          <div class="grid w-full gap-3 sm:grid-cols-4 xl:w-[520px]">
+            <div class="rounded-lg bg-[#eff6ff] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">발행 완료</p>
+              <p id="doneCount" class="mt-1 text-[22px] font-extrabold text-[#2563eb]">0</p>
+            </div>
+            <div class="rounded-lg bg-[#f0fdf4] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">발행 후보</p>
+              <p id="readyCount" class="mt-1 text-[22px] font-extrabold text-[#16a34a]">2</p>
+            </div>
+            <div class="rounded-lg bg-[#fff7ed] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">확인 필요</p>
+              <p id="reviewCount" class="mt-1 text-[22px] font-extrabold text-[#d97706]">1</p>
+            </div>
+            <div class="rounded-lg bg-[#fef2f2] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">발행 보류</p>
+              <p id="blockedCount" class="mt-1 text-[22px] font-extrabold text-[#ef4444]">1</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          <button class="filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white"
+            data-filter="all">전체</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="ready">발행 후보</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="review">확인 필요</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="blocked">발행 보류</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="done">발행 완료</button>
+        </div>
+
+        <div class="mt-4 flex items-stretch gap-2">
+          <button id="queuePrev" type="button"
+            class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
+            aria-label="이전 인보이스 요청">&lsaquo;</button>
+          <div id="caseQueue" class="queue-scroll flex flex-1 gap-3 overflow-x-auto overflow-y-hidden scroll-smooth">
+          </div>
+          <button id="queueNext" type="button"
+            class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
+            aria-label="다음 인보이스 요청">&rsaquo;</button>
+        </div>
+      </section>
+
+      <section class="mt-5 grid gap-5 xl:grid-cols-[1fr_320px]">
+        <div class="space-y-5">
+          <section class="panel p-5">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p class="text-[12px] font-bold uppercase tracking-[0.14em] text-[#64748b]">Selected Invoice Request
+                </p>
+                <h2 id="caseTitle" class="mt-1 text-[25px] font-extrabold"></h2>
+                <p id="caseSubtitle" class="mt-1 text-[14px] leading-6 text-[#64748b]"></p>
+              </div>
+              <span id="caseStatus" class="w-fit rounded-full px-4 py-2 text-[13px] font-bold"></span>
+            </div>
+            <div class="mt-4 grid gap-3 md:grid-cols-5">
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">SME</p>
+                <p id="smeName" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">KYB</p>
+                <p class="mt-1 text-[14px] font-bold text-[#16a34a]">APPROVED</p>
+              </div>
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">Buyer</p>
+                <p id="buyerName" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">Amount</p>
+                <p id="invoiceAmount" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">Due Date</p>
+                <p id="dueDate" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+            <div class="panel p-5">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <h3 class="text-[18px] font-extrabold">Agent 1차 검토 결과</h3>
+                <button id="rerunAiBtn"
+                  class="h-[38px] rounded-lg border border-[#dbe2ef] bg-white px-3 text-[12px] font-bold text-[#475569] hover:bg-[#f8fafc]">재검토</button>
+              </div>
+              <p id="aiSummary"
+                class="rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-4 text-[14px] leading-7 text-[#334155]"></p>
+              <div id="checkList" class="mt-3 space-y-3"></div>
+            </div>
+
+            <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              <div class="panel p-5">
+                <h3 class="text-[17px] font-extrabold">인보이스 증빙</h3>
+                <p class="mt-2 text-[13px] leading-5 text-[#64748b]">전자세금계산서, 계약/발주, 납품 근거를 대조해 실제 청구권이 존재하는지 확인합니다.</p>
+                <div id="invoiceDetails" class="mt-4 space-y-3"></div>
+              </div>
+              <div class="panel p-5">
+                <h3 class="text-[17px] font-extrabold">Buyer Confirmation</h3>
+                <div id="buyerDetails" class="mt-4 space-y-3"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel mb-8 p-5">
+            <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <h3 class="text-[18px] font-extrabold">Risk Passport</h3>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <span id="riskGradeBadge" class="w-fit rounded-full px-4 py-2 text-[13px] font-bold"></span>
+                <span id="passportState" class="w-fit rounded-full px-4 py-2 text-[13px] font-bold"></span>
+              </div>
+            </div>
+            <div id="passportDetails" class="mt-4 grid gap-3 md:grid-cols-2 2xl:grid-cols-3"></div>
+          </section>
+        </div>
+
+        <aside class="panel h-fit p-5 xl:sticky xl:top-5">
+          <h3 class="text-[18px] font-extrabold">Admin 결정</h3>
+          <label class="mt-4 block">
+            <span class="mb-2 block text-[12px] font-bold text-[#64748b]">Admin Memo</span>
+            <textarea id="verifierMemo" class="field min-h-[112px]" placeholder="승인 근거 또는 보완 요청 사유"></textarea>
+          </label>
+          <div id="approvalGates" class="mt-4 space-y-3"></div>
+          <label class="mt-4 flex cursor-pointer gap-3 rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-4">
+            <input id="humanConfirm" type="checkbox" class="mt-1 h-4 w-4 accent-[#2563eb]" />
+            <span class="text-[13px] leading-5 text-[#475569]">Agent 근거와 Buyer 확인 정보를 검토했습니다.</span>
+          </label>
+          <div class="mt-4 space-y-3">
+            <button id="issuePassportBtn"
+              class="h-[46px] w-full rounded-lg border border-[#2563eb] bg-white text-[14px] font-bold text-[#2563eb] hover:bg-[#eff6ff]">Risk
+              Passport 확정</button>
+            <button id="approveRwaBtn" disabled
+              class="h-[48px] w-full rounded-lg bg-[#2563eb] text-[15px] font-bold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:bg-[#94a3b8]">Invoice
+              RWA 발행 승인</button>
+            <button id="requestSupplementBtn"
+              class="h-[44px] w-full rounded-lg border border-[#d97706] bg-white text-[14px] font-bold text-[#d97706] hover:bg-[#fff7ed]">보완
+              요청</button>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script>
+      const cases = {
+        hanbit: {
+          id: "#INV-2026-0042",
+          company: "(주)한빛테크",
+          buyer: "삼성전자(주)",
+          amount: "₩60,000,000",
+          due: "2026.07.15",
+          status: "발행 후보",
+          statusTone: "ready",
+          filter: "ready",
+          passportIssued: false,
+          riskGrade: "A",
+          subtitle: "Buyer Confirmation과 인보이스 OCR 금액이 모두 일치한 요청입니다.",
+          summary: "KYB 승인 기업의 인보이스 원본, Buyer 지급 확인, 금액, 만기일이 일치합니다. Agent는 Risk Passport 확정과 Invoice RWA 발행 승인을 추천합니다.",
+          checks: [["Buyer Confirmation", "PASS", "Buyer가 지급 의무를 확인했습니다."], ["Invoice OCR", "PASS", "전자세금계산서 금액과 등록 금액이 일치합니다."], ["Duplicate Check", "PASS", "중복 등록된 인보이스가 없습니다."], ["Dispute", "PASS", "분쟁 또는 취소 이력이 없습니다."]],
+          invoice: [["전자세금계산서", "금액, 발행일, 공급자 정보 일치"], ["거래명세서", "납품 항목과 인보이스 설명 일치"], ["만기일", "2026.07.15로 Buyer 확인서와 일치"], ["중복 여부", "동일 번호/금액 중복 없음"]],
+          buyerInfo: [["확인 상태", "Verified"], ["확인자", "삼성전자 AP 담당자"], ["확인 시각", "2026.05.11 14:22"], ["지급 의무", "무조건 지급 확인"]],
+          passport: [["지급 확인 여부", "확인 완료", "지급기업이 해당 인보이스의 지급 예정 사실을 확인했는지 여부"], ["분쟁 여부", "분쟁 없음", "납품, 계약, 대금 지급과 관련된 분쟁 발생 여부"], ["과거 지급 이력", "정상 지급 12건", "지급기업 또는 발행기업의 이전 지급 및 상환 이력"], ["지급 지연 이력", "지연 이력 없음", "과거 거래에서 대금 지급이 지연된 이력이 있는지 여부"], ["검증 상태", "인보이스/납품/지급 확인 완료", "인보이스, 계약, 납품, 지급 확인 등의 검증 진행 상태"], ["예상 수령액", "₩60,475,200", "자금 공급자가 받는 추가 금액과 원금을 더한 값"]],
+          gates: [["Risk Passport", "ready", "초안 확정 가능"], ["Invoice RWA", "ready", "Admin 확인 후 발행 가능"]]
+        },
+        smart: {
+          id: "#INV-2026-0041",
+          company: "(주)스마트솔루션",
+          buyer: "LG전자(주)",
+          amount: "₩42,000,000",
+          due: "2026.07.22",
+          status: "확인 필요",
+          statusTone: "review",
+          filter: "review",
+          passportIssued: false,
+          riskGrade: "B",
+          subtitle: "인보이스 원본은 일치하지만 Buyer Confirmation이 아직 없습니다.",
+          summary: "KYB는 승인 상태입니다. 다만 Buyer 지급 확인이 완료되지 않아 Risk Passport 확정과 Invoice RWA 발행 승인은 보류해야 합니다.",
+          checks: [["Buyer Confirmation", "WAIT", "Buyer의 지급 확인 응답이 필요합니다."], ["Invoice OCR", "PASS", "등록 금액과 OCR 금액이 일치합니다."], ["Duplicate Check", "PASS", "중복 등록은 없습니다."], ["Dispute", "PASS", "분쟁 이력이 없습니다."]],
+          invoice: [["전자세금계산서", "금액과 만기일 일치"], ["거래명세서", "문서 제출 완료"], ["만기일", "2026.07.22"], ["중복 여부", "중복 없음"]],
+          buyerInfo: [["확인 상태", "Pending"], ["확인자", "응답 대기"], ["확인 시각", "-"], ["지급 의무", "미확인"]],
+          passport: [["지급 확인 여부", "미확인", "지급기업이 해당 인보이스의 지급 예정 사실을 확인했는지 여부"], ["분쟁 여부", "분쟁 없음", "납품, 계약, 대금 지급과 관련된 분쟁 발생 여부"], ["과거 지급 이력", "정상 지급 7건", "지급기업 또는 발행기업의 이전 지급 및 상환 이력"], ["지급 지연 이력", "30일 이내 지연 1건", "과거 거래에서 대금 지급이 지연된 이력이 있는지 여부"], ["검증 상태", "Buyer Confirmation 대기", "인보이스, 계약, 납품, 지급 확인 등의 검증 진행 상태"], ["예상 수령액", "산정 보류", "자금 공급자가 받는 추가 금액과 원금을 더한 값"]],
+          gates: [["Risk Passport", "blocked", "Buyer 확인 후 가능"], ["Invoice RWA", "blocked", "발행 보류"]]
+        },
+        green: {
+          id: "#INV-2026-0038",
+          company: "(주)그린파츠",
+          buyer: "현대자동차(주)",
+          amount: "₩33,500,000",
+          due: "2026.08.03",
+          status: "발행 후보",
+          statusTone: "ready",
+          filter: "ready",
+          passportIssued: false,
+          riskGrade: "A",
+          subtitle: "Buyer 확인은 완료됐고 품목명 축약 메모만 남은 요청입니다.",
+          summary: "Buyer Confirmation과 금액은 일치합니다. 발주서의 품목명이 축약되어 Verifier Memo에 근거를 남긴 뒤 발행할 수 있습니다.",
+          checks: [["Buyer Confirmation", "PASS", "Buyer가 지급 의무를 확인했습니다."], ["Invoice OCR", "REVIEW", "품목명 축약 표기가 확인되었습니다."], ["Duplicate Check", "PASS", "중복 등록은 없습니다."], ["Dispute", "PASS", "분쟁 이력이 없습니다."]],
+          invoice: [["전자세금계산서", "금액과 만기일 일치"], ["발주서", "품목명이 축약 표기됨"], ["만기일", "2026.08.03"], ["중복 여부", "중복 없음"]],
+          buyerInfo: [["확인 상태", "Verified"], ["확인자", "현대자동차 구매 담당자"], ["확인 시각", "2026.05.10 10:08"], ["지급 의무", "확인 완료"]],
+          passport: [["지급 확인 여부", "확인 완료", "지급기업이 해당 인보이스의 지급 예정 사실을 확인했는지 여부"], ["분쟁 여부", "분쟁 없음", "납품, 계약, 대금 지급과 관련된 분쟁 발생 여부"], ["과거 지급 이력", "정상 지급 9건", "지급기업 또는 발행기업의 이전 지급 및 상환 이력"], ["지급 지연 이력", "지연 이력 없음", "과거 거래에서 대금 지급이 지연된 이력이 있는지 여부"], ["검증 상태", "품목명 메모 후 완료", "인보이스, 계약, 납품, 지급 확인 등의 검증 진행 상태"], ["예상 수령액", "₩33,203,800", "자금 공급자가 받는 추가 금액과 원금을 더한 값"]],
+          gates: [["Risk Passport", "ready", "메모 후 확정 가능"], ["Invoice RWA", "ready", "Admin 확인 후 발행 가능"]]
+        },
+        next: {
+          id: "#INV-2026-0035",
+          company: "(주)넥스트웨어",
+          buyer: "SK하이닉스(주)",
+          amount: "₩75,000,000",
+          due: "2026.08.18",
+          status: "발행 보류",
+          statusTone: "blocked",
+          filter: "blocked",
+          passportIssued: false,
+          riskGrade: "C",
+          subtitle: "금액 불일치와 Buyer Confirmation 미완료로 발행할 수 없는 요청입니다.",
+          summary: "등록 금액과 OCR 금액이 다르고 Buyer Confirmation도 완료되지 않았습니다. Risk Passport 확정과 Invoice RWA 발행 승인은 보류해야 합니다.",
+          checks: [["Buyer Confirmation", "WAIT", "Buyer의 확인 응답이 없습니다."], ["Invoice OCR", "REVIEW", "등록 금액과 OCR 금액 차이가 감지되었습니다."], ["Duplicate Check", "PASS", "중복 등록은 없습니다."], ["Risk Signal", "BLOCKED", "필수 조건 미충족으로 발행 보류가 필요합니다."]],
+          invoice: [["전자세금계산서", "OCR 금액 불일치"], ["거래명세서", "문서 제출 완료"], ["만기일", "2026.08.18"], ["중복 여부", "중복 없음"]],
+          buyerInfo: [["확인 상태", "Pending"], ["확인자", "응답 대기"], ["확인 시각", "-"], ["지급 의무", "미확인"]],
+          passport: [["지급 확인 여부", "미확인", "지급기업이 해당 인보이스의 지급 예정 사실을 확인했는지 여부"], ["분쟁 여부", "확인 필요", "납품, 계약, 대금 지급과 관련된 분쟁 발생 여부"], ["과거 지급 이력", "정상 지급 3건", "지급기업 또는 발행기업의 이전 지급 및 상환 이력"], ["지급 지연 이력", "지연 2건", "과거 거래에서 대금 지급이 지연된 이력이 있는지 여부"], ["검증 상태", "금액 불일치/Buyer 확인 대기", "인보이스, 계약, 납품, 지급 확인 등의 검증 진행 상태"], ["예상 수령액", "산정 보류", "자금 공급자가 받는 추가 금액과 원금을 더한 값"]],
+          gates: [["Risk Passport", "blocked", "초안 확정 불가"], ["Invoice RWA", "blocked", "발행 불가"]]
+        }
+      };
+
+      const toneClasses = {
+        ready: "bg-[#dcfce7] text-[#16a34a]",
+        review: "bg-[#ffedd5] text-[#d97706]",
+        blocked: "bg-[#fee2e2] text-[#ef4444]",
+        done: "bg-[#dbeafe] text-[#2563eb]"
+      };
+      const checkTone = {
+        PASS: "bg-[#dcfce7] text-[#16a34a]",
+        REVIEW: "bg-[#ffedd5] text-[#d97706]",
+        WAIT: "bg-[#ffedd5] text-[#d97706]",
+        BLOCKED: "bg-[#fee2e2] text-[#ef4444]"
+      };
+      const gradeTone = {
+        A: "bg-[#dbeafe] text-[#2563eb]",
+        B: "bg-[#ffedd5] text-[#d97706]",
+        C: "bg-[#fee2e2] text-[#ef4444]"
+      };
+      let selectedCaseKey = "hanbit";
+      let activeFilter = "all";
+
+      function visibleCases() {
+        return Object.entries(cases).filter(([, item]) => activeFilter === "all" || item.filter === activeFilter);
+      }
+
+      function renderStats() {
+        const items = Object.values(cases);
+        document.getElementById("doneCount").textContent = items.filter((item) => item.filter === "done").length;
+        document.getElementById("readyCount").textContent = items.filter((item) => item.filter === "ready").length;
+        document.getElementById("reviewCount").textContent = items.filter((item) => item.filter === "review").length;
+        document.getElementById("blockedCount").textContent = items.filter((item) => item.filter === "blocked").length;
+      }
+
+      function setActiveFilter(nextFilter) {
+        activeFilter = nextFilter;
+        document.querySelectorAll(".filter-btn").forEach((button) => {
+          button.className = button.dataset.filter === activeFilter
+            ? "filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white"
+            : "filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]";
+        });
+      }
+
+      function updateQueueButtons() {
+        const queue = document.getElementById("caseQueue");
+        const prev = document.getElementById("queuePrev");
+        const next = document.getElementById("queueNext");
+        const hasOverflow = queue.scrollWidth > queue.clientWidth + 2;
+        const atStart = queue.scrollLeft <= 2;
+        const atEnd = queue.scrollLeft + queue.clientWidth >= queue.scrollWidth - 2;
+
+        prev.classList.toggle("hidden", !hasOverflow || atStart);
+        prev.classList.toggle("flex", hasOverflow && !atStart);
+        next.classList.toggle("hidden", !hasOverflow || atEnd);
+        next.classList.toggle("flex", hasOverflow && !atEnd);
+      }
+
+      function renderQueue() {
+        document.getElementById("caseQueue").innerHTML = visibleCases().map(([key, item]) => {
+          const selected = key === selectedCaseKey;
+          return `
+          <button type="button" data-key="${key}" class="case-card min-w-[360px] max-w-[360px] rounded-lg border ${selected ? "border-[#2563eb]" : "border-[#e5e8f0]"} bg-white p-4 text-left shadow-sm hover:border-[#2563eb]">
+            <div class="flex items-start justify-between gap-3">
+              <span class="rounded-full ${toneClasses[item.statusTone]} px-3 py-1 text-[11px] font-bold">${item.status}</span>
+              <span class="text-[12px] font-bold text-[#94a3b8]">${item.id}</span>
+            </div>
+            <p class="mt-4 text-[17px] font-extrabold ${selected ? "text-[#0f172a]" : "text-[#475569]"}">${item.company}</p>
+            <p class="mt-3 text-[13px] font-semibold text-[#64748b]">${item.buyer}</p>
+          </button>
+        `;
+        }).join("");
+        document.querySelectorAll(".case-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            selectedCaseKey = card.dataset.key;
+            renderQueue();
+            renderCase();
+          });
+        });
+        updateQueueButtons();
+      }
+
+      function renderRows(targetId, rows) {
+        document.getElementById(targetId).innerHTML = rows.map(([title, detail]) => `
+        <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] px-4 py-3">
+          <p class="text-[13px] font-bold text-[#0f172a]">${title}</p>
+          <p class="mt-1 text-[13px] leading-5 text-[#64748b]">${detail}</p>
+        </div>
+      `).join("");
+      }
+
+      function renderChecks(rows) {
+        document.getElementById("checkList").innerHTML = rows.map(([title, status, detail]) => `
+        <div class="rounded-lg border border-[#e5e8f0] bg-white p-4">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-[13px] font-extrabold text-[#0f172a]">${title}</p>
+            <span class="rounded-full ${checkTone[status]} px-3 py-1 text-[11px] font-bold">${status}</span>
+          </div>
+          <p class="mt-2 text-[13px] leading-5 text-[#64748b]">${detail}</p>
+        </div>
+      `).join("");
+      }
+
+      function renderGates(rows) {
+        document.getElementById("approvalGates").innerHTML = rows.map(([title, tone, detail]) => `
+        <div class="flex items-center justify-between gap-3 rounded-lg border border-[#e5e8f0] bg-[#f8fafc] px-4 py-3">
+          <div>
+            <p class="text-[13px] font-bold text-[#0f172a]">${title}</p>
+            <p class="mt-1 text-[12px] text-[#64748b]">${detail}</p>
+          </div>
+          <span class="rounded-full ${toneClasses[tone]} px-3 py-1 text-[11px] font-bold">${tone.toUpperCase()}</span>
+        </div>
+      `).join("");
+      }
+
+      function renderPassport(rows) {
+        document.getElementById("passportDetails").innerHTML = rows.map(([title, value, detail]) => `
+        <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] px-4 py-3">
+          <p class="text-[12px] font-bold text-[#64748b]">${title}</p>
+          <p class="mt-1 text-[15px] font-extrabold text-[#0f172a]">${value}</p>
+          <p class="mt-2 text-[12px] leading-5 text-[#64748b]">${detail}</p>
+        </div>
+      `).join("");
+      }
+
+      function renderCase() {
+        const item = cases[selectedCaseKey];
+        document.getElementById("caseTitle").textContent = item.id;
+        document.getElementById("caseSubtitle").textContent = item.subtitle;
+        document.getElementById("caseStatus").textContent = item.status;
+        document.getElementById("caseStatus").className = `w-fit rounded-full px-4 py-2 text-[13px] font-bold ${toneClasses[item.statusTone]}`;
+        document.getElementById("smeName").textContent = item.company;
+        document.getElementById("buyerName").textContent = item.buyer;
+        document.getElementById("invoiceAmount").textContent = item.amount;
+        document.getElementById("dueDate").textContent = item.due;
+        document.getElementById("aiSummary").textContent = item.summary;
+        document.getElementById("verifierMemo").value = "";
+        document.getElementById("humanConfirm").checked = false;
+        document.getElementById("approveRwaBtn").disabled = true;
+        document.getElementById("issuePassportBtn").textContent = item.passportIssued ? "Risk Passport 발급 완료" : "Risk Passport 확정";
+
+        const passportState = document.getElementById("passportState");
+        const riskGradeBadge = document.getElementById("riskGradeBadge");
+        const stateLabel = item.statusTone === "ready" ? "초안 확정 가능" : item.statusTone === "review" ? "확인 후 확정" : item.statusTone === "done" ? "발행 완료" : "발행 보류";
+        riskGradeBadge.textContent = `Risk Grade ${item.riskGrade}`;
+        riskGradeBadge.className = `w-fit rounded-full px-4 py-2 text-[13px] font-bold ${gradeTone[item.riskGrade]}`;
+        passportState.textContent = stateLabel;
+        passportState.className = `w-fit rounded-full px-4 py-2 text-[13px] font-bold ${toneClasses[item.statusTone]}`;
+
+        renderChecks(item.checks);
+        renderRows("invoiceDetails", item.invoice);
+        renderRows("buyerDetails", item.buyerInfo);
+        renderPassport(item.passport);
+        renderGates(item.gates);
+      }
+
+      document.querySelectorAll(".filter-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          setActiveFilter(button.dataset.filter);
+          if (!visibleCases().some(([key]) => key === selectedCaseKey)) selectedCaseKey = visibleCases()[0]?.[0] || "hanbit";
+          renderQueue();
+          renderCase();
+        });
+      });
+
+      document.getElementById("humanConfirm").addEventListener("change", (event) => {
+        const item = cases[selectedCaseKey];
+        document.getElementById("approveRwaBtn").disabled = !event.target.checked || item.statusTone !== "ready";
+      });
+      document.getElementById("queuePrev").addEventListener("click", () => {
+        document.getElementById("caseQueue").scrollBy({ left: -380, behavior: "smooth" });
+      });
+      document.getElementById("queueNext").addEventListener("click", () => {
+        document.getElementById("caseQueue").scrollBy({ left: 380, behavior: "smooth" });
+      });
+      document.getElementById("caseQueue").addEventListener("scroll", updateQueueButtons);
+      window.addEventListener("resize", updateQueueButtons);
+      document.getElementById("rerunAiBtn").addEventListener("click", (event) => {
+        event.currentTarget.textContent = "검토 중...";
+        event.currentTarget.className = "h-[38px] rounded-lg border border-[#fed7aa] bg-[#fff7ed] px-3 text-[12px] font-bold text-[#d97706]";
+        alert("Agent에게 Invoice 재검토를 요청합니다.");
+      });
+      document.getElementById("issuePassportBtn").addEventListener("click", () => {
+        const item = cases[selectedCaseKey];
+        if (item.statusTone === "blocked") {
+          alert("필수 조건 미충족으로 Risk Passport를 확정할 수 없습니다.");
+          return;
+        }
+        item.passportIssued = true;
+        document.getElementById("issuePassportBtn").textContent = "Risk Passport 발급 완료";
+        alert(`${item.id} Risk Passport가 확정되었습니다.`);
+      });
+      document.getElementById("approveRwaBtn").addEventListener("click", () => {
+        const item = cases[selectedCaseKey];
+        if (!item.passportIssued) {
+          alert("Risk Passport를 발급해주세요.");
+          return;
+        }
+        item.status = "발행 완료";
+        item.statusTone = "done";
+        item.filter = "done";
+        item.gates = [["Risk Passport", "done", "발급 완료"], ["Invoice RWA", "done", "발행 승인 완료"]];
+        setActiveFilter("done");
+        renderStats();
+        renderQueue();
+        renderCase();
+        alert(`${item.id} Invoice RWA 발행을 최종 승인했습니다.`);
+      });
+      document.getElementById("requestSupplementBtn").addEventListener("click", () => alert(`${cases[selectedCaseKey].id} 보완 요청이 생성되었습니다. Admin Memo를 함께 저장하세요.`));
+
+      renderStats();
+      renderQueue();
+      renderCase();
+    </script>
+  </body>
+
+</html>
