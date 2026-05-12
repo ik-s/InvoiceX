@@ -1,169 +1,232 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RWA 마켓 — InvoiceX</title>
-    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { font-family: "Pretendard", sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; letter-spacing: -0.02em; background-color: #f8fafc; }
-        .fw-bold { font-weight: 600 !important; }
-        .saas-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
-        .modal-panel { transform: scale(.97); opacity: 0; transition: all .22s ease; }
-        .modal-panel.show { transform: scale(1); opacity: 1; }
-        .modal-text-wrap { overflow-wrap: anywhere; word-break: keep-all; line-height: 1.55; }
-        .market-card { transition: all .2s cubic-bezier(.4,0,.2,1); }
-        .market-card:hover { transform: translateY(-2px); border-color: #bfdbfe; box-shadow: 0 10px 15px -3px rgba(59,130,246,.06); }
-    </style>
-</head>
-<body class="text-gray-900 min-w-0">
 
-    <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-50 h-14 flex items-center">
-        <div class="max-w-7xl mx-auto w-full flex items-center justify-between px-6">
-            <div class="flex items-center space-x-10 min-w-0">
-                <a href="mypage.html?role=funder" class="text-blue-600 text-xl fw-bold cursor-pointer flex-shrink-0">InvoiceX</a>
-                <div class="hidden md:flex space-x-8 text-sm text-gray-400">
-                    <a href="mypage.html?role=funder" class="hover:text-blue-600 transition">마이페이지</a>
-                    <a href="rwamarket.html" class="text-blue-600 fw-bold border-b-2 border-blue-600 pb-0.5">RWA 마켓</a>
-                </div>
-            </div>
-            <button onclick="location.href='role-select.html'" class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
-                로그아웃
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-            </button>
-        </div>
-    </nav>
-
-    <main class="pt-20 pb-16 max-w-7xl mx-auto px-6">
-        <div class="mb-6">
-            <a href="mypage.html?role=funder" class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-blue-600 transition">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                마이페이지로 돌아가기
-            </a>
-        </div>
-
-        <section class="saas-card p-8 mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-            <div>
-                <p class="text-xs text-blue-600 fw-bold mb-3 uppercase tracking-widest">RWA Market</p>
-                <h1 class="text-2xl fw-bold text-gray-900 mb-2">검증된 인보이스 RWA에 참여하세요</h1>
-                <p class="text-sm text-gray-400 leading-relaxed">리스크 패스포트와 RWA 정보를 확인한 뒤, 보유 RLUSD 한도 내에서 참여할 수 있습니다.</p>
-            </div>
-            <div class="grid grid-cols-2 gap-3 w-full lg:w-auto">
-                <div class="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4">
-                    <p class="text-xs text-gray-400 mb-1">출금 가능 잔액</p>
-                    <p class="text-lg fw-bold text-gray-900">50,155 <span class="text-xs text-gray-400">RLUSD</span></p>
-                </div>
-                <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4">
-                    <p class="text-xs text-blue-500 mb-1">참여 가능 자산</p>
-                    <p id="available-count" class="text-lg fw-bold text-blue-600">3 <span class="text-xs text-blue-400">건</span></p>
-                </div>
-            </div>
-        </section>
-
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-            <div class="relative w-full sm:max-w-md">
-                <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"/></svg>
-                <input id="market-search" oninput="setMarketSearch(this.value)" type="text" placeholder="기업명, 인보이스 ID, Risk Grade 검색" class="w-full h-10 pl-11 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-50 transition">
-            </div>
-            <div class="flex items-center space-x-2 text-sm text-gray-400">
-                <span>정렬</span>
-                <select id="market-sort" onchange="setMarketSort(this.value)" class="border border-gray-200 rounded-xl h-10 px-3 bg-white text-gray-600 text-sm focus:outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-50 transition cursor-pointer">
-                    <option value="latest">최신순</option>
-                    <option value="grade">등급 높은순</option>
-                    <option value="due">만기일 빠른순</option>
-                    <option value="amount">금액 높은순</option>
-                </select>
-            </div>
-        </div>
-
-        <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
-    </main>
-
-    <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-40 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm" onclick="closeModal()">
-        <div id="modal-container" class="modal-panel bg-white w-full max-w-3xl rounded-2xl p-8 shadow-2xl max-h-[88vh] overflow-y-auto" onclick="event.stopPropagation()"></div>
-    </div>
-
-    <script>
-        let marketSearch = '';
-        let marketSort = 'latest';
-        let processingId = null;
-
-        const rwaItems = [
-            {
-                id: 'INV-2026-0101', grade: 'A', gradeClass: 'bg-blue-50 text-blue-600 border-blue-100', confirmable: true,
-                issuer: '(주)한빛테크', buyer: '삼성전자(주)', amountKRW: '₩60,475,200', amountRLUSD: 45320,
-                due: '2026.07.15', dday: 'D-64', yieldText: '6.8%', status: '참여 가능',
-                info: { supply: '전자부품 납품 매출채권', issuedAt: '2026.05.12', maturity: '2026.07.15', unitPrincipal: '₩10,000 / RWA', token: 'RLUSD', settlement: 'XRPL Escrow' },
-                passport: { paymentCheck: '확인 완료', dispute: '분쟁 없음', paymentHistory: '정상 지급 12건', delay: '지연 이력 없음', verification: '인보이스/납품/지급 확인 완료', expected: '₩60,475,200' }
-            },
-            {
-                id: 'INV-2026-0102', grade: 'A', gradeClass: 'bg-blue-50 text-blue-600 border-blue-100', confirmable: true,
-                issuer: '대한건설(주)', buyer: '현대자동차(주)', amountKRW: '₩42,800,000', amountRLUSD: 32100,
-                due: '2026.06.28', dday: 'D-47', yieldText: '6.2%', status: '참여 가능',
-                info: { supply: '공급망 대금 매출채권', issuedAt: '2026.05.10', maturity: '2026.06.28', unitPrincipal: '₩10,000 / RWA', token: 'RLUSD', settlement: 'XRPL Escrow' },
-                passport: { paymentCheck: '확인 완료', dispute: '분쟁 없음', paymentHistory: '정상 지급 9건', delay: '지연 이력 없음', verification: '인보이스/계약/납품 확인 완료', expected: '₩42,800,000' }
-            },
-            {
-                id: 'INV-2026-0103', grade: 'B', gradeClass: 'bg-gray-50 text-gray-600 border-gray-100', confirmable: false,
-                issuer: '에이스무역', buyer: 'LG디스플레이(주)', amountKRW: '₩35,000,000', amountRLUSD: 26250,
-                due: '2026.08.01', dday: 'D-81', yieldText: '7.4%', status: '참여 가능',
-                info: { supply: '해외 부품 공급 매출채권', issuedAt: '2026.05.08', maturity: '2026.08.01', unitPrincipal: '₩10,000 / RWA', token: 'RLUSD', settlement: 'XRPL Escrow' },
-                passport: { paymentCheck: '확인 완료', dispute: '분쟁 없음', paymentHistory: '정상 지급 5건', delay: '소액 지연 1건', verification: '인보이스/계약 확인 완료', expected: '₩35,000,000' }
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>RWA 마켓 — InvoiceX</title>
+        <link rel="stylesheet" as="style" crossorigin
+            href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>
+            body {
+                font-family: "Pretendard", sans-serif;
+                font-weight: 300;
+                -webkit-font-smoothing: antialiased;
+                letter-spacing: -0.02em;
+                background-color: #f8fafc;
             }
-        ];
 
-        function setMarketSearch(value) {
-            marketSearch = value.trim().toLowerCase();
-            renderMarket();
-        }
-
-        function setMarketSort(value) {
-            marketSort = value;
-            renderMarket();
-        }
-
-        function marketSearchText(item) {
-            return [
-                item.id, item.grade, 'Risk Grade ' + item.grade, item.issuer, item.buyer,
-                item.amountKRW, item.amountRLUSD, item.due, item.dday, item.status,
-                item.info.supply, item.info.settlement
-            ].join(' ').toLowerCase();
-        }
-
-        function sortMarketRows(rows) {
-            const gradeRank = { A: 1, B: 2, C: 3, D: 4 };
-            const sorted = [...rows];
-            if (marketSort === 'grade') {
-                sorted.sort((a, b) => (gradeRank[a.grade] || 99) - (gradeRank[b.grade] || 99));
-            } else if (marketSort === 'due') {
-                sorted.sort((a, b) => new Date(a.due) - new Date(b.due));
-            } else if (marketSort === 'amount') {
-                sorted.sort((a, b) => b.amountRLUSD - a.amountRLUSD);
-            } else {
-                sorted.sort((a, b) => b.id.localeCompare(a.id));
+            .fw-bold {
+                font-weight: 600 !important;
             }
-            return sorted;
-        }
+
+            .saas-card {
+                background: #fff;
+                border: 1px solid #e2e8f0;
+                border-radius: 16px;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            }
+
+            .modal-panel {
+                transform: scale(.97);
+                opacity: 0;
+                transition: all .22s ease;
+            }
+
+            .modal-panel.show {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            .modal-text-wrap {
+                overflow-wrap: anywhere;
+                word-break: keep-all;
+                line-height: 1.55;
+            }
+
+            .market-card {
+                transition: all .2s cubic-bezier(.4, 0, .2, 1);
+            }
+
+            .market-card:hover {
+                transform: translateY(-2px);
+                border-color: #bfdbfe;
+                box-shadow: 0 10px 15px -3px rgba(59, 130, 246, .06);
+            }
+        </style>
+    </head>
+
+    <body class="text-gray-900 min-w-0">
+
+        <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-50 h-14 flex items-center">
+            <div class="max-w-7xl mx-auto w-full flex items-center justify-between px-6">
+                <div class="flex items-center space-x-10 min-w-0">
+                    <a href="mypage.html?role=funder"
+                        class="text-blue-600 text-xl fw-bold cursor-pointer flex-shrink-0">InvoiceX</a>
+                    <div class="hidden md:flex space-x-8 text-sm text-gray-400">
+                        <a href="mypage.html?role=funder" class="hover:text-blue-600 transition">마이페이지</a>
+                        <a href="rwamarket.html" class="text-blue-600 fw-bold border-b-2 border-blue-600 pb-0.5">RWA
+                            마켓</a>
+                    </div>
+                </div>
+                <button onclick="location.href='login.html'"
+                    class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
+                    로그아웃
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                </button>
+            </div>
+        </nav>
+
+        <main class="pt-20 pb-16 max-w-7xl mx-auto px-6">
+            <div class="mb-6">
+                <a href="mypage.html?role=funder"
+                    class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-blue-600 transition">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                    마이페이지로 돌아가기
+                </a>
+            </div>
+
+            <section class="saas-card p-8 mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
+                <div>
+                    <p class="text-xs text-blue-600 fw-bold mb-3 uppercase tracking-widest">RWA Market</p>
+                    <h1 class="text-2xl fw-bold text-gray-900 mb-2">검증된 인보이스 RWA에 참여하세요</h1>
+                    <p class="text-sm text-gray-400 leading-relaxed">리스크 패스포트와 RWA 정보를 확인한 뒤, 보유 RLUSD 한도 내에서 참여할 수
+                        있습니다.</p>
+                </div>
+                <div class="grid grid-cols-2 gap-3 w-full lg:w-auto">
+                    <div class="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4">
+                        <p class="text-xs text-gray-400 mb-1">출금 가능 잔액</p>
+                        <p class="text-lg fw-bold text-gray-900">50,155 <span class="text-xs text-gray-400">RLUSD</span>
+                        </p>
+                    </div>
+                    <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4">
+                        <p class="text-xs text-blue-500 mb-1">참여 가능 자산</p>
+                        <p id="available-count" class="text-lg fw-bold text-blue-600">3 <span
+                                class="text-xs text-blue-400">건</span></p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+                <div class="relative w-full sm:max-w-md">
+                    <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-300" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+                    </svg>
+                    <input id="market-search" oninput="setMarketSearch(this.value)" type="text"
+                        placeholder="기업명, 인보이스 ID, Risk Grade 검색"
+                        class="w-full h-10 pl-11 pr-4 rounded-xl bg-white border border-gray-200 text-sm text-gray-700 placeholder-gray-300 focus:outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-50 transition">
+                </div>
+                <div class="flex items-center space-x-2 text-sm text-gray-400">
+                    <span>정렬</span>
+                    <select id="market-sort" onchange="setMarketSort(this.value)"
+                        class="border border-gray-200 rounded-xl h-10 px-3 bg-white text-gray-600 text-sm focus:outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-50 transition cursor-pointer">
+                        <option value="latest">최신순</option>
+                        <option value="grade">등급 높은순</option>
+                        <option value="due">만기일 빠른순</option>
+                        <option value="amount">금액 높은순</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="market-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+        </main>
+
+        <div id="modal-overlay"
+            class="fixed inset-0 bg-black bg-opacity-40 z-[100] hidden flex items-center justify-center p-4 backdrop-blur-sm"
+            onclick="closeModal()">
+            <div id="modal-container"
+                class="modal-panel bg-white w-full max-w-3xl rounded-2xl p-8 shadow-2xl max-h-[88vh] overflow-y-auto"
+                onclick="event.stopPropagation()"></div>
+        </div>
+
+        <script>
+            let marketSearch = '';
+            let marketSort = 'latest';
+            let processingId = null;
+
+            const rwaItems = [
+                {
+                    id: 'INV-2026-0101', grade: 'A', gradeClass: 'bg-blue-50 text-blue-600 border-blue-100', confirmable: true,
+                    issuer: '(주)한빛테크', buyer: '삼성전자(주)', amountKRW: '₩60,475,200', amountRLUSD: 45320,
+                    due: '2026.07.15', dday: 'D-64', yieldText: '6.8%', status: '참여 가능',
+                    info: { supply: '전자부품 납품 매출채권', issuedAt: '2026.05.12', maturity: '2026.07.15', unitPrincipal: '₩10,000 / RWA', token: 'RLUSD', settlement: 'XRPL Escrow' },
+                    passport: { paymentCheck: '확인 완료', dispute: '분쟁 없음', paymentHistory: '정상 지급 12건', delay: '지연 이력 없음', verification: '인보이스/납품/지급 확인 완료', expected: '₩60,475,200' }
+                },
+                {
+                    id: 'INV-2026-0102', grade: 'A', gradeClass: 'bg-blue-50 text-blue-600 border-blue-100', confirmable: true,
+                    issuer: '대한건설(주)', buyer: '현대자동차(주)', amountKRW: '₩42,800,000', amountRLUSD: 32100,
+                    due: '2026.06.28', dday: 'D-47', yieldText: '6.2%', status: '참여 가능',
+                    info: { supply: '공급망 대금 매출채권', issuedAt: '2026.05.10', maturity: '2026.06.28', unitPrincipal: '₩10,000 / RWA', token: 'RLUSD', settlement: 'XRPL Escrow' },
+                    passport: { paymentCheck: '확인 완료', dispute: '분쟁 없음', paymentHistory: '정상 지급 9건', delay: '지연 이력 없음', verification: '인보이스/계약/납품 확인 완료', expected: '₩42,800,000' }
+                },
+                {
+                    id: 'INV-2026-0103', grade: 'B', gradeClass: 'bg-gray-50 text-gray-600 border-gray-100', confirmable: false,
+                    issuer: '에이스무역', buyer: 'LG디스플레이(주)', amountKRW: '₩35,000,000', amountRLUSD: 26250,
+                    due: '2026.08.01', dday: 'D-81', yieldText: '7.4%', status: '참여 가능',
+                    info: { supply: '해외 부품 공급 매출채권', issuedAt: '2026.05.08', maturity: '2026.08.01', unitPrincipal: '₩10,000 / RWA', token: 'RLUSD', settlement: 'XRPL Escrow' },
+                    passport: { paymentCheck: '확인 완료', dispute: '분쟁 없음', paymentHistory: '정상 지급 5건', delay: '소액 지연 1건', verification: '인보이스/계약 확인 완료', expected: '₩35,000,000' }
+                }
+            ];
+
+            function setMarketSearch(value) {
+                marketSearch = value.trim().toLowerCase();
+                renderMarket();
+            }
+
+            function setMarketSort(value) {
+                marketSort = value;
+                renderMarket();
+            }
+
+            function marketSearchText(item) {
+                return [
+                    item.id, item.grade, 'Risk Grade ' + item.grade, item.issuer, item.buyer,
+                    item.amountKRW, item.amountRLUSD, item.due, item.dday, item.status,
+                    item.info.supply, item.info.settlement
+                ].join(' ').toLowerCase();
+            }
+
+            function sortMarketRows(rows) {
+                const gradeRank = { A: 1, B: 2, C: 3, D: 4 };
+                const sorted = [...rows];
+                if (marketSort === 'grade') {
+                    sorted.sort((a, b) => (gradeRank[a.grade] || 99) - (gradeRank[b.grade] || 99));
+                } else if (marketSort === 'due') {
+                    sorted.sort((a, b) => new Date(a.due) - new Date(b.due));
+                } else if (marketSort === 'amount') {
+                    sorted.sort((a, b) => b.amountRLUSD - a.amountRLUSD);
+                } else {
+                    sorted.sort((a, b) => b.id.localeCompare(a.id));
+                }
+                return sorted;
+            }
 
 
-        function updateMarketSummary() {
-            const available = rwaItems.filter(item => item.status === '참여 가능').length;
-            const el = document.getElementById('available-count');
-            if (el) el.innerHTML = available + ' <span class="text-xs text-blue-400">건</span>';
-        }
+            function updateMarketSummary() {
+                const available = rwaItems.filter(item => item.status === '참여 가능').length;
+                const el = document.getElementById('available-count');
+                if (el) el.innerHTML = available + ' <span class="text-xs text-blue-400">건</span>';
+            }
 
-        function gradeBadge(item) {
-            return `<span class="text-xs fw-bold py-1 px-2.5 rounded-full border ${item.gradeClass}">Risk Grade ${item.grade}</span>`;
-        }
+            function gradeBadge(item) {
+                return `<span class="text-xs fw-bold py-1 px-2.5 rounded-full border ${item.gradeClass}">Risk Grade ${item.grade}</span>`;
+            }
 
-        function renderMarket() {
-            updateMarketSummary();
-            const grid = document.getElementById('market-grid');
-            const rows = sortMarketRows(rwaItems.filter(item => !marketSearch || marketSearchText(item).includes(marketSearch)));
-            grid.innerHTML = rows.map(item => {
-                const done = item.status === '참여 완료';
-                return `
+            function renderMarket() {
+                updateMarketSummary();
+                const grid = document.getElementById('market-grid');
+                const rows = sortMarketRows(rwaItems.filter(item => !marketSearch || marketSearchText(item).includes(marketSearch)));
+                grid.innerHTML = rows.map(item => {
+                    const done = item.status === '참여 완료';
+                    return `
                 <div class="market-card saas-card p-6">
                     <div class="flex items-center justify-between mb-5 gap-3">
                         ${gradeBadge(item)}
@@ -190,15 +253,15 @@
                         ${done ? '참여 완료' : '참여하기'}
                     </button>
                 </div>`;
-            }).join('') || `<div class="col-span-full saas-card p-12 text-center text-sm text-gray-400">검색 결과가 없습니다.</div>`;
-        }
+                }).join('') || `<div class="col-span-full saas-card p-12 text-center text-sm text-gray-400">검색 결과가 없습니다.</div>`;
+            }
 
-        function getItem(id) { return rwaItems.find(item => item.id === id); }
+            function getItem(id) { return rwaItems.find(item => item.id === id); }
 
-        function openRWAModal(id) {
-            const item = getItem(id);
-            const i = item.info;
-            setModal(`
+            function openRWAModal(id) {
+                const item = getItem(id);
+                const i = item.info;
+                setModal(`
                 <div class="flex items-start justify-between gap-4 mb-6">
                     <div>
                         <p class="text-xs text-blue-600 fw-bold mb-2 uppercase tracking-widest">RWA Information</p>
@@ -222,12 +285,12 @@
                 </div>
                 <button onclick="closeModal()" class="w-full h-10 rounded-xl bg-gray-100 text-gray-700 text-sm fw-bold hover:bg-gray-200 transition">닫기</button>
             `);
-        }
+            }
 
-        function openPassportModal(id) {
-            const item = getItem(id);
-            const p = item.passport;
-            setModal(`
+            function openPassportModal(id) {
+                const item = getItem(id);
+                const p = item.passport;
+                setModal(`
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
                     <h3 class="text-lg fw-bold text-gray-900">Risk Passport</h3>
                     <div class="flex items-center gap-2">
@@ -249,13 +312,13 @@
                 </div>
                 <button onclick="closeModal()" class="w-full h-10 rounded-xl bg-gray-100 text-gray-700 text-sm fw-bold hover:bg-gray-200 transition">닫기</button>
             `);
-        }
+            }
 
-        function openJoinModal(id) {
-            const item = getItem(id);
-            const balance = 50155;
-            const after = balance - item.amountRLUSD;
-            setModal(`
+            function openJoinModal(id) {
+                const item = getItem(id);
+                const balance = 50155;
+                const after = balance - item.amountRLUSD;
+                setModal(`
                 <h3 class="text-lg fw-bold text-gray-900 mb-2">RWA 참여 확인</h3>
                 <p class="text-sm text-gray-400 mb-6 modal-text-wrap">보유 RLUSD 잔액 기준으로 해당 RWA에 참여합니다. 참여 완료 후 이 페이지에서 참여 완료 상태로 표시됩니다.</p>
                 <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-4">
@@ -280,19 +343,19 @@
                     <button id="join-execute-btn" onclick="executeJoin('${item.id}')" ${after < 0 ? 'disabled' : ''} class="flex-1 h-10 rounded-xl ${after < 0 ? 'bg-gray-100 text-gray-300 cursor-default' : 'bg-blue-600 hover:bg-blue-700 text-white'} text-sm fw-bold transition">참여 실행</button>
                 </div>
             `);
-        }
+            }
 
-        function executeJoin(id) {
-            if (processingId) return;
-            processingId = id;
-            const btn = document.getElementById('join-execute-btn');
-            if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; btn.className = 'flex-1 h-10 rounded-xl bg-gray-100 text-gray-400 text-sm fw-bold cursor-default'; }
-            setTimeout(() => {
-                const item = getItem(id);
-                item.status = '참여 완료';
-                processingId = null;
-                renderMarket();
-                setModal(`
+            function executeJoin(id) {
+                if (processingId) return;
+                processingId = id;
+                const btn = document.getElementById('join-execute-btn');
+                if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; btn.className = 'flex-1 h-10 rounded-xl bg-gray-100 text-gray-400 text-sm fw-bold cursor-default'; }
+                setTimeout(() => {
+                    const item = getItem(id);
+                    item.status = '참여 완료';
+                    processingId = null;
+                    renderMarket();
+                    setModal(`
                     <div class="text-center">
                         <div class="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-4">
                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
@@ -302,31 +365,32 @@
                         <button onclick="closeModal()" class="w-full h-10 rounded-xl bg-blue-600 text-white text-sm fw-bold hover:bg-blue-700 transition">확인</button>
                     </div>
                 `);
-            }, 900);
-        }
+                }, 900);
+            }
 
-        function infoRow(label, value) {
-            return `<div class="bg-gray-50 border border-gray-100 rounded-2xl p-4"><p class="text-xs text-gray-400 mb-1">${label}</p><p class="text-sm fw-bold text-gray-900 modal-text-wrap">${value}</p></div>`;
-        }
-        function passportCard(label, value, desc) {
-            return `<div class="bg-white border border-gray-200 rounded-2xl p-5"><p class="text-xs text-gray-400 mb-2 fw-bold">${label}</p><p class="text-base fw-bold text-gray-900 mb-3 modal-text-wrap">${value}</p><p class="text-xs text-gray-400 modal-text-wrap">${desc}</p></div>`;
-        }
-        function setModal(html) {
-            const overlay = document.getElementById('modal-overlay');
-            const con = document.getElementById('modal-container');
-            con.innerHTML = html;
-            overlay.classList.remove('hidden');
-            document.body.style.overflow = 'hidden';
-            setTimeout(() => con.classList.add('show'), 10);
-        }
-        function closeModal() {
-            const overlay = document.getElementById('modal-overlay');
-            const con = document.getElementById('modal-container');
-            con.classList.remove('show');
-            setTimeout(() => { overlay.classList.add('hidden'); document.body.style.overflow = ''; }, 180);
-        }
+            function infoRow(label, value) {
+                return `<div class="bg-gray-50 border border-gray-100 rounded-2xl p-4"><p class="text-xs text-gray-400 mb-1">${label}</p><p class="text-sm fw-bold text-gray-900 modal-text-wrap">${value}</p></div>`;
+            }
+            function passportCard(label, value, desc) {
+                return `<div class="bg-white border border-gray-200 rounded-2xl p-5"><p class="text-xs text-gray-400 mb-2 fw-bold">${label}</p><p class="text-base fw-bold text-gray-900 mb-3 modal-text-wrap">${value}</p><p class="text-xs text-gray-400 modal-text-wrap">${desc}</p></div>`;
+            }
+            function setModal(html) {
+                const overlay = document.getElementById('modal-overlay');
+                const con = document.getElementById('modal-container');
+                con.innerHTML = html;
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => con.classList.add('show'), 10);
+            }
+            function closeModal() {
+                const overlay = document.getElementById('modal-overlay');
+                const con = document.getElementById('modal-container');
+                con.classList.remove('show');
+                setTimeout(() => { overlay.classList.add('hidden'); document.body.style.overflow = ''; }, 180);
+            }
 
-        renderMarket();
-    </script>
-</body>
+            renderMarket();
+        </script>
+    </body>
+
 </html>

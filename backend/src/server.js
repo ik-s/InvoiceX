@@ -1,5 +1,3 @@
-require('dotenv').config({ quiet: true });
-
 const crypto = require('crypto');
 const path = require('path');
 const { promisify } = require('util');
@@ -7,6 +5,11 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
+
+require('dotenv').config({
+    path: path.resolve(__dirname, '..', '.env'),
+    quiet: true
+});
 
 const scryptAsync = promisify(crypto.scrypt);
 
