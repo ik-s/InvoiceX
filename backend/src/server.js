@@ -4,6 +4,7 @@ const { promisify } = require('util');
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
 const xrpl = require('xrpl');
 
@@ -19,6 +20,7 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const INVOICE_STORAGE_BUCKET = process.env.INVOICE_STORAGE_BUCKET || 'invoice-documents';
 const XRPL_TESTNET_URL = process.env.XRPL_TESTNET_URL || 'wss://s.altnet.rippletest.net:51233';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -47,6 +49,11 @@ function getSupabase() {
 
     return supabase;
 }
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const pagesDir = path.join(repoRoot, 'frontend', 'pages');
@@ -279,6 +286,111 @@ function hexMemo(value) {
     return Buffer.from(String(value || '').slice(0, 256), 'utf8').toString('hex').toUpperCase();
 }
 
+const INVOICE_STATUSES = new Set([
+    'needs_review',
+    'admin_pending',
+    'rejected',
+    'supplement_requested',
+    'rwa_approved'
+]);
+
+function normalizeInvoiceAmount(value) {
+    const amount = Number(String(value || '').replace(/[^0-9]/g, ''));
+    return Number.isFinite(amount) ? amount : 0;
+}
+
+function generateInvoicePublicId() {
+    const year = new Date().getFullYear();
+    const serial = String(Date.now()).slice(-6);
+    const rand = crypto.randomBytes(2).toString('hex').toUpperCase();
+    return `#INV-${year}-${serial}${rand}`;
+}
+
+function cleanInvoicePublicId(raw) {
+    return decodeURIComponent(String(raw || '')).trim();
+}
+
+function publicInvoice(row) {
+    if (!row) return null;
+    return {
+        id: row.public_id,
+        public_id: row.public_id,
+        uuid: row.id,
+        issuer_name: row.issuer_name,
+        buyer_name: row.buyer_name,
+        buyer_email: row.buyer_email,
+        amount: row.amount,
+        currency: row.currency,
+        due_date: row.due_date,
+        delivery_date: row.delivery_date,
+        description: row.description,
+        file_name: row.file_name,
+        file_mime_type: row.file_mime_type,
+        file_size_bytes: row.file_size_bytes,
+        doc_url: row.doc_url,
+        status: row.status,
+        admin_approval: row.admin_approval,
+        passport_issued: row.passport_issued,
+        risk_grade: row.risk_grade,
+        admin_memo: row.admin_memo,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+    };
+}
+
+async function ensureInvoiceBucket() {
+    const db = getSupabase();
+    const { data: buckets, error: listError } = await db.storage.listBuckets();
+    if (listError) throw listError;
+    if ((buckets || []).some((bucket) => bucket.name === INVOICE_STORAGE_BUCKET)) return;
+
+    const { error: createError } = await db.storage.createBucket(INVOICE_STORAGE_BUCKET, {
+        public: true,
+        fileSizeLimit: 10 * 1024 * 1024,
+        allowedMimeTypes: ['application/pdf', 'image/png', 'image/jpeg']
+    });
+
+    if (createError && !String(createError.message || '').includes('already exists')) {
+        throw createError;
+    }
+}
+
+async function uploadInvoiceDocument(publicId, file) {
+    if (!file) return null;
+
+    await ensureInvoiceBucket();
+    const db = getSupabase();
+    const safeId = publicId.replace(/^#/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const ext = file.originalname && file.originalname.includes('.')
+        ? file.originalname.split('.').pop().toLowerCase()
+        : 'bin';
+    const objectPath = `${safeId}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await db.storage
+        .from(INVOICE_STORAGE_BUCKET)
+        .upload(objectPath, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false
+        });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = db.storage.from(INVOICE_STORAGE_BUCKET).getPublicUrl(objectPath);
+    return data.publicUrl;
+}
+
+function requireInvoiceFields(fields) {
+    const missing = Object.entries(fields)
+        .filter(([, value]) => value === undefined || value === null || String(value).trim() === '')
+        .map(([key]) => key);
+
+    if (missing.length) {
+        const error = new Error(`Missing required invoice fields: ${missing.join(', ')}`);
+        error.statusCode = 400;
+        throw error;
+    }
+}
+
 async function withXrplClient(callback) {
     const client = new xrpl.Client(XRPL_TESTNET_URL);
     await client.connect();
@@ -300,7 +412,192 @@ function publicTestnetWallet(wallet, balance) {
 }
 
 app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, service: 'InvoiceX backend' });
+    res.json({ ok: true, service: 'InvoiceX backend', storage_bucket: INVOICE_STORAGE_BUCKET });
+});
+
+app.post('/api/invoices', upload.single('document'), async (req, res) => {
+    try {
+        const buyerName = req.body.buyerName || req.body.buyer_name;
+        const buyerEmail = req.body.buyerEmail || req.body.buyer_email;
+        const invoiceAmount = req.body.invoiceAmount || req.body.amount;
+        const dueDate = req.body.dueDate || req.body.due_date;
+        const deliveryDate = req.body.deliveryDate || req.body.delivery_date;
+        const invoiceDesc = req.body.invoiceDesc || req.body.description;
+        const issuerName = req.body.issuerName || req.body.issuer_name || 'InvoiceX 등록기업';
+        const currency = req.body.currency || 'KRW';
+
+        requireInvoiceFields({ buyerName, buyerEmail, invoiceAmount, dueDate, deliveryDate, invoiceDesc, issuerName });
+
+        const amount = normalizeInvoiceAmount(invoiceAmount);
+        if (amount <= 0) {
+            return res.status(400).json({ message: 'Invoice amount must be a positive number.' });
+        }
+
+        const publicId = generateInvoicePublicId();
+        const docUrl = req.file ? await uploadInvoiceDocument(publicId, req.file) : null;
+
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .insert({
+                public_id: publicId,
+                issuer_name: issuerName,
+                buyer_name: buyerName,
+                buyer_email: buyerEmail,
+                amount,
+                currency,
+                due_date: dueDate,
+                delivery_date: deliveryDate,
+                description: invoiceDesc,
+                file_name: req.file?.originalname || null,
+                file_mime_type: req.file?.mimetype || null,
+                file_size_bytes: req.file?.size || null,
+                doc_url: docUrl,
+                status: 'needs_review',
+                admin_approval: 'none',
+                passport_issued: false
+            })
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to create invoice.', error);
+        return res.status(201).json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Invoice registration failed.', error);
+    }
+});
+
+app.get('/api/invoices', async (req, res) => {
+    try {
+        const statuses = String(req.query.status || '')
+            .split(',')
+            .map((status) => status.trim())
+            .filter(Boolean);
+
+        let query = getSupabase().from('invoices').select('*').order('created_at', { ascending: false });
+        if (statuses.length) query = query.in('status', statuses);
+
+        const { data, error } = await query;
+        if (error) return dbError(res, 'Failed to load invoices.', error);
+        return res.json({ invoices: (data || []).map(publicInvoice) });
+    } catch (error) {
+        return dbError(res, 'Failed to load invoices.', error);
+    }
+});
+
+app.get('/api/invoices/:publicId', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .select('*')
+            .eq('public_id', publicId)
+            .single();
+
+        if (error) return dbError(res, 'Failed to load invoice.', error, 404);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to load invoice.', error);
+    }
+});
+
+app.patch('/api/invoices/:publicId/status', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const status = req.body.status;
+        const adminApproval = req.body.adminApproval || req.body.admin_approval;
+
+        if (!INVOICE_STATUSES.has(status)) {
+            return res.status(400).json({ message: `Unsupported invoice status: ${status}` });
+        }
+
+        const patch = { status };
+        if (adminApproval) patch.admin_approval = adminApproval;
+        if (status === 'admin_pending' && !adminApproval) patch.admin_approval = 'pending';
+        if (status === 'rejected' && !adminApproval) patch.admin_approval = 'none';
+        if (req.body.rejectReason) patch.admin_memo = req.body.rejectReason;
+
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .update(patch)
+            .eq('public_id', publicId)
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to update invoice status.', error);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to update invoice status.', error);
+    }
+});
+
+app.get('/api/admin/invoices', async (req, res) => {
+    try {
+        const statuses = String(req.query.status || 'admin_pending')
+            .split(',')
+            .map((status) => status.trim())
+            .filter(Boolean);
+
+        let query = getSupabase().from('invoices').select('*').order('updated_at', { ascending: false });
+        if (statuses.length) query = query.in('status', statuses);
+
+        const { data, error } = await query;
+        if (error) return dbError(res, 'Failed to load admin invoices.', error);
+        return res.json({ invoices: (data || []).map(publicInvoice) });
+    } catch (error) {
+        return dbError(res, 'Failed to load admin invoices.', error);
+    }
+});
+
+app.post('/api/admin/invoices/:publicId/passport', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .update({
+                passport_issued: true,
+                risk_grade: req.body.riskGrade || req.body.risk_grade || 'A'
+            })
+            .eq('public_id', publicId)
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to issue Risk Passport.', error);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to issue Risk Passport.', error);
+    }
+});
+
+app.post('/api/admin/invoices/:publicId/approve-rwa', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const { data: current, error: fetchError } = await getSupabase()
+            .from('invoices')
+            .select('*')
+            .eq('public_id', publicId)
+            .single();
+
+        if (fetchError) return dbError(res, 'Failed to load invoice for RWA approval.', fetchError, 404);
+        if (!current.passport_issued) {
+            return res.status(400).json({ message: 'Risk Passport must be issued before Invoice RWA approval.' });
+        }
+
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .update({
+                status: 'rwa_approved',
+                admin_approval: 'approved',
+                admin_memo: req.body.memo || current.admin_memo || null
+            })
+            .eq('public_id', publicId)
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to approve Invoice RWA.', error);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to approve Invoice RWA.', error);
+    }
 });
 
 app.post('/api/xrpl/testnet/wallet', authenticateToken, async (req, res) => {

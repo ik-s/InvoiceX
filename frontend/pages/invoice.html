@@ -194,20 +194,77 @@
             </div>
             <h3 class="text-lg fw-bold text-gray-900 mb-1">관리자 승인 대기 상태로 이동했습니다.</h3>
             <p class="text-xs text-gray-400 mb-6">관리자 최종 승인 후 마켓에 등록됩니다.</p>
-            <button onclick="closeModal('modal-approve-success')" class="w-full h-10 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition">확인</button>
+            <button onclick="goToAdminQueue()" class="w-full h-10 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition">관리자 검증 대기열로 이동</button>
         </div>
     </div>
 
     <script>
-        const invoices = [
+        const API_BASE_URL = window.INVOICEX_API_BASE_URL || 'http://localhost:3000';
+        const DEMO_INVOICES = [
             { id: '#INV-0042', corp: '(주)한빛테크', amount: '50,000,000', date: '2026.07.15', status: 'needs_review', adminApproval: 'none', docUrl: 'https://via.placeholder.com/800x1000.png?text=(Ju)Hanbit+Tech+Invoice' },
             { id: '#INV-0043', corp: '대한건설(주)', amount: '120,000,000', date: '2026.08.01', status: 'needs_review', adminApproval: 'none', docUrl: 'https://via.placeholder.com/800x1000.png?text=Daehan+Construction+Invoice' },
             { id: '#INV-0044', corp: '에이스무역', amount: '35,000,000', date: '2026.06.20', status: 'admin_pending', adminApproval: 'pending', docUrl: 'https://via.placeholder.com/800x1000.png?text=Ace+Trading+Invoice' }
         ];
+        let invoices = [];
 
         let expandedInvoiceId = null;
         let currentInvoiceId = null;
         let currentZoom = 1.0;
+
+        function apiUrl(path) { return `${API_BASE_URL}${path}`; }
+
+        async function parseApiResponse(response) {
+            const payload = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(payload.message || payload.error || '서버 요청 처리에 실패했습니다.');
+            return payload;
+        }
+
+        function formatAmount(value) {
+            const numeric = Number(String(value || '').replace(/[^0-9]/g, ''));
+            return numeric ? numeric.toLocaleString('ko-KR') : String(value || '0');
+        }
+
+        function formatDate(value) {
+            if (!value) return '-';
+            return String(value).slice(0, 10).replaceAll('-', '.');
+        }
+
+        function normalizeInvoice(row) {
+            const publicId = row.public_id || row.id;
+            return {
+                id: publicId,
+                dbId: row.uuid || row.db_id || row.database_id || null,
+                corp: row.issuer_name || row.corp || row.company || 'InvoiceX 등록기업',
+                buyer: row.buyer_name || row.buyer || '',
+                buyerEmail: row.buyer_email || '',
+                amount: formatAmount(row.amount || row.invoice_amount),
+                date: formatDate(row.due_date || row.date),
+                deliveryDate: formatDate(row.delivery_date),
+                description: row.description || row.invoice_desc || '',
+                status: row.status || 'needs_review',
+                adminApproval: row.admin_approval || row.adminApproval || 'none',
+                docUrl: row.doc_url || `https://via.placeholder.com/800x1000.png?text=${encodeURIComponent(publicId + ' Invoice')}`
+            };
+        }
+
+        async function loadInvoices() {
+            try {
+                const result = await fetch(apiUrl('/api/invoices?status=needs_review,admin_pending,rejected'));
+                const payload = await parseApiResponse(result);
+                invoices = (payload.invoices || []).map(normalizeInvoice);
+                if (!invoices.length) invoices = DEMO_INVOICES.slice();
+            } catch (error) {
+                console.warn('InvoiceX API 연결 실패. 데모 데이터를 표시합니다.', error);
+                invoices = DEMO_INVOICES.slice();
+            }
+
+            const focusId = new URLSearchParams(window.location.search).get('invoice');
+            if (focusId && invoices.some(inv => inv.id === focusId)) {
+                expandedInvoiceId = focusId;
+                currentInvoiceId = focusId;
+            }
+            renderLists();
+        }
 
         function getInvoice(id) {
             return invoices.find(i => i.id === id);
@@ -332,13 +389,14 @@
                                     </div>
                                     <div>
                                         <p class="text-xs text-gray-400 mb-1">지급 기업 확인</p>
-                                        <p class="text-sm fw-bold text-gray-900">삼성전자(주) (Signed)</p>
+                                        <p class="text-sm fw-bold text-gray-900">${inv.buyer || '지급기업'} (Signed)</p>
                                     </div>
                                 </div>
                                 <div>
                                     <p class="text-xs text-gray-400 mb-1">최종 청구 금액 (VAT 포함)</p>
                                     <p class="text-2xl fw-bold text-gray-900 tracking-tight">₩${inv.amount}</p>
                                 </div>
+                                ${inv.description ? `<div class="mt-5 pt-5 border-t border-gray-100"><p class="text-xs text-gray-400 mb-1">거래 설명</p><p class="text-sm text-gray-700 leading-6">${inv.description}</p></div>` : ''}
                             </div>
                         </div>
 
@@ -396,13 +454,23 @@
             openModal('modal-reject-reason');
         }
 
-        function submitReject() {
+        async function submitReject() {
             const inv = getInvoice(currentInvoiceId);
-            if (inv) {
-                inv.status = 'rejected';
-                inv.adminApproval = 'none';
+            if (!inv) return;
+
+            try {
+                await parseApiResponse(await fetch(apiUrl(`/api/invoices/${encodeURIComponent(inv.id)}/status`), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'rejected', adminApproval: 'none' })
+                }));
+            } catch (error) {
+                alert(error.message);
+                return;
             }
 
+            inv.status = 'rejected';
+            inv.adminApproval = 'none';
             expandedInvoiceId = null;
             renderLists();
             closeModal('modal-reject-reason');
@@ -415,21 +483,39 @@
             openModal('modal-approve-summary');
         }
 
-        function submitApprove() {
+        async function submitApprove() {
             const inv = getInvoice(currentInvoiceId);
-            if (inv) {
-                inv.status = 'admin_pending';
-                inv.adminApproval = 'pending';
+            if (!inv) return;
+
+            try {
+                await parseApiResponse(await fetch(apiUrl(`/api/invoices/${encodeURIComponent(inv.id)}/status`), {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'admin_pending', adminApproval: 'pending' })
+                }));
+            } catch (error) {
+                alert(error.message);
+                return;
             }
 
+            inv.status = 'admin_pending';
+            inv.adminApproval = 'pending';
             expandedInvoiceId = currentInvoiceId;
             renderLists();
             closeModal('modal-approve-summary');
             openModal('modal-approve-success');
         }
 
+        function goToAdminQueue() {
+            if (currentInvoiceId) {
+                window.location.href = `admin-risk-agent.html?invoice=${encodeURIComponent(currentInvoiceId)}`;
+                return;
+            }
+            window.location.href = 'admin-risk-agent.html';
+        }
+
         window.onload = () => {
-            renderLists();
+            loadInvoices();
         };
     </script>
 </body>
