@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인보이스 등록 - InvoiceX</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css");
+        body { font-family: "Pretendard", sans-serif; font-weight: 300; background-color: #f8fafc; letter-spacing: -0.02em; -webkit-font-smoothing: antialiased; }
+        .fw-bold { font-weight: 600 !important; }
+        .saas-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 1rem; box-shadow: 0 1px 2px rgba(15,23,42,0.03); }
+        .form-input { width: 100%; height: 44px; padding: 0 1rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; font-size: 0.875rem; outline: none; transition: border-color .15s ease, box-shadow .15s ease, background .15s ease; }
+        .form-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08); background: #fff; }
+        .form-textarea { min-height: 112px; padding-top: .875rem; resize: none; }
+        .field-invalid { border-color: #ef4444 !important; background: #fff7f7 !important; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important; }
+        .upload-area.dragover { border-color: #2563eb; background-color: #eff6ff; }
+        .upload-invalid { border-color: #ef4444 !important; background: #fff7f7 !important; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .text-wrap-safe { overflow-wrap: anywhere; word-break: keep-all; line-height: 1.55; }
+    </style>
+</head>
+<body class="min-h-screen text-gray-900">
+    <!-- Nav: 인보이스 등록자 기준 상단 메뉴 -->
+    <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-50 h-14 flex items-center">
+        <div class="max-w-7xl mx-auto w-full flex items-center justify-between px-6">
+            <div class="flex items-center space-x-10">
+                <a href="mypage.html?role=registrar" class="text-blue-600 text-xl fw-bold">InvoiceX</a>
+                <div class="hidden md:flex space-x-8 text-sm text-gray-400">
+                    <a href="mypage.html?role=registrar" class="hover:text-blue-600 transition">마이페이지</a>
+                    <a href="register.html" class="text-blue-600 fw-bold border-b-2 border-blue-600 pb-0.5">인보이스 등록</a>
+                </div>
+            </div>
+            <button onclick="location.href='role-select.html'" class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
+                로그아웃
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+            </button>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto pt-24 pb-16 px-6">
+        <div class="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+            <div>
+                <p class="text-xs fw-bold text-blue-600 uppercase tracking-widest mb-2">Invoice Registration</p>
+                <h1 class="text-2xl fw-bold text-gray-900 mb-2">인보이스 등록</h1>
+                <p class="text-sm text-gray-400 text-wrap-safe">납품 또는 용역 제공이 완료된 인보이스를 등록하고 지급기업 확인 요청을 전송하세요.</p>
+            </div>
+            
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <section class="lg:col-span-8 saas-card p-6 md:p-8">
+                <form id="invoice-form" onsubmit="handleFormSubmit(event)" novalidate>
+                    <div class="space-y-9">
+                        <div>
+                            <div class="flex items-center justify-between mb-5">
+                                <div>
+                                    <h2 class="text-base fw-bold text-gray-900">지급기업 정보</h2>
+                                    <p class="text-xs text-gray-400 mt-1">서류 대조와 지급 확인 요청을 받을 기업 정보를 입력하세요.</p>
+                                </div>
+                                <span class="text-xs fw-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-3 py-1">필수</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div class="relative">
+                                    <label for="buyer-name" class="block text-xs fw-bold text-gray-600 mb-2">구매기업명 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="buyer-name" name="buyerName" autocomplete="off" oninput="showSuggestions(this.value); clearFieldError(this)" placeholder="예: 삼성전자(주)" class="form-input">
+                                    <ul id="suggestion-box" class="absolute z-20 w-full bg-white border border-gray-200 rounded-xl shadow-sm mt-1 hidden max-h-44 overflow-y-auto no-scrollbar"></ul>
+                                </div>
+                                <div>
+                                    <label for="buyer-email" class="block text-xs fw-bold text-gray-600 mb-2">구매기업 담당자 이메일 <span class="text-red-500">*</span></label>
+                                    <input type="email" id="buyer-email" name="buyerEmail" oninput="clearFieldError(this)" placeholder="buyer@company.com" class="form-input">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-8">
+                            <h2 class="text-base fw-bold text-gray-900 mb-1">인보이스 기본 정보</h2>
+                            <p class="text-xs text-gray-400 mb-5">금액과 만기일은 이후 RWA 등록 및 대금 수령 기준으로 사용됩니다.</p>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <label for="invoice-amount" class="block text-xs fw-bold text-gray-600 mb-2">인보이스 금액 <span class="text-red-500">*</span></label>
+                                    <input type="text" id="invoice-amount" name="invoiceAmount" oninput="formatAmountInput(this); clearFieldError(this)" placeholder="50,000,000" class="form-input">
+                                </div>
+                                <div>
+                                    <label for="currency" class="block text-xs fw-bold text-gray-600 mb-2">통화</label>
+                                    <input type="text" id="currency" value="KRW (원)" readonly class="form-input bg-gray-100 text-gray-400 cursor-not-allowed">
+                                </div>
+                                <div>
+                                    <label for="due-date" class="block text-xs fw-bold text-gray-600 mb-2">만기일 / 대금 지급 예정일 <span class="text-red-500">*</span></label>
+                                    <input type="date" id="due-date" name="dueDate" onchange="clearFieldError(this)" class="form-input text-gray-500">
+                                </div>
+                                <div>
+                                    <label for="delivery-date" class="block text-xs fw-bold text-gray-600 mb-2">납품 완료일 <span class="text-red-500">*</span></label>
+                                    <input type="date" id="delivery-date" name="deliveryDate" onchange="clearFieldError(this)" class="form-input text-gray-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-8">
+                            <h2 class="text-base fw-bold text-gray-900 mb-1">거래 설명</h2>
+                            <p class="text-xs text-gray-400 mb-5">납품 내역, 계약 번호, 검증에 필요한 설명을 간단히 입력하세요.</p>
+                            <label for="invoice-desc" class="block text-xs fw-bold text-gray-600 mb-2">인보이스 설명 <span class="text-red-500">*</span></label>
+                            <textarea id="invoice-desc" name="invoiceDesc" rows="4" oninput="clearFieldError(this)" placeholder="예: 2026년 5월 서버 장비 납품 완료 / 계약번호 CX-2026-0512" class="form-input form-textarea"></textarea>
+                        </div>
+
+                        <div class="border-t border-gray-100 pt-8">
+                            <h2 class="text-base fw-bold text-gray-900 mb-1">증빙 서류</h2>
+                            <p class="text-xs text-gray-400 mb-5">전자세금계산서 또는 거래명세서를 첨부해야 등록 요청이 가능합니다.</p>
+                            <label class="block text-xs fw-bold text-gray-600 mb-2">첨부파일 <span class="text-red-500">*</span></label>
+                            <div id="drop-zone" onclick="document.getElementById('file-upload').click()" class="upload-area border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-all bg-gray-50 relative">
+                                <input type="file" id="file-upload" class="hidden" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(this)">
+                                <div id="upload-placeholder">
+                                    <div class="w-12 h-12 rounded-2xl bg-white border border-gray-100 flex items-center justify-center mx-auto mb-3">
+                                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                                    </div>
+                                    <p class="text-sm fw-bold text-gray-700">클릭하거나 파일을 이곳으로 드래그하세요.</p>
+                                    <p class="text-xs text-gray-400 mt-1">PDF, JPG, PNG 파일을 지원합니다.</p>
+                                </div>
+                                <div id="file-preview" class="hidden items-center justify-between bg-white border border-blue-100 p-4 rounded-xl max-w-md mx-auto" onclick="event.stopPropagation()">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <span class="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">📄</span>
+                                        <span id="file-name" class="text-sm fw-bold text-blue-700 truncate">filename.pdf</span>
+                                    </div>
+                                    <button type="button" onclick="removeFile(event)" class="text-xs fw-bold text-red-500 hover:text-red-700 px-3 h-8 bg-red-50 rounded-lg transition-colors flex-shrink-0">삭제</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row sm:justify-end gap-3 pt-8 mt-8 border-t border-gray-100">
+                        <button type="button" onclick="handleDraftSave()" class="h-11 px-6 bg-gray-100 text-gray-600 text-sm fw-bold rounded-xl hover:bg-gray-200 transition-colors">임시 저장</button>
+                        <button type="submit" class="h-11 px-8 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
+                            인보이스 등록 요청
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <aside class="lg:col-span-4 space-y-5">
+                <div class="saas-card p-6">
+                    <h3 class="text-base fw-bold text-gray-900 mb-4">등록 전 확인사항</h3>
+                    <div class="space-y-3 text-sm text-gray-500">
+                        <div class="flex gap-3"><span class="w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-xs fw-bold flex items-center justify-center flex-shrink-0">1</span><p>전자세금계산서 또는 거래명세서를 첨부했는지 확인하세요.</p></div>
+                        <div class="flex gap-3"><span class="w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-xs fw-bold flex items-center justify-center flex-shrink-0">2</span><p>납품 완료일과 만기일이 실제 계약 조건과 일치해야 합니다.</p></div>
+                        <div class="flex gap-3"><span class="w-5 h-5 rounded-full bg-blue-50 text-blue-600 text-xs fw-bold flex items-center justify-center flex-shrink-0">3</span><p>지급기업 담당자 이메일로 확인 요청이 발송됩니다.</p></div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <!-- 누락/검증 오류 모달 -->
+    <div id="modal-error" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-gray-900 bg-opacity-40" onclick="closeModal('modal-error')"></div>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md relative z-10 p-6">
+            <div class="w-12 h-12 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
+                <svg class="w-6 h-6 text-red-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            </div>
+            <h3 class="text-lg fw-bold text-gray-900 mb-2">필수 정보가 부족합니다</h3>
+            <p class="text-sm text-gray-400 mb-4">아래 항목을 입력한 뒤 다시 등록 요청해 주세요.</p>
+            <ul id="error-list" class="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-2 text-sm text-gray-600 mb-6"></ul>
+            <button onclick="closeModal('modal-error')" class="w-full h-10 bg-gray-900 text-white text-sm fw-bold rounded-xl hover:bg-black transition-colors">확인</button>
+        </div>
+    </div>
+
+    <!-- 임시 저장 모달 -->
+    <div id="modal-draft" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-gray-900 bg-opacity-40" onclick="closeModal('modal-draft')"></div>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm relative z-10 p-6 text-center">
+            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-lg fw-bold text-gray-900 mb-2">임시 저장 완료</h3>
+            <p class="text-sm text-gray-400 mb-6">작성 중인 인보이스가 임시 저장되었습니다.</p>
+            <button onclick="closeModal('modal-draft')" class="w-full h-10 bg-gray-100 text-gray-700 text-sm fw-bold rounded-xl hover:bg-gray-200 transition-colors">확인</button>
+        </div>
+    </div>
+
+    <!-- 등록 완료 모달 -->
+    <div id="modal-success" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4">
+        <div class="absolute inset-0 bg-gray-900 bg-opacity-40" onclick="closeModal('modal-success')"></div>
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm relative z-10 p-6 text-center">
+            <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <h3 class="text-lg fw-bold text-gray-900 mb-2">인보이스 등록 요청 완료</h3>
+            <p class="text-sm text-gray-400 mb-6 text-wrap-safe">구매기업으로 서류 대조 및 지급 확인 요청이 전송되었습니다. 등록 현황은 마이페이지에서 확인할 수 있습니다.</p>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="closeModal('modal-success')" class="h-10 bg-gray-100 text-gray-700 text-sm fw-bold rounded-xl hover:bg-gray-200 transition-colors">확인</button>
+               
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        const dbCompanies = ['삼성전자(주)', 'LG전자(주)', '(주)한빛테크', '(주)스마트솔루션', '(주)그린파츠', '현대자동차(주)', 'SK하이닉스(주)', 'LG디스플레이(주)', '대한건설(주)', '에이스무역'];
+
+        function showSuggestions(val) {
+            const box = document.getElementById('suggestion-box');
+            box.innerHTML = '';
+            if (!val.trim()) { box.classList.add('hidden'); return; }
+            const matches = dbCompanies.filter(c => c.toLowerCase().includes(val.toLowerCase()));
+            if (!matches.length) { box.classList.add('hidden'); return; }
+            box.classList.remove('hidden');
+            matches.forEach(match => {
+                const li = document.createElement('li');
+                li.className = 'px-4 py-3 hover:bg-gray-50 cursor-pointer text-sm text-gray-700 transition-colors border-b border-gray-50 last:border-0';
+                li.textContent = match;
+                li.onclick = () => {
+                    document.getElementById('buyer-name').value = match;
+                    clearFieldError(document.getElementById('buyer-name'));
+                    box.classList.add('hidden');
+                };
+                box.appendChild(li);
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('#buyer-name') && !e.target.closest('#suggestion-box')) {
+                document.getElementById('suggestion-box').classList.add('hidden');
+            }
+        });
+
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-upload');
+        const uploadPlaceholder = document.getElementById('upload-placeholder');
+        const filePreview = document.getElementById('file-preview');
+        const fileNameDisp = document.getElementById('file-name');
+
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) {
+                fileInput.files = e.dataTransfer.files;
+                handleFileSelect(fileInput);
+            }
+        });
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                fileNameDisp.textContent = file.name;
+                uploadPlaceholder.classList.add('hidden');
+                filePreview.classList.remove('hidden');
+                filePreview.classList.add('flex');
+                dropZone.classList.remove('upload-invalid');
+            }
+        }
+
+        function removeFile(e) {
+            e.stopPropagation();
+            fileInput.value = '';
+            filePreview.classList.add('hidden');
+            filePreview.classList.remove('flex');
+            uploadPlaceholder.classList.remove('hidden');
+        }
+
+        function clearFieldError(el) {
+            if (el) el.classList.remove('field-invalid');
+        }
+
+        function markInvalid(el) {
+            if (el) el.classList.add('field-invalid');
+        }
+
+        function formatAmountInput(input) {
+            const raw = input.value.replace(/[^0-9]/g, '');
+            input.value = raw ? Number(raw).toLocaleString('ko-KR') : '';
+        }
+
+        function isEmail(value) {
+            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        }
+
+        function collectValidationErrors() {
+            const buyerName = document.getElementById('buyer-name');
+            const buyerEmail = document.getElementById('buyer-email');
+            const amount = document.getElementById('invoice-amount');
+            const dueDate = document.getElementById('due-date');
+            const deliveryDate = document.getElementById('delivery-date');
+            const desc = document.getElementById('invoice-desc');
+            const fields = [buyerName, buyerEmail, amount, dueDate, deliveryDate, desc];
+            fields.forEach(clearFieldError);
+            dropZone.classList.remove('upload-invalid');
+
+            const errors = [];
+            const addError = (label, el) => { errors.push({ label, el }); markInvalid(el); };
+
+            if (!buyerName.value.trim()) addError('구매기업명', buyerName);
+            if (!buyerEmail.value.trim()) addError('구매기업 담당자 이메일', buyerEmail);
+            else if (!isEmail(buyerEmail.value.trim())) addError('올바른 이메일 형식', buyerEmail);
+            if (!amount.value.trim() || !/[0-9]/.test(amount.value)) addError('인보이스 금액', amount);
+            if (!dueDate.value) addError('만기일 / 대금 지급 예정일', dueDate);
+            if (!deliveryDate.value) addError('납품 완료일', deliveryDate);
+            if (dueDate.value && deliveryDate.value && dueDate.value < deliveryDate.value) addError('만기일은 납품 완료일 이후 날짜여야 합니다', dueDate);
+            if (!desc.value.trim()) addError('인보이스 설명', desc);
+            if (fileInput.files.length === 0) {
+                errors.push({ label: '첨부파일', el: dropZone });
+                dropZone.classList.add('upload-invalid');
+            }
+            return errors;
+        }
+
+        function showValidationErrors(errors) {
+            const list = document.getElementById('error-list');
+            list.innerHTML = errors.map(err => `<li class="flex items-start gap-2"><span class="text-red-500 fw-bold">•</span><span>${err.label}</span></li>`).join('');
+            openModal('modal-error');
+            const first = errors[0]?.el;
+            if (first) {
+                setTimeout(() => {
+                    first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    if (typeof first.focus === 'function') first.focus({ preventScroll: true });
+                }, 100);
+            }
+        }
+
+        function handleDraftSave() {
+            openModal('modal-draft');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const errors = collectValidationErrors();
+            if (errors.length) {
+                showValidationErrors(errors);
+                return;
+            }
+            openModal('modal-success');
+        }
+    </script>
+</body>
+</html>
