@@ -5,6 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
+const xrpl = require('xrpl');
 
 require('dotenv').config({
     path: path.resolve(__dirname, '..', '.env'),
@@ -18,7 +19,7 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DEMO_AUTO_APPROVE_KYB = process.env.DEMO_AUTO_APPROVE_KYB !== 'false';
+const XRPL_TESTNET_URL = process.env.XRPL_TESTNET_URL || 'wss://s.altnet.rippletest.net:51233';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('[config] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for database access.');
@@ -86,6 +87,8 @@ const REDIRECT_BY_ROLE = {
     FUNDER: '/mypage.html?role=funder',
     ADMIN: '/admin-kyb-review.html'
 };
+
+const PUBLIC_SIGNUP_ROLES = new Set(['SME', 'BUYER', 'FUNDER']);
 
 function normalizeRole(role) {
     if (!role) return null;
@@ -253,8 +256,166 @@ function demoBusinessNumber(role) {
     return `DEMO-${normalizeRole(role) || 'USER'}-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
+function parsePositiveXrp(value, fallback = '1') {
+    const raw = value === undefined || value === null || value === '' ? fallback : value;
+    const amount = Number(raw);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        const error = new Error('A positive XRP amount is required.');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (amount > 1000) {
+        const error = new Error('Demo Testnet payments are limited to 1000 XRP.');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return String(amount);
+}
+
+function hexMemo(value) {
+    return Buffer.from(String(value || '').slice(0, 256), 'utf8').toString('hex').toUpperCase();
+}
+
+async function withXrplClient(callback) {
+    const client = new xrpl.Client(XRPL_TESTNET_URL);
+    await client.connect();
+
+    try {
+        return await callback(client);
+    } finally {
+        await client.disconnect();
+    }
+}
+
+function publicTestnetWallet(wallet, balance) {
+    return {
+        address: wallet.classicAddress || wallet.address,
+        seed: wallet.seed,
+        network: 'XRPL_TESTNET',
+        balance_xrp: balance
+    };
+}
+
 app.get('/api/health', (_req, res) => {
     res.json({ ok: true, service: 'InvoiceX backend' });
+});
+
+app.post('/api/xrpl/testnet/wallet', authenticateToken, async (req, res) => {
+    try {
+        const amount = parsePositiveXrp(req.body.amount_xrp, '100');
+        const result = await withXrplClient((client) => client.fundWallet(null, {
+            amount,
+            usageContext: 'InvoiceX demo testnet wallet'
+        }));
+
+        return res.status(201).json({
+            message: 'XRPL Testnet wallet funded.',
+            wallet: publicTestnetWallet(result.wallet, result.balance),
+            balance_xrp: result.balance,
+            faucet: 'XRPL Testnet'
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to create XRPL Testnet wallet.', error);
+    }
+});
+
+app.post('/api/xrpl/testnet/wallet/fund', authenticateToken, async (req, res) => {
+    try {
+        const seed = String(req.body.seed || '').trim();
+        const amount = parsePositiveXrp(req.body.amount_xrp, '20');
+
+        if (!seed) {
+            return res.status(400).json({ message: 'seed is required for demo faucet funding.' });
+        }
+
+        const wallet = xrpl.Wallet.fromSeed(seed);
+        const result = await withXrplClient((client) => client.fundWallet(wallet, {
+            amount,
+            usageContext: 'InvoiceX demo testnet faucet refill'
+        }));
+
+        return res.json({
+            message: 'XRPL Testnet wallet funded.',
+            wallet: publicTestnetWallet(result.wallet, result.balance),
+            balance_xrp: result.balance,
+            faucet: 'XRPL Testnet'
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to fund XRPL Testnet wallet.', error);
+    }
+});
+
+app.get('/api/xrpl/testnet/accounts/:address/balance', authenticateToken, async (req, res) => {
+    try {
+        const address = String(req.params.address || '').trim();
+        if (!xrpl.isValidClassicAddress(address)) {
+            return res.status(400).json({ message: 'A valid XRPL classic address is required.' });
+        }
+
+        const balance = await withXrplClient((client) => client.getXrpBalance(address));
+        return res.json({
+            address,
+            balance_xrp: balance,
+            network: 'XRPL_TESTNET'
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to load XRPL Testnet balance.', error);
+    }
+});
+
+app.post('/api/xrpl/testnet/payments', authenticateToken, async (req, res) => {
+    try {
+        const seed = String(req.body.source_seed || '').trim();
+        const destination = String(req.body.destination_address || '').trim();
+        const amountXrp = parsePositiveXrp(req.body.amount_xrp, '1');
+
+        if (!seed) {
+            return res.status(400).json({ message: 'source_seed is required for demo Testnet payment.' });
+        }
+
+        if (!xrpl.isValidClassicAddress(destination)) {
+            return res.status(400).json({ message: 'A valid destination_address is required.' });
+        }
+
+        const sourceWallet = xrpl.Wallet.fromSeed(seed);
+        const tx = {
+            TransactionType: 'Payment',
+            Account: sourceWallet.classicAddress,
+            Destination: destination,
+            Amount: xrpl.xrpToDrops(amountXrp)
+        };
+
+        if (req.body.memo) {
+            tx.Memos = [{ Memo: { MemoData: hexMemo(req.body.memo) } }];
+        }
+
+        const result = await withXrplClient((client) => client.submitAndWait(tx, { wallet: sourceWallet }));
+        const txResult = result.result.meta?.TransactionResult;
+
+        if (txResult !== 'tesSUCCESS') {
+            return res.status(502).json({
+                message: 'XRPL Testnet payment was not successful.',
+                status: txResult,
+                raw: result.result
+            });
+        }
+
+        return res.json({
+            message: 'XRPL Testnet payment succeeded.',
+            status: txResult,
+            tx_hash: result.result.hash,
+            ledger_index: result.result.ledger_index,
+            amount_xrp: amountXrp,
+            source_address: sourceWallet.classicAddress,
+            destination_address: destination,
+            network: 'XRPL_TESTNET'
+        });
+    } catch (error) {
+        return dbError(res, 'XRPL Testnet payment failed.', error);
+    }
 });
 
 app.post('/api/auth/signup', async (req, res) => {
@@ -269,6 +430,10 @@ app.post('/api/auth/signup', async (req, res) => {
 
         if (!email || !password || !roleType || !companyName) {
             return res.status(400).json({ message: 'email, password, role_type, and company_name are required.' });
+        }
+
+        if (!PUBLIC_SIGNUP_ROLES.has(roleType)) {
+            return res.status(403).json({ message: 'This role cannot be selected during public signup.' });
         }
 
         const { data: existingUser, error: lookupError } = await getSupabase()
@@ -504,8 +669,7 @@ async function submitKybHandler(req, res) {
         const companyId = req.user.companyId;
         if (!companyId) return res.status(400).json({ message: 'Company information is missing.' });
         const submittedAt = new Date().toISOString();
-        // Demo-only: auto-approve KYB so the hackathon flow can proceed without an admin reviewer.
-        const kybStatus = DEMO_AUTO_APPROVE_KYB ? 'APPROVED' : 'PENDING';
+        const kybStatus = 'PENDING';
 
         const metadata = {
             representative_name: req.body.representative_name || req.body.representative || null,
@@ -513,15 +677,14 @@ async function submitKybHandler(req, res) {
             business_type: req.body.business_type || req.body.company_type || null,
             contact_email: req.body.contact_email || req.body.email || null,
             document_url: req.body.document_url || null,
-            submitted_by: req.user.userId,
-            demo_auto_approved: DEMO_AUTO_APPROVE_KYB
+            submitted_by: req.user.userId
         };
 
         const { data: company, error: companyError } = await getSupabase()
             .from('companies')
             .update({
                 kyb_status: kybStatus,
-                badge_status: DEMO_AUTO_APPROVE_KYB
+                badge_status: false
             })
             .eq('company_id', companyId)
             .select()
@@ -538,7 +701,7 @@ async function submitKybHandler(req, res) {
                 status: kybStatus,
                 provider_ref_id: JSON.stringify(metadata),
                 submitted_at: submittedAt,
-                approved_at: DEMO_AUTO_APPROVE_KYB ? submittedAt : null
+                approved_at: null
             }])
             .select()
             .single();
@@ -546,12 +709,10 @@ async function submitKybHandler(req, res) {
         if (verificationError) return dbError(res, 'Failed to create KYB verification.', verificationError);
 
         return res.status(201).json({
-            message: DEMO_AUTO_APPROVE_KYB
-                ? 'KYB verification submitted and demo-approved.'
-                : 'KYB verification submitted.',
-            demo_auto_approved: DEMO_AUTO_APPROVE_KYB,
+            message: 'KYB verification submitted and is waiting for admin approval.',
+            demo_auto_approved: false,
             kyb_status: kybStatus,
-            has_badge: DEMO_AUTO_APPROVE_KYB,
+            has_badge: false,
             company,
             verification
         });

@@ -176,6 +176,17 @@
                     <svg class="w-5 h-5 flex-none text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
 
+                <button id="testnet-wallet-btn" type="button" onclick="createTestnetWallet(this)" class="wallet-connect-row">
+                    <span class="wallet-connect-icon bg-blue-600">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 3v18M5 8h14M5 16h14" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm fw-bold text-white">XRPL Testnet Faucet</span>
+                        <span class="block text-xs text-gray-400 mt-0.5">테스트 지갑 생성 및 Testnet XRP 충전</span>
+                    </span>
+                    <svg class="w-5 h-5 flex-none text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
                 <p id="wallet-connect-message" class="hidden mt-5 rounded-xl border px-4 py-3 text-xs fw-bold leading-relaxed"></p>
             </div>
         </section>
@@ -189,6 +200,8 @@
         let currentMyPage = null;
 
         function getSavedWalletConnection() {
+            if (!InvoiceXApi.walletSessionActive()) return null;
+
             try {
                 return JSON.parse(localStorage.getItem('invoiceXWallet') || 'null');
             } catch (error) {
@@ -249,7 +262,8 @@
             const walletBtn = document.getElementById('wallet-btn');
             if (!walletBtn || !savedWalletConnection?.address) return;
 
-            walletBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M20 12a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>${savedWalletConnection.address.slice(0, 6)}...${savedWalletConnection.address.slice(-4)}`;
+            const label = savedWalletConnection.walletType === 'xrpl-testnet' ? 'Testnet' : '';
+            walletBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M20 12a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>${label ? label + ' ' : ''}${savedWalletConnection.address.slice(0, 6)}...${savedWalletConnection.address.slice(-4)}`;
             walletBtn.classList.remove('bg-gray-900', 'hover:bg-black');
             walletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
         }
@@ -343,6 +357,7 @@
             localStorage.setItem('ix_wallet_address', data.address);
             localStorage.setItem('ix_wallet_type', data.walletType);
             localStorage.setItem('ix_wallet_network', data.network);
+            InvoiceXApi.markWalletSession();
 
             savedWalletConnection = data;
             WALLET_ADDR = data.address;
@@ -350,6 +365,7 @@
                 data.rlusdBalance = saved.wallet.rlusd_balance;
             }
             renderWalletButton();
+            renderHeaderWalletSummary();
         }
 
         async function connectCrossmarkWallet(button) {
@@ -389,6 +405,39 @@
             }
         }
 
+        async function createTestnetWallet(button) {
+            try {
+                if (!InvoiceXApi.token()) {
+                    location.href = 'login.html';
+                    return;
+                }
+
+                setWalletConnectLoading(button, true);
+                showWalletConnectMessage('XRPL Testnet faucet에서 테스트 지갑을 생성하고 있습니다.', 'info');
+
+                const result = await InvoiceXApi.createTestnetWallet({ amount_xrp: '100' });
+                const wallet = result.wallet;
+                const walletData = {
+                    walletType: 'xrpl-testnet',
+                    walletName: 'XRPL Testnet Faucet',
+                    address: wallet.address,
+                    seed: wallet.seed,
+                    network: wallet.network,
+                    connectedAt: new Date().toISOString(),
+                    xrpBalance: Number(result.balance_xrp || wallet.balance_xrp || 0)
+                };
+
+                await saveWalletConnection(walletData);
+                showWalletConnectMessage(`XRPL Testnet 지갑이 생성되었습니다. ${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}`, 'success');
+                setTimeout(closeWalletConnectModal, 750);
+            } catch (error) {
+                console.error(error);
+                showWalletConnectMessage(error.message || 'XRPL Testnet 지갑 생성에 실패했습니다.', 'error');
+            } finally {
+                setWalletConnectLoading(button, false);
+            }
+        }
+
         let alerts = [];
         let historyAlerts = [];
 
@@ -420,16 +469,20 @@
                 localStorage.setItem('ix_user_role', role);
                 isKyb = currentMyPage.kyb_status === 'APPROVED';
 
-                if (currentMyPage.wallet_address) {
+                const localWallet = getSavedWalletConnection();
+                if (localWallet?.address) {
+                    const sameServerWallet = localWallet.address === currentMyPage.wallet_address;
                     savedWalletConnection = {
-                        walletType: currentMyPage.wallet_type || 'saved',
-                        walletName: 'XRPL Wallet',
-                        address: currentMyPage.wallet_address,
-                        network: currentMyPage.wallet_network || 'XRPL',
-                        connectedAt: null,
-                        rlusdBalance: currentMyPage.rlusd_balance
+                        ...localWallet,
+                        walletType: localWallet.walletType || currentMyPage.wallet_type || 'saved',
+                        walletName: localWallet.walletName || 'XRPL Wallet',
+                        network: localWallet.network || currentMyPage.wallet_network || 'XRPL',
+                        rlusdBalance: sameServerWallet ? currentMyPage.rlusd_balance : localWallet.rlusdBalance
                     };
-                    WALLET_ADDR = currentMyPage.wallet_address;
+                    WALLET_ADDR = localWallet.address;
+                } else {
+                    savedWalletConnection = null;
+                    WALLET_ADDR = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
                 }
 
                 return true;
@@ -479,6 +532,10 @@
         }
 
         function getHeaderBalance() {
+            if (savedWalletConnection?.walletType === 'xrpl-testnet' && savedWalletConnection.xrpBalance !== undefined) {
+                return parseRLUSDAmount(savedWalletConnection.xrpBalance);
+            }
+
             const savedBalance = localStorage.getItem(headerBalanceStorageKey());
             if (savedBalance !== null) return parseRLUSDAmount(savedBalance);
 
@@ -493,8 +550,9 @@
         function renderHeaderWalletSummary() {
             const wrap = document.getElementById('wallet-summary-actions');
             if (!wrap) return;
-            const hasWallet = Boolean(currentMyPage?.wallet_address || savedWalletConnection?.address);
+            const hasWallet = Boolean(savedWalletConnection?.address);
 
+            const tokenSymbol = savedWalletConnection?.walletType === 'xrpl-testnet' ? 'Testnet XRP' : 'RLUSD';
             const balance = formatRLUSDAmount(getHeaderBalance());
             const isRegistrar = role === 'registrar';
             const canTopUp = role === 'funder' || role === 'payer';
@@ -508,8 +566,8 @@
             wrap.className = 'header-balance-panel';
             wrap.innerHTML = `
                 <div class="min-w-0">
-                    <p class="text-[10px] fw-bold text-blue-500 uppercase leading-none">보유 RLUSD</p>
-                    <p class="mt-1 text-sm fw-bold text-gray-900 whitespace-nowrap">${balance} RLUSD</p>
+                    <p class="text-[10px] fw-bold text-blue-500 uppercase leading-none">보유 ${tokenSymbol}</p>
+                    <p class="mt-1 text-sm fw-bold text-gray-900 whitespace-nowrap">${balance} ${tokenSymbol}</p>
                 </div>
                 <button type="button" onclick="${isRegistrar ? 'openRegistrarRecentSettlements()' : 'openTopUpModal()'}"
                     class="header-balance-action ${isRegistrar ? 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50' : 'bg-blue-600 text-white hover:bg-blue-700'}">
@@ -525,23 +583,25 @@
         function openTopUpModal() {
             const con = document.getElementById('modal-container');
             const currentBalance = formatRLUSDAmount(getHeaderBalance());
+            const isTestnetWallet = savedWalletConnection?.walletType === 'xrpl-testnet';
+            const tokenSymbol = isTestnetWallet ? 'Testnet XRP' : 'RLUSD';
             con.innerHTML = `
-                <h3 class="text-lg fw-bold mb-2">RLUSD 충전</h3>
-                <p class="text-sm text-gray-400 mb-5">데모 지갑 잔액에 충전 금액을 반영합니다.</p>
+                <h3 class="text-lg fw-bold mb-2">${tokenSymbol} 충전</h3>
+                <p class="text-sm text-gray-400 mb-5">${isTestnetWallet ? 'XRPL Testnet faucet으로 테스트 토큰을 충전합니다.' : '데모 지갑 잔액에 충전 금액을 반영합니다.'}</p>
                 <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-5">
                     <p class="text-xs fw-bold text-blue-500 mb-1 uppercase">현재 보유</p>
-                    <p class="text-2xl fw-bold text-blue-700">${currentBalance} <span class="text-sm text-blue-400">RLUSD</span></p>
+                    <p class="text-2xl fw-bold text-blue-700">${currentBalance} <span class="text-sm text-blue-400">${tokenSymbol}</span></p>
                 </div>
                 <div class="grid grid-cols-3 gap-2 mb-4">
-                    <button type="button" onclick="selectTopUpAmount(10000)" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">10,000</button>
-                    <button type="button" onclick="selectTopUpAmount(50000)" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">50,000</button>
-                    <button type="button" onclick="selectTopUpAmount(100000)" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">100,000</button>
+                    <button type="button" onclick="selectTopUpAmount(${isTestnetWallet ? 10 : 10000})" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">${isTestnetWallet ? '10' : '10,000'}</button>
+                    <button type="button" onclick="selectTopUpAmount(${isTestnetWallet ? 50 : 50000})" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">${isTestnetWallet ? '50' : '50,000'}</button>
+                    <button type="button" onclick="selectTopUpAmount(${isTestnetWallet ? 100 : 100000})" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">${isTestnetWallet ? '100' : '100,000'}</button>
                 </div>
                 <label class="block text-xs fw-bold text-gray-500 mb-2">충전 금액</label>
                 <div class="flex items-center gap-2 mb-6">
-                    <input id="topup-amount-input" type="text" inputmode="numeric" value="10,000"
+                    <input id="topup-amount-input" type="text" inputmode="numeric" value="${isTestnetWallet ? '10' : '10,000'}"
                         class="min-w-0 flex-1 h-11 rounded-xl border border-gray-200 px-4 text-sm fw-bold text-gray-900 focus:outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-50">
-                    <span class="text-sm fw-bold text-gray-400">RLUSD</span>
+                    <span class="text-sm fw-bold text-gray-400">${tokenSymbol}</span>
                 </div>
                 <div class="flex gap-3">
                     <button onclick="closeModal()" class="flex-1 h-10 flex items-center justify-center bg-gray-100 text-gray-400 rounded-xl text-sm fw-bold">취소</button>
@@ -550,7 +610,7 @@
             showModal();
         }
 
-        function confirmTopUp() {
+        async function confirmTopUp() {
             const input = document.getElementById('topup-amount-input');
             const amount = parseRLUSDAmount(input?.value);
 
@@ -559,10 +619,30 @@
                 return;
             }
 
-            setHeaderBalance(getHeaderBalance() + amount);
-            renderHeaderWalletSummary();
-            closeModal();
-            setTimeout(() => openInfoModal('충전 완료', `${formatRLUSDAmount(amount)} RLUSD가 데모 지갑 잔액에 반영되었습니다.`), 250);
+            try {
+                if (savedWalletConnection?.walletType === 'xrpl-testnet') {
+                    const result = await InvoiceXApi.fundTestnetWallet({
+                        seed: savedWalletConnection.seed,
+                        amount_xrp: String(amount)
+                    });
+                    savedWalletConnection.xrpBalance = Number(result.balance_xrp || result.wallet?.balance_xrp || getHeaderBalance() + amount);
+                    localStorage.setItem('invoiceXWallet', JSON.stringify(savedWalletConnection));
+                    InvoiceXApi.markWalletSession();
+                    setHeaderBalance(savedWalletConnection.xrpBalance);
+                    renderHeaderWalletSummary();
+                    closeModal();
+                    setTimeout(() => openInfoModal('충전 완료', `${formatRLUSDAmount(amount)} Testnet XRP가 faucet을 통해 충전되었습니다.`), 250);
+                    return;
+                }
+
+                setHeaderBalance(getHeaderBalance() + amount);
+                renderHeaderWalletSummary();
+                closeModal();
+                setTimeout(() => openInfoModal('충전 완료', `${formatRLUSDAmount(amount)} RLUSD가 데모 지갑 잔액에 반영되었습니다.`), 250);
+            } catch (error) {
+                console.error(error);
+                alert(error.message || '충전에 실패했습니다.');
+            }
         }
 
         function registrarReceiptRLUSDAmount(item) {

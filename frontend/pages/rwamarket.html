@@ -70,7 +70,7 @@
                             마켓</a>
                     </div>
                 </div>
-                <button onclick="location.href='login.html'"
+                <button onclick="InvoiceXApi.logout(); location.href='login.html'"
                     class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
                     로그아웃
                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -102,7 +102,7 @@
                 <div class="grid grid-cols-2 gap-3 w-full lg:w-auto">
                     <div class="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-4">
                         <p class="text-xs text-gray-400 mb-1">출금 가능 잔액</p>
-                        <p class="text-lg fw-bold text-gray-900">50,155 <span class="text-xs text-gray-400">RLUSD</span>
+                        <p class="text-lg fw-bold text-gray-900"><span id="market-wallet-balance">-</span> <span class="text-xs text-gray-400">Testnet XRP</span>
                         </p>
                     </div>
                     <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-4">
@@ -147,10 +147,75 @@
                 onclick="event.stopPropagation()"></div>
         </div>
 
+        <script src="../assets/js/api.js"></script>
         <script>
+            const WALLET_STORAGE_KEY = 'invoiceXWallet';
+            const RWA_TREASURY_STORAGE_KEY = 'ix_demo_rwa_treasury_wallet';
             let marketSearch = '';
             let marketSort = 'latest';
             let processingId = null;
+
+            function getStoredWallet() {
+                if (!InvoiceXApi.walletSessionActive()) return null;
+
+                try {
+                    return JSON.parse(localStorage.getItem(WALLET_STORAGE_KEY) || 'null');
+                } catch (_error) {
+                    return null;
+                }
+            }
+
+            function saveStoredWallet(wallet) {
+                localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(wallet));
+                InvoiceXApi.markWalletSession();
+            }
+
+            function isTestnetWallet(wallet) {
+                return wallet?.walletType === 'xrpl-testnet' && wallet.seed && wallet.address;
+            }
+
+            function formatXrp(value) {
+                return Number(value || 0).toLocaleString('ko-KR', { maximumFractionDigits: 6 });
+            }
+
+            function testnetJoinAmount(item) {
+                return Math.max(0.1, Math.min(5, item.amountRLUSD / 10000)).toFixed(3);
+            }
+
+            async function ensureRwaTreasuryWallet() {
+                try {
+                    const saved = JSON.parse(localStorage.getItem(RWA_TREASURY_STORAGE_KEY) || 'null');
+                    if (saved?.address) return saved;
+                } catch (_error) {
+                    // Ignore broken demo cache and recreate the treasury wallet below.
+                }
+
+                const result = await InvoiceXApi.createTestnetWallet({ amount_xrp: '20' });
+                const wallet = {
+                    address: result.wallet.address,
+                    seed: result.wallet.seed,
+                    network: result.wallet.network,
+                    xrpBalance: Number(result.balance_xrp || result.wallet.balance_xrp || 0)
+                };
+                localStorage.setItem(RWA_TREASURY_STORAGE_KEY, JSON.stringify(wallet));
+                return wallet;
+            }
+
+            async function refreshWalletBalance(wallet) {
+                if (!isTestnetWallet(wallet)) return wallet;
+                const result = await InvoiceXApi.testnetBalance(wallet.address);
+                wallet.xrpBalance = Number(result.balance_xrp || 0);
+                saveStoredWallet(wallet);
+                renderMarketWalletBalance();
+                return wallet;
+            }
+
+            function renderMarketWalletBalance() {
+                const el = document.getElementById('market-wallet-balance');
+                const wallet = getStoredWallet();
+                if (!el) return;
+                el.textContent = isTestnetWallet(wallet) ? formatXrp(wallet.xrpBalance) : '지갑 필요';
+            }
 
             const rwaItems = [
                 {
@@ -316,17 +381,21 @@
 
             function openJoinModal(id) {
                 const item = getItem(id);
-                const balance = 50155;
-                const after = balance - item.amountRLUSD;
+                const wallet = getStoredWallet();
+                const hasWallet = isTestnetWallet(wallet);
+                const balance = hasWallet ? Number(wallet.xrpBalance || 0) : 0;
+                const amountXrp = Number(testnetJoinAmount(item));
+                const after = balance - amountXrp;
                 setModal(`
                 <h3 class="text-lg fw-bold text-gray-900 mb-2">RWA 참여 확인</h3>
-                <p class="text-sm text-gray-400 mb-6 modal-text-wrap">보유 RLUSD 잔액 기준으로 해당 RWA에 참여합니다. 참여 완료 후 이 페이지에서 참여 완료 상태로 표시됩니다.</p>
+                <p class="text-sm text-gray-400 mb-6 modal-text-wrap">XRPL Testnet XRP로 참여 트랜잭션을 전송합니다. 성공하면 참여 완료 상태로 변경됩니다.</p>
                 <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-4">
                     <div class="flex justify-between py-2 border-b border-gray-200"><span class="text-sm text-gray-400">참여 자산</span><span class="text-sm fw-bold text-gray-900">#${item.id}</span></div>
                     <div class="flex justify-between py-2 border-b border-gray-200"><span class="text-sm text-gray-400">발행/바이어</span><span class="text-sm fw-bold text-gray-900 text-right modal-text-wrap">${item.issuer} → ${item.buyer}</span></div>
-                    <div class="flex justify-between py-2 border-b border-gray-200"><span class="text-sm text-gray-400">참여 금액</span><span class="text-sm fw-bold text-blue-600">${item.amountRLUSD.toLocaleString()} RLUSD</span></div>
-                    <div class="flex justify-between py-2 border-b border-gray-200"><span class="text-sm text-gray-400">출금 가능 잔액</span><span class="text-sm fw-bold text-gray-900">${balance.toLocaleString()} RLUSD</span></div>
-                    <div class="flex justify-between py-2"><span class="text-sm text-gray-400">참여 후 잔액</span><span class="text-sm fw-bold ${after < 0 ? 'text-red-500' : 'text-gray-900'}">${after.toLocaleString()} RLUSD</span></div>
+                    <div class="flex justify-between py-2 border-b border-gray-200"><span class="text-sm text-gray-400">원래 참여 금액</span><span class="text-sm fw-bold text-gray-900">${item.amountRLUSD.toLocaleString()} RLUSD</span></div>
+                    <div class="flex justify-between py-2 border-b border-gray-200"><span class="text-sm text-gray-400">Testnet 전송 금액</span><span class="text-sm fw-bold text-blue-600">${formatXrp(amountXrp)} XRP</span></div>
+                    <div class="flex justify-between py-2 border-b border-gray-200"><span class="text-sm text-gray-400">출금 가능 잔액</span><span class="text-sm fw-bold text-gray-900">${hasWallet ? formatXrp(balance) + ' XRP' : 'XRPL Testnet 지갑 필요'}</span></div>
+                    <div class="flex justify-between py-2"><span class="text-sm text-gray-400">참여 후 잔액</span><span class="text-sm fw-bold ${after < 0 ? 'text-red-500' : 'text-gray-900'}">${hasWallet ? formatXrp(after) + ' XRP' : '-'}</span></div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                     <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4">
@@ -340,19 +409,34 @@
                 </div>
                 <div class="flex gap-3">
                     <button onclick="closeModal()" class="flex-1 h-10 rounded-xl bg-gray-100 text-gray-500 text-sm fw-bold hover:bg-gray-200 transition">취소</button>
-                    <button id="join-execute-btn" onclick="executeJoin('${item.id}')" ${after < 0 ? 'disabled' : ''} class="flex-1 h-10 rounded-xl ${after < 0 ? 'bg-gray-100 text-gray-300 cursor-default' : 'bg-blue-600 hover:bg-blue-700 text-white'} text-sm fw-bold transition">참여 실행</button>
+                    <button id="join-execute-btn" onclick="executeJoin('${item.id}')" ${!hasWallet || after < 0 ? 'disabled' : ''} class="flex-1 h-10 rounded-xl ${!hasWallet || after < 0 ? 'bg-gray-100 text-gray-300 cursor-default' : 'bg-blue-600 hover:bg-blue-700 text-white'} text-sm fw-bold transition">참여 실행</button>
                 </div>
             `);
             }
 
-            function executeJoin(id) {
+            async function executeJoin(id) {
                 if (processingId) return;
+                let wallet = getStoredWallet();
+                if (!isTestnetWallet(wallet)) {
+                    alert('마이페이지에서 XRPL Testnet Faucet 지갑을 먼저 생성해주세요.');
+                    return;
+                }
+
                 processingId = id;
                 const btn = document.getElementById('join-execute-btn');
                 if (btn) { btn.disabled = true; btn.textContent = '처리 중...'; btn.className = 'flex-1 h-10 rounded-xl bg-gray-100 text-gray-400 text-sm fw-bold cursor-default'; }
-                setTimeout(() => {
+                try {
                     const item = getItem(id);
+                    const destination = await ensureRwaTreasuryWallet();
+                    const payment = await InvoiceXApi.sendTestnetPayment({
+                        source_seed: wallet.seed,
+                        destination_address: destination.address,
+                        amount_xrp: testnetJoinAmount(item),
+                        memo: `InvoiceX RWA participation ${item.id}`
+                    });
+                    wallet = await refreshWalletBalance(wallet);
                     item.status = '참여 완료';
+                    item.txHash = payment.tx_hash;
                     processingId = null;
                     renderMarket();
                     setModal(`
@@ -361,11 +445,20 @@
                             <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                         </div>
                         <h3 class="text-lg fw-bold text-gray-900 mb-2">참여가 완료되었습니다</h3>
-                        <p class="text-sm text-gray-400 mb-6 modal-text-wrap">#${id} 건이 참여 완료 상태로 변경되었습니다. 이후 정산 가능 시 마이페이지 정산 내역에서 확인할 수 있습니다.</p>
+                        <p class="text-sm text-gray-400 mb-4 modal-text-wrap">#${id} 건이 XRPL Testnet 트랜잭션 성공 후 참여 완료 상태로 변경되었습니다.</p>
+                        <div class="bg-gray-50 border border-gray-100 rounded-2xl p-4 mb-6 text-left">
+                            <p class="text-xs text-gray-400 mb-1">Tx Hash</p>
+                            <p class="text-xs fw-bold text-blue-600 modal-text-wrap">${payment.tx_hash}</p>
+                        </div>
                         <button onclick="closeModal()" class="w-full h-10 rounded-xl bg-blue-600 text-white text-sm fw-bold hover:bg-blue-700 transition">확인</button>
                     </div>
                 `);
-                }, 900);
+                } catch (error) {
+                    console.error(error);
+                    processingId = null;
+                    alert(error.message || 'XRPL Testnet 참여 처리에 실패했습니다.');
+                    closeModal();
+                }
             }
 
             function infoRow(label, value) {
@@ -389,6 +482,7 @@
                 setTimeout(() => { overlay.classList.add('hidden'); document.body.style.overflow = ''; }, 180);
             }
 
+            renderMarketWalletBalance();
             renderMarket();
         </script>
     </body>

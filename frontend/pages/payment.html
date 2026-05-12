@@ -142,9 +142,9 @@
             <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-5 flex items-center justify-between gap-4">
                 <div>
                     <p class="text-xs text-gray-400 mb-1 uppercase">결제 수단</p>
-                    <p class="wallet-addr fw-bold">rN7d...x3Kq · Main Treasury</p>
+                    <p id="pay-wallet-address" class="wallet-addr fw-bold">XRPL Testnet 지갑 필요</p>
                 </div>
-                <div class="text-sm fw-bold text-blue-600">120,500 RLUSD</div>
+                <div id="pay-wallet-balance" class="text-sm fw-bold text-blue-600">-</div>
             </div>
 
             <div class="space-y-3 mb-6 bg-white border border-gray-100 rounded-2xl p-5">
@@ -167,6 +167,10 @@
                 <div class="flex justify-between items-center">
                     <span class="text-sm text-gray-400">조기 지불 할인</span>
                     <span id="pay-modal-discount" class="text-sm fw-bold text-green-600"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-400">Testnet 결제 금액</span>
+                    <span id="pay-modal-testnet" class="text-sm fw-bold text-blue-600"></span>
                 </div>
             </div>
 
@@ -208,12 +212,20 @@
                     <p class="text-xs text-gray-400 mb-1">Tx Hash</p>
                     <p id="success-tx" class="wallet-addr fw-bold text-blue-600"></p>
                 </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">Testnet 결제</span>
+                    <span id="success-testnet" class="text-xs fw-bold text-blue-600"></span>
+                </div>
             </div>
             <button onclick="closeModal('modal-payment-success')" class="w-full h-10 bg-gray-900 text-white text-sm fw-bold rounded-xl hover:bg-black transition">확인</button>
         </div>
     </div>
 
+    <script src="../assets/js/api.js"></script>
     <script>
+        const WALLET_STORAGE_KEY = 'invoiceXWallet';
+        const PAYMENT_PAYEE_STORAGE_KEY = 'ix_demo_payment_payee_wallet';
+
         const invoices = [
             { id: '#INV-2026-0042', corp: '(주)한빛테크', amount: '50,000,000', date: '2026.05.15', status: 'pending', orderNo: 'PO-HAN-1138', deliveryDate: '2026.04.20', items: 'LED 모듈 외 2건 (500세트)', discount: '- ₩1,000,000', finalAmount: '₩49,000,000', paidAt: '', txHash: '', docs: { tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Hanbit)', receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Hanbit)', delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Hanbit)' } },
             { id: '#INV-2026-0041', corp: '(주)스마트솔루션', amount: '32,000,000', date: '2026.08.01', status: 'pending', orderNo: 'PO-SMART-992', deliveryDate: '2026.05.02', items: '센서 모듈 (300세트)', discount: '- ₩0', finalAmount: '₩32,000,000', paidAt: '', txHash: '', docs: { tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Smart)', receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Smart)', delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Smart)' } },
@@ -224,6 +236,61 @@
         let openDetailId = null;
         let activePaymentId = null;
         let isPaymentProcessing = false;
+
+        function getStoredWallet() {
+            if (!InvoiceXApi.walletSessionActive()) return null;
+
+            try {
+                return JSON.parse(localStorage.getItem(WALLET_STORAGE_KEY) || 'null');
+            } catch (_error) {
+                return null;
+            }
+        }
+
+        function saveStoredWallet(wallet) {
+            localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(wallet));
+            InvoiceXApi.markWalletSession();
+        }
+
+        function isTestnetWallet(wallet) {
+            return wallet?.walletType === 'xrpl-testnet' && wallet.seed && wallet.address;
+        }
+
+        function formatXrp(value) {
+            return Number(value || 0).toLocaleString('ko-KR', { maximumFractionDigits: 6 });
+        }
+
+        function testnetPaymentAmount(inv) {
+            const krw = Number(String(inv.finalAmount || inv.amount).replace(/[^0-9.-]/g, '')) || 10000000;
+            return Math.max(0.1, Math.min(5, krw / 10000000)).toFixed(2);
+        }
+
+        async function ensurePaymentPayeeWallet() {
+            try {
+                const saved = JSON.parse(localStorage.getItem(PAYMENT_PAYEE_STORAGE_KEY) || 'null');
+                if (saved?.address) return saved;
+            } catch (_error) {
+                // Ignore broken demo cache and recreate the destination wallet below.
+            }
+
+            const result = await InvoiceXApi.createTestnetWallet({ amount_xrp: '20' });
+            const wallet = {
+                address: result.wallet.address,
+                seed: result.wallet.seed,
+                network: result.wallet.network,
+                xrpBalance: Number(result.balance_xrp || result.wallet.balance_xrp || 0)
+            };
+            localStorage.setItem(PAYMENT_PAYEE_STORAGE_KEY, JSON.stringify(wallet));
+            return wallet;
+        }
+
+        async function refreshWalletBalance(wallet) {
+            if (!isTestnetWallet(wallet)) return wallet;
+            const result = await InvoiceXApi.testnetBalance(wallet.address);
+            wallet.xrpBalance = Number(result.balance_xrp || 0);
+            saveStoredWallet(wallet);
+            return wallet;
+        }
 
         function renderAll() {
             renderPendingList();
@@ -367,20 +434,35 @@
         function openPaymentExecute(id) {
             activePaymentId = id;
             const inv = invoices.find(i => i.id === id);
+            const wallet = getStoredWallet();
+            const hasTestnetWallet = isTestnetWallet(wallet);
             document.getElementById('pay-modal-id').textContent = inv.id;
             document.getElementById('pay-modal-corp').textContent = inv.corp;
             document.getElementById('pay-modal-amount').textContent = `₩${inv.amount}`;
             document.getElementById('pay-modal-discount').textContent = inv.discount;
             document.getElementById('pay-modal-final').textContent = inv.finalAmount;
+            document.getElementById('pay-modal-testnet').textContent = `${testnetPaymentAmount(inv)} Testnet XRP`;
+            document.getElementById('pay-wallet-address').textContent = hasTestnetWallet
+                ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)} · XRPL Testnet`
+                : '마이페이지에서 XRPL Testnet 지갑을 먼저 생성해주세요.';
+            document.getElementById('pay-wallet-balance').textContent = hasTestnetWallet
+                ? `${formatXrp(wallet.xrpBalance)} XRP`
+                : '-';
             resetPaymentButtons();
             openModal('modal-payment-execute');
         }
 
 
-        function executePayment() {
+        async function executePayment() {
             if (isPaymentProcessing) return;
             const inv = invoices.find(i => i.id === activePaymentId);
             if (!inv || inv.status !== 'pending') return;
+            let wallet = getStoredWallet();
+
+            if (!isTestnetWallet(wallet)) {
+                alert('마이페이지에서 XRPL Testnet Faucet 지갑을 먼저 생성해주세요.');
+                return;
+            }
 
             isPaymentProcessing = true;
             const payBtn = document.getElementById('execute-pay-btn');
@@ -389,15 +471,27 @@
             cancelBtn.disabled = true;
             payBtn.classList.add('opacity-60', 'cursor-not-allowed');
             cancelBtn.classList.add('opacity-60', 'cursor-not-allowed');
-            payBtn.textContent = '처리 중...';
+            payBtn.textContent = 'XRPL 전송 중...';
 
-            setTimeout(() => {
+            try {
+                const destinationWallet = await ensurePaymentPayeeWallet();
+                const amountXrp = testnetPaymentAmount(inv);
+                const payment = await InvoiceXApi.sendTestnetPayment({
+                    source_seed: wallet.seed,
+                    destination_address: destinationWallet.address,
+                    amount_xrp: amountXrp,
+                    memo: `InvoiceX buyer payment ${inv.id}`
+                });
+
+                wallet = await refreshWalletBalance(wallet);
                 inv.status = 'paid';
                 inv.paidAt = getCurrentDateTime();
-                inv.txHash = makeTxHash();
+                inv.txHash = payment.tx_hash;
+                inv.testnetXrp = payment.amount_xrp;
                 document.getElementById('success-id').textContent = inv.id;
                 document.getElementById('success-amount').textContent = inv.finalAmount;
                 document.getElementById('success-tx').textContent = inv.txHash;
+                document.getElementById('success-testnet').textContent = `${payment.amount_xrp} XRP`;
                 if (openDetailId === inv.id) openDetailId = null;
                 closeModal('modal-payment-execute');
                 renderAll();
@@ -405,7 +499,11 @@
                     resetPaymentButtons();
                     openModal('modal-payment-success');
                 }, 180);
-            }, 650);
+            } catch (error) {
+                console.error(error);
+                alert(error.message || 'XRPL Testnet 결제에 실패했습니다.');
+                resetPaymentButtons();
+            }
         }
 
         function resetPaymentButtons() {
