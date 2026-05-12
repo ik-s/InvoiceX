@@ -234,10 +234,27 @@ async function getUserWallet(userId) {
     return data;
 }
 
-function shapeMyPage(user, wallet) {
+async function getLatestKybVerification(companyId) {
+    if (!companyId) return null;
+
+    const { data, error } = await getSupabase()
+        .from('verifications')
+        .select('*')
+        .eq('target_type', 'COMPANY')
+        .eq('target_id', companyId)
+        .eq('verification_type', 'KYB')
+        .order('submitted_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data;
+}
+
+function shapeMyPage(user, wallet, latestKybVerification = null) {
     const company = user.companies || {};
-    const kybStatus = company.kyb_status || 'NOT_SUBMITTED';
-    const hasBadge = Boolean(company.badge_status) || kybStatus === 'APPROVED';
+    const kybStatus = latestKybVerification?.status || company.kyb_status || 'NOT_SUBMITTED';
+    const hasBadge = kybStatus === 'APPROVED' && Boolean(company.badge_status);
 
     return {
         user: publicUser(user),
@@ -250,6 +267,7 @@ function shapeMyPage(user, wallet) {
         kyb_status: kybStatus,
         has_badge: hasBadge,
         kyb_badge: hasBadge,
+        latest_kyb_verification: latestKybVerification,
         is_wallet_connected: Boolean(wallet),
         wallet_address: wallet?.wallet_address || null,
         wallet_type: wallet?.credential_status || null,
@@ -857,7 +875,8 @@ async function myPageHandler(req, res) {
     try {
         const user = await getCurrentUser(req.user.userId);
         const wallet = await getUserWallet(req.user.userId);
-        return res.json(shapeMyPage(user, wallet));
+        const latestKybVerification = await getLatestKybVerification(user.company_id);
+        return res.json(shapeMyPage(user, wallet, latestKybVerification));
     } catch (error) {
         return dbError(res, 'Failed to load my page.', error);
     }
@@ -1038,8 +1057,8 @@ app.get('/api/kyb/me', authenticateToken, async (req, res) => {
         return res.json({
             company: user.companies || null,
             verification,
-            kyb_status: user.companies?.kyb_status || verification?.status || 'NOT_SUBMITTED',
-            has_badge: Boolean(user.companies?.badge_status)
+            kyb_status: verification?.status || user.companies?.kyb_status || 'NOT_SUBMITTED',
+            has_badge: (verification?.status || user.companies?.kyb_status) === 'APPROVED' && Boolean(user.companies?.badge_status)
         });
     } catch (error) {
         return dbError(res, 'Failed to load KYB status.', error);

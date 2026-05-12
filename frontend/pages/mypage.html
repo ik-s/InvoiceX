@@ -141,9 +141,9 @@
 
         <!-- KYB 미인증 안내 -->
         <div id="kyb-notice" class="hidden saas-card p-16 text-center mt-8 max-w-xl mx-auto">
-            <h2 class="text-lg fw-bold text-gray-900 mb-2">기업 인증이 필요합니다</h2>
-            <p class="text-sm text-gray-400 mb-8 leading-relaxed">InvoiceX의 모든 기능을 이용하시려면<br>기업 인증(KYB)을 먼저 완료해 주세요.</p>
-            <button onclick="window.location.href='kyb.html'" class="px-8 h-10 bg-blue-600 text-white rounded-xl fw-bold text-sm hover:bg-blue-700 transition">KYB 인증 시작하기</button>
+            <h2 id="kyb-notice-title" class="text-lg fw-bold text-gray-900 mb-2">기업 인증이 필요합니다</h2>
+            <p id="kyb-notice-description" class="text-sm text-gray-400 mb-8 leading-relaxed">InvoiceX의 모든 기능을 이용하시려면<br>기업 인증(KYB)을 먼저 완료해 주세요.</p>
+            <button id="kyb-notice-action" onclick="window.location.href='kyb.html'" class="px-8 h-10 bg-blue-600 text-white rounded-xl fw-bold text-sm hover:bg-blue-700 transition">KYB 인증 시작하기</button>
         </div>
     </main>
 
@@ -196,7 +196,7 @@
     <script>
         const params = new URLSearchParams(window.location.search);
         let role = params.get('role') || localStorage.getItem('ix_user_role') || 'funder';
-        let isKyb = params.get('kyb') !== 'false';
+        let isKyb = false;
         let currentMyPage = null;
 
         function getSavedWalletConnection() {
@@ -467,7 +467,8 @@
                 currentMyPage = await InvoiceXApi.mypage();
                 role = currentMyPage.client_role || role;
                 localStorage.setItem('ix_user_role', role);
-                isKyb = currentMyPage.kyb_status === 'APPROVED';
+                currentMyPage.kyb_status = String(currentMyPage.kyb_status || 'NOT_SUBMITTED').toUpperCase();
+                isKyb = currentMyPage.kyb_status === 'APPROVED' && currentMyPage.has_badge === true;
 
                 const localWallet = getSavedWalletConnection();
                 if (localWallet?.address) {
@@ -503,6 +504,39 @@
             if (status === 'PENDING') return 'KYB 심사 대기';
             if (status === 'REJECTED') return 'KYB 반려';
             return '인증 미완료';
+        }
+
+        function renderKybNotice(status) {
+            const title = document.getElementById('kyb-notice-title');
+            const description = document.getElementById('kyb-notice-description');
+            const action = document.getElementById('kyb-notice-action');
+            if (!title || !description || !action) return;
+
+            if (status === 'PENDING') {
+                title.textContent = 'KYB 심사가 진행 중입니다';
+                description.innerHTML = '제출한 인증 서류를 Admin이 검토하고 있습니다.<br>심사가 완료되면 이메일로 안내드리며, 승인 후 기능 이용이 가능합니다.';
+                action.textContent = '심사 대기 중';
+                action.disabled = true;
+                action.className = 'px-8 h-10 bg-gray-200 text-gray-500 rounded-xl fw-bold text-sm cursor-not-allowed';
+                action.onclick = null;
+                return;
+            }
+
+            if (status === 'REJECTED') {
+                title.textContent = 'KYB 인증이 반려되었습니다';
+                description.innerHTML = '제출 서류를 다시 확인한 뒤 KYB 인증을 재요청해 주세요.<br>반려 사유가 있는 경우 Admin 안내를 확인해 주세요.';
+                action.textContent = 'KYB 다시 제출하기';
+            } else {
+                title.textContent = '기업 인증이 필요합니다';
+                description.innerHTML = 'InvoiceX의 모든 기능을 이용하시려면<br>기업 인증(KYB)을 먼저 완료해 주세요.';
+                action.textContent = 'KYB 인증 시작하기';
+            }
+
+            action.disabled = false;
+            action.className = 'px-8 h-10 bg-blue-600 text-white rounded-xl fw-bold text-sm hover:bg-blue-700 transition';
+            action.onclick = () => {
+                window.location.href = `kyb.html?role=${encodeURIComponent(role)}`;
+            };
         }
 
         function getDisplayCompanyName() {
@@ -690,6 +724,7 @@
             
             if (isKyb) {
                 document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>${kybStatusLabel(currentMyPage.kyb_status)}`;
+                document.getElementById('kyb-notice').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
                 renderNav(config.nav);
                 renderAlerts();
@@ -698,6 +733,8 @@
             } else {
                 const dot = currentMyPage.kyb_status === 'PENDING' ? 'bg-orange-500' : 'bg-red-500';
                 document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${dot}"></span>${kybStatusLabel(currentMyPage.kyb_status)}`;
+                document.getElementById('main-content').classList.add('hidden');
+                renderKybNotice(currentMyPage.kyb_status);
                 document.getElementById('kyb-notice').classList.remove('hidden');
             }
         }
