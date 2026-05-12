@@ -177,6 +177,7 @@
       </section>
     </main>
 
+    <script src="../assets/js/api.js"></script>
     <script>
       document.querySelectorAll(".upload-area").forEach((area) => {
         const input = area.querySelector('input[type="file"]');
@@ -220,9 +221,31 @@
         location.href = "mypage.html?role=" + roleParam;
       });
 
-      document.getElementById("submitBtn").addEventListener("click", () => {
-        alert("KYB 인증 요청이 완료되었습니다");
-        location.href = "kyb-verified.html?role=" + roleParam;
+      document.getElementById("submitBtn").addEventListener("click", async () => {
+        const submitBtn = document.getElementById("submitBtn");
+        try {
+          if (!InvoiceXApi.token()) {
+            location.href = "login.html";
+            return;
+          }
+
+          submitBtn.disabled = true;
+          submitBtn.textContent = "심사 요청 중...";
+          submitBtn.classList.add("cursor-wait", "opacity-80");
+
+          await InvoiceXApi.submitKyb({
+            document_url: "demo://kyb-documents",
+            business_type: roleParam
+          });
+
+          location.href = "kyb-verified.html?role=" + roleParam;
+        } catch (error) {
+          console.error(error);
+          submitBtn.disabled = false;
+          submitBtn.textContent = "인증 요청하기";
+          submitBtn.classList.remove("cursor-wait", "opacity-80");
+          alert(error.message || "KYB 인증 요청에 실패했습니다.");
+        }
       });
     </script>
   </body>

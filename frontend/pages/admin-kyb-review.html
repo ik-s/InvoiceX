@@ -53,12 +53,49 @@
       }
 
       .queue-scroll {
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
         scrollbar-width: none;
         -ms-overflow-style: none;
       }
 
       .queue-scroll::-webkit-scrollbar {
         display: none;
+      }
+
+      .queue-card {
+        flex: 0 0 320px;
+        scroll-snap-align: start;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .queue-card:hover {
+        transform: translateY(-3px);
+        border-color: #2563eb;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.08);
+      }
+
+      .queue-nav-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 9999px;
+        border: 1px solid #e5e8f0;
+        background: #fff;
+        color: #94a3b8;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+      }
+
+      .queue-nav-btn:hover:not(:disabled) {
+        background: #f8fafc;
+        color: #2563eb;
+      }
+
+      .queue-nav-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
       }
     </style>
   </head>
@@ -105,7 +142,8 @@
             </div>
           </div>
         </div>
-        <div class="mt-4 flex flex-wrap gap-2">
+        <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex flex-wrap gap-2">
           <button class="filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white"
             data-filter="all">전체</button>
           <button
@@ -117,15 +155,18 @@
           <button
             class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
             data-filter="done">검토 완료</button>
-        </div>
-        <div class="mt-4 flex items-stretch gap-2">
+          </div>
+          <div class="flex gap-1 self-end lg:self-auto">
           <button id="queuePrev" type="button"
-            class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
+            class="queue-nav-btn"
             aria-label="이전 KYB 요청">‹</button>
-          <div id="kybQueue" class="queue-scroll flex flex-1 gap-3 overflow-x-auto overflow-y-hidden scroll-smooth"></div>
           <button id="queueNext" type="button"
-            class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
+            class="queue-nav-btn"
             aria-label="다음 KYB 요청">›</button>
+          </div>
+        </div>
+        <div class="mt-4 overflow-hidden">
+          <div id="kybQueue" class="queue-scroll flex gap-4 overflow-x-auto overflow-y-visible px-1 pb-3 pt-2"></div>
         </div>
       </section>
 
@@ -219,8 +260,9 @@
       </section>
     </main>
 
+    <script src="../assets/js/api.js"></script>
     <script>
-      const kybRequests = {
+      let kybRequests = {
         hanbit: {
           requestId: "#KYB-7742", name: "(주)한빛테크", subtitle: "인보이스 조기정산을 신청한 SME입니다.", businessNumber: "123-45-67890", representative: "김한빛", industry: "제조 / 정밀부품", authority: "재무팀 위임장 확인",
           recommendation: "승인 추천", tone: "approve", filter: "approve",
@@ -268,6 +310,76 @@
       let selectedKey = "hanbit";
       let activeFilter = "all";
 
+      function toKybCard(verification) {
+        const company = verification.company || {};
+        const meta = verification.meta || {};
+        const status = verification.status || company.kyb_status || "PENDING";
+        const key = verification.verification_id;
+        const tone = status === "APPROVED" ? "done" : status === "REJECTED" ? "review" : "approve";
+        const filter = status === "APPROVED" ? "done" : status === "REJECTED" ? "review" : "approve";
+        const submittedAt = verification.submitted_at ? new Date(verification.submitted_at).toLocaleString("ko-KR") : "-";
+
+        return {
+          verificationId: verification.verification_id,
+          requestId: `#KYB-${String(verification.verification_id).slice(0, 8)}`,
+          name: company.company_name || "Unknown Company",
+          subtitle: "InvoiceX KYB verification request",
+          businessNumber: company.business_number || "-",
+          representative: meta.representative_name || "-",
+          industry: meta.business_type || company.company_type || "-",
+          authority: meta.contact_email || "-",
+          recommendation: status === "APPROVED" ? "검토 완료" : status === "REJECTED" ? "반려" : "승인 대기",
+          tone,
+          filter,
+          summary: status === "PENDING" ? "제출된 KYB 요청입니다. 관리자 확인 후 승인 또는 반려 처리할 수 있습니다." : `현재 KYB 상태: ${status}`,
+          checks: [["KYB Status", status === "PENDING" ? "REVIEW" : "PASS", `현재 상태: ${status}`]],
+          submitted: [["회사명", company.company_name || "-"], ["사업자번호", company.business_number || "-"], ["제출일", submittedAt], ["담당자", meta.contact_email || "-"]],
+          documents: [["제출 문서", meta.document_url || "demo://kyb-documents"]],
+          owners: [[meta.representative_name || "대표자", "KYB 제출 정보 기준"]],
+          purpose: [["서비스 목적", "InvoiceX 공통 데모 KYB"], ["역할", company.company_type || "-"], ["운영 국가", "KR"], ["메모", verification.rejected_reason || "-"]]
+        };
+      }
+
+      async function loadKybRequestsFromApi() {
+        if (!InvoiceXApi.token()) {
+          location.href = "login.html";
+          return;
+        }
+
+        try {
+          const data = await InvoiceXApi.adminKybList();
+          const rows = data.verifications || [];
+          if (!rows.length) return;
+
+          kybRequests = Object.fromEntries(rows.map((item) => [item.verification_id, toKybCard(item)]));
+          selectedKey = Object.keys(kybRequests)[0] || selectedKey;
+        } catch (error) {
+          console.error(error);
+          alert(error.message || "KYB 검토 목록을 불러오지 못했습니다.");
+        }
+      }
+
+      async function decideSelectedKyb(action) {
+        const item = kybRequests[selectedKey];
+        if (!item?.verificationId) {
+          alert(`${item?.name || "선택된 KYB"} 처리 완료 (데모)`);
+          return;
+        }
+
+        const memo = document.getElementById("adminMemo").value.trim();
+        if (action === "approve") {
+          await InvoiceXApi.adminApproveKyb(item.verificationId, { reason: memo });
+          alert(`${item.name} KYB가 승인되었습니다.`);
+        } else {
+          await InvoiceXApi.adminRejectKyb(item.verificationId, { reason: memo || "Rejected by admin." });
+          alert(`${item.name} KYB를 반려 처리했습니다.`);
+        }
+
+        await loadKybRequestsFromApi();
+        renderQueue();
+        renderRequest();
+      }
+
       function visibleRequests() {
         return Object.entries(kybRequests).filter(([, item]) => activeFilter === "all" || item.filter === activeFilter);
       }
@@ -276,7 +388,7 @@
         document.getElementById("kybQueue").innerHTML = visibleRequests().map(([key, item]) => {
           const selected = key === selectedKey;
           return `
-          <button type="button" data-key="${key}" class="kyb-card min-w-[360px] max-w-[360px] rounded-lg border ${selected ? "border-[#2563eb]" : "border-[#e5e8f0]"} bg-white p-4 text-left shadow-sm hover:border-[#2563eb]">
+          <button type="button" data-key="${key}" class="kyb-card queue-card rounded-lg border ${selected ? "border-[#2563eb]" : "border-[#e5e8f0]"} bg-white p-5 text-left shadow-sm">
             <div class="flex items-start justify-between gap-3">
               <span class="rounded-full ${toneClasses[item.tone]} px-3 py-1 text-[11px] font-bold">${item.recommendation}</span>
               <span class="text-[12px] font-bold text-[#94a3b8]">${item.requestId}</span>
@@ -304,10 +416,8 @@
         const atStart = queue.scrollLeft <= 2;
         const atEnd = queue.scrollLeft + queue.clientWidth >= queue.scrollWidth - 2;
 
-        prev.classList.toggle("hidden", !hasOverflow || atStart);
-        prev.classList.toggle("flex", hasOverflow && !atStart);
-        next.classList.toggle("hidden", !hasOverflow || atEnd);
-        next.classList.toggle("flex", hasOverflow && !atEnd);
+        prev.disabled = !hasOverflow || atStart;
+        next.disabled = !hasOverflow || atEnd;
       }
 
       function renderRows(targetId, rows) {
@@ -369,20 +479,39 @@
         document.getElementById("approveBtn").disabled = !event.target.checked;
       });
       document.getElementById("queuePrev").addEventListener("click", () => {
-        document.getElementById("kybQueue").scrollBy({ left: -380, behavior: "smooth" });
+        document.getElementById("kybQueue").scrollBy({ left: -336, behavior: "smooth" });
       });
       document.getElementById("queueNext").addEventListener("click", () => {
-        document.getElementById("kybQueue").scrollBy({ left: 380, behavior: "smooth" });
+        document.getElementById("kybQueue").scrollBy({ left: 336, behavior: "smooth" });
       });
       document.getElementById("kybQueue").addEventListener("scroll", updateQueueButtons);
       window.addEventListener("resize", updateQueueButtons);
       document.getElementById("rerunAgentBtn").addEventListener("click", () => alert(`${kybRequests[selectedKey].requestId} Agent 재검토를 실행했습니다. 데모에서는 현재 결과를 유지합니다.`));
-      document.getElementById("approveBtn").addEventListener("click", () => alert(`${kybRequests[selectedKey].name} KYB가 승인되었습니다. (데모)`));
+      document.getElementById("approveBtn").addEventListener("click", async () => {
+        try {
+          await decideSelectedKyb("approve");
+        } catch (error) {
+          console.error(error);
+          alert(error.message || "KYB 승인 처리에 실패했습니다.");
+        }
+      });
       document.getElementById("supplementBtn").addEventListener("click", () => alert(`${kybRequests[selectedKey].name}에 보완 요청을 전송했습니다. (데모)`));
-      document.getElementById("rejectBtn").addEventListener("click", () => alert(`${kybRequests[selectedKey].name} KYB를 반려 처리했습니다. (데모)`));
+      document.getElementById("rejectBtn").addEventListener("click", async () => {
+        try {
+          await decideSelectedKyb("reject");
+        } catch (error) {
+          console.error(error);
+          alert(error.message || "KYB 반려 처리에 실패했습니다.");
+        }
+      });
 
-      renderQueue();
-      renderRequest();
+      async function initAdminKybReview() {
+        await loadKybRequestsFromApi();
+        renderQueue();
+        renderRequest();
+      }
+
+      initAdminKybReview();
     </script>
   </body>
 

@@ -53,12 +53,49 @@
       }
 
       .queue-scroll {
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
         scrollbar-width: none;
         -ms-overflow-style: none;
       }
 
       .queue-scroll::-webkit-scrollbar {
         display: none;
+      }
+
+      .queue-card {
+        flex: 0 0 320px;
+        scroll-snap-align: start;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .queue-card:hover {
+        transform: translateY(-3px);
+        border-color: #2563eb;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.08);
+      }
+
+      .queue-nav-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 9999px;
+        border: 1px solid #e5e8f0;
+        background: #fff;
+        color: #94a3b8;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+      }
+
+      .queue-nav-btn:hover:not(:disabled) {
+        background: #f8fafc;
+        color: #2563eb;
+      }
+
+      .queue-nav-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
       }
     </style>
   </head>
@@ -106,7 +143,8 @@
           </div>
         </div>
 
-        <div class="mt-4 flex flex-wrap gap-2">
+        <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex flex-wrap gap-2">
           <button class="filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white"
             data-filter="all">전체</button>
           <button
@@ -121,17 +159,19 @@
           <button
             class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
             data-filter="done">발행 완료</button>
+          </div>
+          <div class="flex gap-1 self-end lg:self-auto">
+          <button id="queuePrev" type="button"
+            class="queue-nav-btn"
+            aria-label="이전 인보이스 요청">&lsaquo;</button>
+          <button id="queueNext" type="button"
+            class="queue-nav-btn"
+            aria-label="다음 인보이스 요청">&rsaquo;</button>
+          </div>
         </div>
 
-        <div class="mt-4 flex items-stretch gap-2">
-          <button id="queuePrev" type="button"
-            class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
-            aria-label="이전 인보이스 요청">&lsaquo;</button>
-          <div id="caseQueue" class="queue-scroll flex flex-1 gap-3 overflow-x-auto overflow-y-hidden scroll-smooth">
-          </div>
-          <button id="queueNext" type="button"
-            class="flex w-[38px] shrink-0 items-center justify-center rounded-lg border border-[#dbe2ef] bg-white text-[20px] font-bold text-[#2563eb] hover:bg-[#eff6ff]"
-            aria-label="다음 인보이스 요청">&rsaquo;</button>
+        <div class="mt-4 overflow-hidden">
+          <div id="caseQueue" class="queue-scroll flex gap-4 overflow-x-auto overflow-y-visible px-1 pb-3 pt-2"></div>
         </div>
       </section>
 
@@ -365,17 +405,15 @@
         const atStart = queue.scrollLeft <= 2;
         const atEnd = queue.scrollLeft + queue.clientWidth >= queue.scrollWidth - 2;
 
-        prev.classList.toggle("hidden", !hasOverflow || atStart);
-        prev.classList.toggle("flex", hasOverflow && !atStart);
-        next.classList.toggle("hidden", !hasOverflow || atEnd);
-        next.classList.toggle("flex", hasOverflow && !atEnd);
+        prev.disabled = !hasOverflow || atStart;
+        next.disabled = !hasOverflow || atEnd;
       }
 
       function renderQueue() {
         document.getElementById("caseQueue").innerHTML = visibleCases().map(([key, item]) => {
           const selected = key === selectedCaseKey;
           return `
-          <button type="button" data-key="${key}" class="case-card min-w-[360px] max-w-[360px] rounded-lg border ${selected ? "border-[#2563eb]" : "border-[#e5e8f0]"} bg-white p-4 text-left shadow-sm hover:border-[#2563eb]">
+          <button type="button" data-key="${key}" class="case-card queue-card rounded-lg border ${selected ? "border-[#2563eb]" : "border-[#e5e8f0]"} bg-white p-5 text-left shadow-sm">
             <div class="flex items-start justify-between gap-3">
               <span class="rounded-full ${toneClasses[item.statusTone]} px-3 py-1 text-[11px] font-bold">${item.status}</span>
               <span class="text-[12px] font-bold text-[#94a3b8]">${item.id}</span>
@@ -483,10 +521,10 @@
         document.getElementById("approveRwaBtn").disabled = !event.target.checked || item.statusTone !== "ready";
       });
       document.getElementById("queuePrev").addEventListener("click", () => {
-        document.getElementById("caseQueue").scrollBy({ left: -380, behavior: "smooth" });
+        document.getElementById("caseQueue").scrollBy({ left: -336, behavior: "smooth" });
       });
       document.getElementById("queueNext").addEventListener("click", () => {
-        document.getElementById("caseQueue").scrollBy({ left: 380, behavior: "smooth" });
+        document.getElementById("caseQueue").scrollBy({ left: 336, behavior: "smooth" });
       });
       document.getElementById("caseQueue").addEventListener("scroll", updateQueueButtons);
       window.addEventListener("resize", updateQueueButtons);

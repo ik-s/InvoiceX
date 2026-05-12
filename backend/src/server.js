@@ -1,196 +1,788 @@
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
+
+const crypto = require('crypto');
+const path = require('path');
+const { promisify } = require('util');
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const { createClient } = require('@supabase/supabase-js');
 
+const scryptAsync = promisify(crypto.scrypt);
+
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3000;
+const JWT_SECRET = process.env.JWT_SECRET;
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const DEMO_AUTO_APPROVE_KYB = process.env.DEMO_AUTO_APPROVE_KYB !== 'false';
+
+if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.warn('[config] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for database access.');
+}
+
+if (!JWT_SECRET) {
+    console.warn('[config] JWT_SECRET is required for authenticated API access.');
+}
+
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+        auth: {
+            persistSession: false,
+            autoRefreshToken: false
+        }
+    })
+    : null;
+
+function getSupabase() {
+    if (!supabase) {
+        const error = new Error('Supabase server configuration is missing. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.');
+        error.statusCode = 503;
+        throw error;
+    }
+
+    return supabase;
+}
+
+const repoRoot = path.resolve(__dirname, '..', '..');
+const pagesDir = path.join(repoRoot, 'frontend', 'pages');
+const assetsDir = path.join(repoRoot, 'frontend', 'assets');
+
 app.use(cors());
+app.use(express.json({ limit: '1mb' }));
+app.use('/assets', express.static(assetsDir));
+app.use(express.static(pagesDir));
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+app.get('/', (_req, res) => {
+    res.sendFile(path.join(pagesDir, 'start.html'));
+});
 
-//JWT 토큰 검증
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (!token) return res.status(401).json({ message: "인증 토큰이 없습니다. 다시 로그인해주세요." });
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) return res.status(403).json({ message: "유효하지 않거나 만료된 토큰입니다." });
-
-        req.user = user;
-        next(); // 검사 통과 -> 다음 API로 넘어가기
-    });
+const ROLE_ALIASES = {
+    invoice: 'SME',
+    registrar: 'SME',
+    sme: 'SME',
+    rwa: 'FUNDER',
+    funder: 'FUNDER',
+    payment: 'BUYER',
+    payer: 'BUYER',
+    buyer: 'BUYER',
+    admin: 'ADMIN',
+    verifier: 'ADMIN'
 };
 
-// 1. 회원가입 API (그대로 유지)
-app.post('/api/auth/signup', async (req, res) => {
-    const { email, password, user_name, role_type, company_name, business_number, company_type } = req.body;
+const CLIENT_ROLE_BY_SERVER_ROLE = {
+    SME: 'registrar',
+    BUYER: 'payer',
+    FUNDER: 'funder',
+    ADMIN: 'admin'
+};
 
-    const { data: company, error: compErr } = await supabase
-        .from('companies')
-        .insert([{ company_name, business_number, company_type, kyb_status: 'NOT_SUBMITTED' }])
-        .select().single();
-    if (compErr) return res.status(500).json({ error: "기업 생성 실패", details: compErr });
+const REDIRECT_BY_ROLE = {
+    SME: '/mypage.html?role=registrar',
+    BUYER: '/mypage.html?role=payer',
+    FUNDER: '/mypage.html?role=funder',
+    ADMIN: '/admin-kyb-review.html'
+};
 
-    const { data: user, error: userErr } = await supabase
-        .from('users')
-        .insert([{ email, password, user_name, role_type, company_id: company.company_id }])
-        .select().single();
-    if (userErr) return res.status(500).json({ error: "사용자 생성 실패", details: userErr });
+function normalizeRole(role) {
+    if (!role) return null;
+    return ROLE_ALIASES[String(role).trim().toLowerCase()] || String(role).trim().toUpperCase();
+}
 
-    res.json({ message: "회원가입이 완료되었습니다. 로그인해주세요.", user });
-});
+function clientRole(role) {
+    return CLIENT_ROLE_BY_SERVER_ROLE[normalizeRole(role)] || 'funder';
+}
 
-// 2. 로그인 API 
-app.post('/api/auth/login', async (req, res) => {
-    const { email, password } = req.body;
-    const { data: user, error } = await supabase.from('users').select('*').eq('email', email).single();
+function redirectForRole(role) {
+    return REDIRECT_BY_ROLE[normalizeRole(role)] || '/mypage.html?role=funder';
+}
 
-    if (!user || user.password !== password) {
-        return res.status(401).json({ message: "이메일 또는 비밀번호가 틀렸습니다." });
+function publicUser(user) {
+    if (!user) return null;
+    return {
+        user_id: user.user_id,
+        email: user.email,
+        user_name: user.user_name,
+        role_type: normalizeRole(user.role_type),
+        role: normalizeRole(user.role_type),
+        client_role: clientRole(user.role_type),
+        company_id: user.company_id || user.companies?.company_id || null
+    };
+}
+
+function dbError(res, message, error, status = 500) {
+    console.error(message, error);
+    const details = error?.message || error?.details || error;
+    return res.status(error?.statusCode || status).json({ message, error: message, details });
+}
+
+async function hashPassword(password) {
+    const salt = crypto.randomBytes(16).toString('hex');
+    const derivedKey = await scryptAsync(password, salt, 64);
+    return `scrypt:${salt}:${derivedKey.toString('hex')}`;
+}
+
+async function verifyPassword(password, storedPassword) {
+    if (!storedPassword) return false;
+
+    if (!storedPassword.startsWith('scrypt:')) {
+        return password === storedPassword;
     }
 
-    const token = jwt.sign(
-        { userId: user.user_id, role: user.role_type, companyId: user.company_id },
-        process.env.JWT_SECRET, { expiresIn: '24h' }
+    const [, salt, key] = storedPassword.split(':');
+    if (!salt || !key) return false;
+
+    const derivedKey = await scryptAsync(password, salt, 64);
+    const storedKey = Buffer.from(key, 'hex');
+    if (storedKey.length !== derivedKey.length) return false;
+
+    return crypto.timingSafeEqual(storedKey, derivedKey);
+}
+
+function signToken(user) {
+    if (!JWT_SECRET) {
+        throw new Error('JWT_SECRET is not configured.');
+    }
+
+    return jwt.sign(
+        {
+            userId: user.user_id,
+            role: normalizeRole(user.role_type),
+            companyId: user.company_id || null
+        },
+        JWT_SECRET,
+        { expiresIn: '24h' }
     );
-    res.json({ message: "로그인 성공", token });
-});
+}
 
+function authenticateToken(req, res, next) {
+    const authHeader = req.headers.authorization || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-// 3. 이동 페이지 조회 API (토큰 보안 + BUYER 역할 반영)
-app.get('/api/me/route', authenticateToken, async (req, res) => {
-    // 💡 URL 파라미터가 아니라 해독된 토큰에서 userId를 사용
-    const userId = req.user.userId;
+    if (!token) {
+        return res.status(401).json({ message: 'Authentication token is required.' });
+    }
 
-    const { data: user, error } = await supabase.from('users').select('role_type').eq('user_id', userId).single();
-    if (error || !user) return res.status(404).json({ message: "유저를 찾을 수 없습니다." });
+    if (!JWT_SECRET) {
+        return res.status(500).json({ message: 'JWT_SECRET is not configured.' });
+    }
 
-    let targetPage = '/';
-    if (user.role_type === 'SME') targetPage = '/mypage/sme';
-    else if (user.role_type === 'BUYER') targetPage = '/mypage/buyer';
-    else if (user.role_type === 'FUNDER') targetPage = '/mypage/funder';
-    else if (user.role_type === 'ADMIN') targetPage = '/admin';
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ message: 'Authentication token is invalid or expired.' });
+        }
 
-    res.json({ role: user.role_type, redirect_to: targetPage });
-});
-
-
-// 4. 내 마이페이지 정보 조회 API (토큰 보안 적용)
-
-app.get('/api/me/mypage', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-
-    const { data: userInfo, error: userErr } = await supabase
-        .from('users')
-        .select(`user_name, email, role_type, companies ( company_name, kyb_status, badge_status )`)
-        .eq('user_id', userId).single();
-    if (userErr) return res.status(500).json({ error: "유저 정보 조회 실패" });
-
-    const { data: wallet } = await supabase
-        .from('wallets').select('wallet_address, rlusd_balance').eq('owner_id', userId).single();
-
-    res.json({
-        user_name: userInfo.user_name,
-        email: userInfo.email,
-        role: userInfo.role_type,
-        company_name: userInfo.companies?.company_name,
-        kyb_status: userInfo.companies?.kyb_status,
-        has_badge: userInfo.companies?.badge_status,
-        is_wallet_connected: !!wallet,
-        wallet_address: wallet ? wallet.wallet_address : null,
-
-        // wallet 데이터가 있으면 DB에서 가져온 실제 잔액 변수를 띄워주고, 없으면 "0.00"을 띄워라
-        rlusd_balance: wallet ? wallet.rlusd_balance : "0.00"
+        req.user = user;
+        next();
     });
-});
+}
 
-app.listen(process.env.PORT, () => {
-    console.log(`백엔드 서버 구동이 완료되었습니다. 포트: ${process.env.PORT}`);
-});
+function requireAdmin(req, res, next) {
+    if (normalizeRole(req.user?.role) !== 'ADMIN') {
+        return res.status(403).json({ message: 'Admin permission is required.' });
+    }
+    next();
+}
 
-// 5. 지갑 연결 API (내 지갑 주소 DB에 저장하기)
-app.post('/api/wallet/connect', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-    const { wallet_address } = req.body;
-
-    if (!wallet_address) return res.status(400).json({ message: "지갑 주소를 보내주세요" });
-
-    // 1. 이미 이 유저의 지갑이 DB에 있는지 확인
-    const { data: existingWallet } = await supabase
-        .from('wallets')
-        .select('*')
-        .eq('owner_id', userId)
+async function getCurrentUser(userId) {
+    const { data, error } = await getSupabase()
+        .from('users')
+        .select(`
+            user_id,
+            email,
+            user_name,
+            role_type,
+            company_id,
+            companies (
+                company_id,
+                company_name,
+                business_number,
+                company_type,
+                kyb_status,
+                badge_status
+            )
+        `)
+        .eq('user_id', userId)
         .single();
 
-    let resultData;
-    let resultError;
+    if (error) throw error;
+    return data;
+}
 
-    if (existingWallet) {
-        // 2. 이미 지갑이 있으면 주소만 '업데이트'
-        const { data, error } = await supabase
-            .from('wallets')
-            .update({ wallet_address: wallet_address })
-            .eq('owner_id', userId)
-            .select();
-        resultData = data; resultError = error;
-    } else {
-        // 3. 지갑이 없으면 '새로 생성' (초기 잔액 0원)
-        const { data, error } = await supabase
-            .from('wallets')
-            .insert([{ owner_id: userId, wallet_address: wallet_address, rlusd_balance: 0.00 }])
-            .select();
-        resultData = data; resultError = error;
-    }
+async function getUserWallet(userId) {
+    const { data, error } = await getSupabase()
+        .from('wallets')
+        .select('*')
+        .eq('owner_type', 'USER')
+        .eq('owner_id', userId)
+        .maybeSingle();
 
-    if (resultError) return res.status(500).json({ error: "지갑 연결 실패", details: resultError });
-    res.json({ message: "지갑 연결 성공!", wallet: resultData[0] });
+    if (error) throw error;
+    return data;
+}
+
+function shapeMyPage(user, wallet) {
+    const company = user.companies || {};
+    const kybStatus = company.kyb_status || 'NOT_SUBMITTED';
+    const hasBadge = Boolean(company.badge_status) || kybStatus === 'APPROVED';
+
+    return {
+        user: publicUser(user),
+        user_name: user.user_name,
+        email: user.email,
+        role: normalizeRole(user.role_type),
+        client_role: clientRole(user.role_type),
+        company_id: company.company_id || user.company_id || null,
+        company_name: company.company_name || null,
+        kyb_status: kybStatus,
+        has_badge: hasBadge,
+        kyb_badge: hasBadge,
+        is_wallet_connected: Boolean(wallet),
+        wallet_address: wallet?.wallet_address || null,
+        wallet_type: wallet?.credential_status || null,
+        wallet_network: wallet?.network || null,
+        rlusd_balance: wallet?.rlusd_balance ?? '0.00',
+        balance_source: 'DEMO_DB'
+    };
+}
+
+function demoBusinessNumber(role) {
+    return `DEMO-${normalizeRole(role) || 'USER'}-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+}
+
+app.get('/api/health', (_req, res) => {
+    res.json({ ok: true, service: 'InvoiceX backend' });
 });
 
-// 6. KYB 인증 신청 API (상태를 PENDING으로 변경)
-app.post('/api/kyb/submit', authenticateToken, async (req, res) => {
-    const companyId = req.user.companyId;
+app.post('/api/auth/signup', async (req, res) => {
+    try {
+        const email = String(req.body.email || '').trim().toLowerCase();
+        const password = String(req.body.password || '');
+        const userName = String(req.body.user_name || req.body.name || email.split('@')[0] || '').trim();
+        const roleType = normalizeRole(req.body.role_type || req.body.role);
+        const companyName = String(req.body.company_name || req.body.companyName || '').trim();
+        const businessNumber = String(req.body.business_number || '').trim() || demoBusinessNumber(roleType);
+        const companyType = String(req.body.company_type || roleType || '').trim() || null;
 
-    if (!companyId) return res.status(400).json({ message: "소속된 기업 정보가 없습니다." });
+        if (!email || !password || !roleType || !companyName) {
+            return res.status(400).json({ message: 'email, password, role_type, and company_name are required.' });
+        }
 
-    // companies 테이블의 kyb_status를 'PENDING'으로 업데이트
-    const { data: company, error } = await supabase
-        .from('companies')
-        .update({ kyb_status: 'PENDING' })
-        .eq('company_id', companyId)
-        .select().single();
+        const { data: existingUser, error: lookupError } = await getSupabase()
+            .from('users')
+            .select('user_id')
+            .eq('email', email)
+            .maybeSingle();
 
-    if (error) return res.status(500).json({ error: "KYB 신청 실패", details: error });
-    res.json({ message: "KYB 인증 신청이 완료되었습니다. 관리자 검토를 기다려주세요.", company });
+        if (lookupError) return dbError(res, 'Failed to check existing user.', lookupError);
+        if (existingUser) return res.status(409).json({ message: 'An account with this email already exists.' });
+
+        const { data: company, error: companyError } = await getSupabase()
+            .from('companies')
+            .insert([{
+                company_name: companyName,
+                business_number: businessNumber,
+                company_type: companyType,
+                kyb_status: 'NOT_SUBMITTED',
+                badge_status: false
+            }])
+            .select()
+            .single();
+
+        if (companyError) return dbError(res, 'Failed to create company.', companyError);
+
+        const passwordHash = await hashPassword(password);
+        const { data: user, error: userError } = await getSupabase()
+            .from('users')
+            .insert([{
+                email,
+                password: passwordHash,
+                user_name: userName,
+                role_type: roleType,
+                company_id: company.company_id
+            }])
+            .select('user_id,email,user_name,role_type,company_id')
+            .single();
+
+        if (userError) {
+            return dbError(
+                res,
+                'Failed to create user. Check that public.users.company_id has been approved and added.',
+                userError
+            );
+        }
+
+        return res.status(201).json({
+            message: 'Signup completed.',
+            user: publicUser(user),
+            company,
+            redirect_to: '/login.html'
+        });
+    } catch (error) {
+        return dbError(res, 'Signup failed.', error);
+    }
 });
 
-// 7. 관리자 KYB 검토 API (ADMIN 전용)
-app.post('/api/admin/kyb/review', authenticateToken, async (req, res) => {
-    const role = req.user.role; // 토큰에서 내 역할 꺼내기
-    const { target_company_id, action } = req.body; // action은 'APPROVED' 또는 'REJECTED'
+app.post('/api/auth/login', async (req, res) => {
+    try {
+        const email = String(req.body.email || '').trim().toLowerCase();
+        const password = String(req.body.password || '');
 
-    // 관리자가 아니면 접근 제한
-    if (role !== 'ADMIN') {
-        return res.status(403).json({ message: "접근 권한이 없습니다. 오직 관리자만 승인할 수 있습니다." });
+        if (!email || !password) {
+            return res.status(400).json({ message: 'email and password are required.' });
+        }
+
+        const { data: user, error } = await getSupabase()
+            .from('users')
+            .select('user_id,email,password,user_name,role_type,company_id')
+            .eq('email', email)
+            .maybeSingle();
+
+        if (error) return dbError(res, 'Failed to load user.', error);
+        if (!user || !(await verifyPassword(password, user.password))) {
+            return res.status(401).json({ message: 'Email or password is incorrect.' });
+        }
+
+        if (!String(user.password || '').startsWith('scrypt:')) {
+            const passwordHash = await hashPassword(password);
+            await getSupabase().from('users').update({ password: passwordHash }).eq('user_id', user.user_id);
+        }
+
+        const token = signToken(user);
+        return res.json({
+            message: 'Login succeeded.',
+            token,
+            user: publicUser(user),
+            role: normalizeRole(user.role_type),
+            client_role: clientRole(user.role_type),
+            redirect_to: redirectForRole(user.role_type)
+        });
+    } catch (error) {
+        return dbError(res, 'Login failed.', error);
+    }
+});
+
+app.get('/api/me', authenticateToken, async (req, res) => {
+    try {
+        const user = await getCurrentUser(req.user.userId);
+        return res.json({
+            user: publicUser(user),
+            company: user.companies || null,
+            redirect_to: redirectForRole(user.role_type)
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to load current user.', error);
+    }
+});
+
+app.get('/api/me/route', authenticateToken, async (req, res) => {
+    try {
+        const user = await getCurrentUser(req.user.userId);
+        return res.json({
+            role: normalizeRole(user.role_type),
+            client_role: clientRole(user.role_type),
+            redirect_to: redirectForRole(user.role_type)
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to resolve route.', error);
+    }
+});
+
+async function myPageHandler(req, res) {
+    try {
+        const user = await getCurrentUser(req.user.userId);
+        const wallet = await getUserWallet(req.user.userId);
+        return res.json(shapeMyPage(user, wallet));
+    } catch (error) {
+        return dbError(res, 'Failed to load my page.', error);
+    }
+}
+
+app.get('/api/mypage', authenticateToken, myPageHandler);
+app.get('/api/me/mypage', authenticateToken, myPageHandler);
+
+async function walletConnectHandler(req, res) {
+    try {
+        const userId = req.user.userId;
+        const walletAddress = String(req.body.wallet_address || req.body.address || '').trim();
+        const network = String(req.body.network || 'XRPL').trim();
+
+        if (!walletAddress) {
+            return res.status(400).json({ message: 'wallet_address is required.' });
+        }
+
+        const existingWallet = await getUserWallet(userId);
+        let result;
+
+        if (existingWallet) {
+            const { data, error } = await getSupabase()
+                .from('wallets')
+                .update({
+                    wallet_address: walletAddress,
+                    network,
+                    credential_status: 'CONNECTED'
+                })
+                .eq('wallet_id', existingWallet.wallet_id)
+                .select()
+                .single();
+
+            if (error) return dbError(res, 'Failed to update wallet.', error);
+            result = data;
+        } else {
+            const { data, error } = await getSupabase()
+                .from('wallets')
+                .insert([{
+                    owner_type: 'USER',
+                    owner_id: userId,
+                    wallet_address: walletAddress,
+                    network,
+                    credential_status: 'CONNECTED',
+                    rlusd_balance: 0
+                }])
+                .select()
+                .single();
+
+            if (error) return dbError(res, 'Failed to connect wallet.', error);
+            result = data;
+        }
+
+        return res.json({
+            message: 'Wallet connected.',
+            wallet: result,
+            balance_source: 'DEMO_DB'
+        });
+    } catch (error) {
+        return dbError(res, 'Wallet connection failed.', error);
+    }
+}
+
+app.post('/api/wallets/connect', authenticateToken, walletConnectHandler);
+app.post('/api/wallet/connect', authenticateToken, walletConnectHandler);
+
+app.get('/api/wallets/me', authenticateToken, async (req, res) => {
+    try {
+        const wallet = await getUserWallet(req.user.userId);
+        return res.json({ wallet, is_wallet_connected: Boolean(wallet) });
+    } catch (error) {
+        return dbError(res, 'Failed to load wallet.', error);
+    }
+});
+
+app.get('/api/wallets/me/balance', authenticateToken, async (req, res) => {
+    try {
+        const wallet = await getUserWallet(req.user.userId);
+        return res.json({
+            wallet_address: wallet?.wallet_address || null,
+            rlusd_balance: wallet?.rlusd_balance ?? '0.00',
+            balance_source: 'DEMO_DB'
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to load wallet balance.', error);
+    }
+});
+
+app.delete('/api/wallets/me', authenticateToken, async (req, res) => {
+    try {
+        const { error } = await getSupabase()
+            .from('wallets')
+            .delete()
+            .eq('owner_type', 'USER')
+            .eq('owner_id', req.user.userId);
+
+        if (error) return dbError(res, 'Failed to disconnect wallet.', error);
+        return res.json({ message: 'Wallet disconnected.' });
+    } catch (error) {
+        return dbError(res, 'Wallet disconnect failed.', error);
+    }
+});
+
+async function submitKybHandler(req, res) {
+    try {
+        const companyId = req.user.companyId;
+        if (!companyId) return res.status(400).json({ message: 'Company information is missing.' });
+        const submittedAt = new Date().toISOString();
+        // Demo-only: auto-approve KYB so the hackathon flow can proceed without an admin reviewer.
+        const kybStatus = DEMO_AUTO_APPROVE_KYB ? 'APPROVED' : 'PENDING';
+
+        const metadata = {
+            representative_name: req.body.representative_name || req.body.representative || null,
+            business_address: req.body.business_address || req.body.address || null,
+            business_type: req.body.business_type || req.body.company_type || null,
+            contact_email: req.body.contact_email || req.body.email || null,
+            document_url: req.body.document_url || null,
+            submitted_by: req.user.userId,
+            demo_auto_approved: DEMO_AUTO_APPROVE_KYB
+        };
+
+        const { data: company, error: companyError } = await getSupabase()
+            .from('companies')
+            .update({
+                kyb_status: kybStatus,
+                badge_status: DEMO_AUTO_APPROVE_KYB
+            })
+            .eq('company_id', companyId)
+            .select()
+            .single();
+
+        if (companyError) return dbError(res, 'Failed to update KYB status.', companyError);
+
+        const { data: verification, error: verificationError } = await getSupabase()
+            .from('verifications')
+            .insert([{
+                target_type: 'COMPANY',
+                target_id: companyId,
+                verification_type: 'KYB',
+                status: kybStatus,
+                provider_ref_id: JSON.stringify(metadata),
+                submitted_at: submittedAt,
+                approved_at: DEMO_AUTO_APPROVE_KYB ? submittedAt : null
+            }])
+            .select()
+            .single();
+
+        if (verificationError) return dbError(res, 'Failed to create KYB verification.', verificationError);
+
+        return res.status(201).json({
+            message: DEMO_AUTO_APPROVE_KYB
+                ? 'KYB verification submitted and demo-approved.'
+                : 'KYB verification submitted.',
+            demo_auto_approved: DEMO_AUTO_APPROVE_KYB,
+            kyb_status: kybStatus,
+            has_badge: DEMO_AUTO_APPROVE_KYB,
+            company,
+            verification
+        });
+    } catch (error) {
+        return dbError(res, 'KYB submission failed.', error);
+    }
+}
+
+app.post('/api/kyb/verifications', authenticateToken, submitKybHandler);
+app.post('/api/kyb/submit', authenticateToken, submitKybHandler);
+
+app.get('/api/kyb/me', authenticateToken, async (req, res) => {
+    try {
+        const user = await getCurrentUser(req.user.userId);
+        const { data: verification, error } = await getSupabase()
+            .from('verifications')
+            .select('*')
+            .eq('target_type', 'COMPANY')
+            .eq('target_id', user.company_id)
+            .eq('verification_type', 'KYB')
+            .order('submitted_at', { ascending: false, nullsFirst: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) return dbError(res, 'Failed to load KYB verification.', error);
+        return res.json({
+            company: user.companies || null,
+            verification,
+            kyb_status: user.companies?.kyb_status || verification?.status || 'NOT_SUBMITTED',
+            has_badge: Boolean(user.companies?.badge_status)
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to load KYB status.', error);
+    }
+});
+
+function parseVerificationMeta(value) {
+    if (!value) return {};
+    try {
+        return JSON.parse(value);
+    } catch (_error) {
+        return { provider_ref_id: value };
+    }
+}
+
+async function listKybVerifications() {
+    const { data: verifications, error } = await getSupabase()
+        .from('verifications')
+        .select('*')
+        .eq('target_type', 'COMPANY')
+        .eq('verification_type', 'KYB')
+        .order('submitted_at', { ascending: false, nullsFirst: false });
+
+    if (error) throw error;
+
+    const companyIds = [...new Set((verifications || []).map((item) => item.target_id).filter(Boolean))];
+    let companiesById = {};
+
+    if (companyIds.length) {
+        const { data: companies, error: companyError } = await getSupabase()
+            .from('companies')
+            .select('*')
+            .in('company_id', companyIds);
+
+        if (companyError) throw companyError;
+        companiesById = Object.fromEntries((companies || []).map((company) => [company.company_id, company]));
     }
 
-    if (action !== 'APPROVED' && action !== 'REJECTED') {
-        return res.status(400).json({ message: "action 값은 'APPROVED' 또는 'REJECTED'여야 합니다." });
+    return (verifications || []).map((verification) => ({
+        ...verification,
+        meta: parseVerificationMeta(verification.provider_ref_id),
+        company: companiesById[verification.target_id] || null
+    }));
+}
+
+app.get('/api/admin/kyb/verifications', authenticateToken, requireAdmin, async (_req, res) => {
+    try {
+        const items = await listKybVerifications();
+        return res.json({ verifications: items });
+    } catch (error) {
+        return dbError(res, 'Failed to load KYB verification queue.', error);
     }
+});
 
-    // 승인(APPROVED)이면 인증 뱃지도 true, 거절이면 false
-    const badgeStatus = (action === 'APPROVED');
+app.get('/api/admin/kyb/verifications/:verification_id', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const { data: verification, error } = await getSupabase()
+            .from('verifications')
+            .select('*')
+            .eq('verification_id', req.params.verification_id)
+            .single();
 
-    // 해당 기업의 상태 업데이트
-    const { data: company, error } = await supabase
+        if (error) return dbError(res, 'Failed to load KYB verification.', error, 404);
+
+        const { data: company, error: companyError } = await getSupabase()
+            .from('companies')
+            .select('*')
+            .eq('company_id', verification.target_id)
+            .maybeSingle();
+
+        if (companyError) return dbError(res, 'Failed to load KYB company.', companyError);
+
+        return res.json({
+            verification: {
+                ...verification,
+                meta: parseVerificationMeta(verification.provider_ref_id),
+                company
+            }
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to load KYB verification.', error);
+    }
+});
+
+async function decideKyb({ verificationId, adminUserId, action, reason }) {
+    const status = action === 'APPROVED' ? 'APPROVED' : 'REJECTED';
+    const { data: verification, error: verificationError } = await getSupabase()
+        .from('verifications')
+        .select('*')
+        .eq('verification_id', verificationId)
+        .single();
+
+    if (verificationError) throw verificationError;
+
+    const verificationUpdate = {
+        status,
+        rejected_reason: status === 'REJECTED' ? reason || 'Rejected by admin.' : null,
+        approved_at: status === 'APPROVED' ? new Date().toISOString() : null
+    };
+
+    const { data: updatedVerification, error: updateVerificationError } = await getSupabase()
+        .from('verifications')
+        .update(verificationUpdate)
+        .eq('verification_id', verificationId)
+        .select()
+        .single();
+
+    if (updateVerificationError) throw updateVerificationError;
+
+    const { data: company, error: companyError } = await getSupabase()
         .from('companies')
-        .update({ kyb_status: action, badge_status: badgeStatus })
-        .eq('company_id', target_company_id)
-        .select().single();
+        .update({
+            kyb_status: status,
+            badge_status: status === 'APPROVED'
+        })
+        .eq('company_id', verification.target_id)
+        .select()
+        .single();
 
-    if (error) return res.status(500).json({ error: "KYB 검토 처리 실패", details: error });
-    res.json({ message: `기업 KYB 상태가 ${action}로 변경되었습니다!`, company });
+    if (companyError) throw companyError;
+
+    await getSupabase().from('admin_reviews').insert([{
+        admin_user_id: adminUserId,
+        target_type: 'KYB_VERIFICATION',
+        target_id: verificationId,
+        decision: status
+    }]);
+
+    return { verification: updatedVerification, company };
+}
+
+app.patch('/api/admin/kyb/verifications/:verification_id/approve', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const result = await decideKyb({
+            verificationId: req.params.verification_id,
+            adminUserId: req.user.userId,
+            action: 'APPROVED',
+            reason: req.body.reason
+        });
+        return res.json({ message: 'KYB approved.', ...result });
+    } catch (error) {
+        return dbError(res, 'Failed to approve KYB.', error);
+    }
+});
+
+app.patch('/api/admin/kyb/verifications/:verification_id/reject', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const result = await decideKyb({
+            verificationId: req.params.verification_id,
+            adminUserId: req.user.userId,
+            action: 'REJECTED',
+            reason: req.body.reason || req.body.rejected_reason
+        });
+        return res.json({ message: 'KYB rejected.', ...result });
+    } catch (error) {
+        return dbError(res, 'Failed to reject KYB.', error);
+    }
+});
+
+app.post('/api/admin/kyb/review', authenticateToken, requireAdmin, async (req, res) => {
+    try {
+        const targetCompanyId = req.body.target_company_id;
+        const action = normalizeRole(req.body.action) === 'APPROVED' ? 'APPROVED' : String(req.body.action || '').toUpperCase();
+
+        if (!targetCompanyId || !['APPROVED', 'REJECTED'].includes(action)) {
+            return res.status(400).json({ message: 'target_company_id and action APPROVED/REJECTED are required.' });
+        }
+
+        const { data: verification, error } = await getSupabase()
+            .from('verifications')
+            .select('*')
+            .eq('target_type', 'COMPANY')
+            .eq('target_id', targetCompanyId)
+            .eq('verification_type', 'KYB')
+            .order('submitted_at', { ascending: false, nullsFirst: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) return dbError(res, 'Failed to load KYB verification.', error);
+
+        if (verification) {
+            const result = await decideKyb({
+                verificationId: verification.verification_id,
+                adminUserId: req.user.userId,
+                action,
+                reason: req.body.reason
+            });
+            return res.json({ message: `KYB ${action}.`, ...result });
+        }
+
+        const { data: company, error: companyError } = await getSupabase()
+            .from('companies')
+            .update({ kyb_status: action, badge_status: action === 'APPROVED' })
+            .eq('company_id', targetCompanyId)
+            .select()
+            .single();
+
+        if (companyError) return dbError(res, 'Failed to update company KYB status.', companyError);
+        return res.json({ message: `KYB ${action}.`, company });
+    } catch (error) {
+        return dbError(res, 'Admin KYB review failed.', error);
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`InvoiceX backend is running on http://localhost:${PORT}`);
 });

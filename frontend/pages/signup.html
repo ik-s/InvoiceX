@@ -155,7 +155,7 @@
             역할 선택
           </label>
 
-          <div class="grid grid-cols-3 gap-3 max-md:grid-cols-1">
+          <div class="grid grid-cols-4 gap-3 max-md:grid-cols-1">
             <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
               <input
                 type="radio"
@@ -185,6 +185,16 @@
                 class="sr-only"
               />
               대금 지급
+            </label>
+
+            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
+              <input
+                type="radio"
+                name="role"
+                value="admin"
+                class="sr-only"
+              />
+              Admin / Verifier
             </label>
           </div>
         </div>
@@ -230,6 +240,7 @@
     </article>
   </main>
 
+  <script src="../assets/js/api.js"></script>
   <script>
     const signupForm = document.querySelector('form');
     const requestVerification = document.querySelector('#requestVerification');
@@ -245,7 +256,7 @@
       alert('인증번호가 이메일로 전송되었습니다.');
     });
 
-    signupForm.addEventListener('submit', function(event) {
+    signupForm.addEventListener('submit', async function(event) {
       event.preventDefault();
 
       const email = document.querySelector('#email-signup').value.trim();
@@ -270,18 +281,31 @@
         return;
       }
 
-      const signupData = {
-        email,
-        emailVerification,
-        password,
-        role: role.value,
-        companyName
-      };
+      try {
+        const signupData = {
+          email,
+          emailVerification,
+          role: role.value,
+          companyName
+        };
 
-      localStorage.setItem('invoiceXSignupData', JSON.stringify(signupData));
+        await InvoiceXApi.signup({
+          email,
+          password,
+          user_name: email.split('@')[0],
+          role_type: role.value,
+          company_name: companyName
+        });
 
-      alert('회원가입이 완료되었습니다. 로그인해주세요.');
-      window.location.href = 'login.html';
+        localStorage.setItem('invoiceXSignupData', JSON.stringify(signupData));
+        localStorage.setItem('ix_user_role', InvoiceXApi.clientRole(role.value));
+
+        alert('회원가입이 완료되었습니다. 로그인해주세요.');
+        window.location.href = 'login.html';
+      } catch (error) {
+        console.error(error);
+        alert(error.message || '회원가입에 실패했습니다.');
+      }
     });
 
     // 역할 선택 시각적 효과

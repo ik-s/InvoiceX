@@ -90,6 +90,7 @@
       </section>
     </main>
 
+    <script src="../assets/js/api.js"></script>
     <script>
       const roleParam = new URLSearchParams(location.search).get("role") || "funder";
 
@@ -97,17 +98,42 @@
         location.href = "mypage.html?role=" + roleParam;
       });
 
-      setTimeout(() => {
-        localStorage.setItem("ix_kyb_verified", "true");
-        document.getElementById("statusIcon").textContent = "✓";
-        document.getElementById("statusIcon").className = "flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#DCFCE7] text-[28px] font-extrabold text-[#16A34A]";
-        document.getElementById("statusTitle").textContent = "인증 완료되었습니다!";
-        document.getElementById("statusDescription").textContent = "마이페이지로 이동합니다.";
-
+      function goToMypage(delay = 1800) {
         setTimeout(() => {
           location.href = "mypage.html?role=" + roleParam;
-        }, 3000);
-      }, 5000);
+        }, delay);
+      }
+
+      async function refreshKybStatus() {
+        try {
+          const data = await InvoiceXApi.kybMe();
+          const status = data.kyb_status;
+
+          if (status === "APPROVED") {
+            document.getElementById("statusIcon").textContent = "✓";
+            document.getElementById("statusIcon").className = "flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#DCFCE7] text-[28px] font-extrabold text-[#16A34A]";
+            document.getElementById("statusTitle").textContent = "심사가 완료됐습니다!";
+            document.getElementById("statusDescription").textContent = "KYB 인증에 성공하였습니다. 마이페이지로 이동합니다.";
+            goToMypage();
+          } else if (status === "REJECTED") {
+            document.getElementById("statusIcon").textContent = "!";
+            document.getElementById("statusIcon").className = "flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#FEE2E2] text-[28px] font-extrabold text-[#EF4444]";
+            document.getElementById("statusTitle").textContent = "KYB가 반려되었습니다";
+            document.getElementById("statusDescription").textContent = "마이페이지에서 상태를 확인해주세요.";
+            goToMypage(2600);
+          } else {
+            document.getElementById("statusTitle").textContent = "KYB 심사 대기 중입니다";
+            document.getElementById("statusDescription").textContent = "제출 서류와 기업 정보를 확인하고 있습니다.";
+            setTimeout(refreshKybStatus, 1200);
+          }
+        } catch (error) {
+          console.error(error);
+          document.getElementById("statusDescription").textContent = error.message || "KYB 상태를 불러오지 못했습니다.";
+          goToMypage(2600);
+        }
+      }
+
+      setTimeout(refreshKybStatus, 1200);
     </script>
   </body>
 

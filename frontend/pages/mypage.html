@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InvoiceX - 통합 대시보드</title>
     <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         /* ── 폰트 시스템: Light(300) + SemiBold(600) 딱 두 종류만 ── */
         body { font-family: "Pretendard", sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; letter-spacing: -0.02em; background-color: #f8fafc; }
@@ -37,6 +37,27 @@
         .table-action-btn { min-width: 76px; height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border-radius: 12px; font-size: 12px; line-height: 1; white-space: nowrap; font-weight: 600; transition: all .15s ease; }
         .table-status-badge { width: 82px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; box-sizing: border-box; border-radius: 9999px; font-size: 11px; line-height: 1; white-space: nowrap; font-weight: 600; }
         .funder-settlement-badge { width: 92px; height: 28px; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; box-sizing: border-box; border-radius: 9999px; font-size: 11px; line-height: 1; white-space: nowrap; font-weight: 600; }
+        .header-balance-panel { min-width: 236px; min-height: 52px; display: inline-flex; align-items: center; justify-content: space-between; gap: 18px; padding: 8px 12px 8px 18px; border-radius: 14px; border: 1px solid #bfdbfe; background: #eff6ff; }
+        .header-balance-action { height: 34px; min-width: 68px; display: inline-flex; align-items: center; justify-content: center; border-radius: 10px; padding: 0 16px; font-size: 12px; line-height: 1; font-weight: 600; white-space: nowrap; transition: all .15s ease; }
+        .registrar-receipt-table { table-layout: fixed; }
+        .registrar-receipt-table th, .registrar-receipt-table td { padding-left: 0.625rem !important; padding-right: 0.625rem !important; vertical-align: middle; }
+        .registrar-receipt-table th:nth-child(1), .registrar-receipt-table td:nth-child(1) { width: 92px; }
+        .registrar-receipt-table th:nth-child(2), .registrar-receipt-table td:nth-child(2) { width: 102px; }
+        .registrar-receipt-table th:nth-child(3), .registrar-receipt-table td:nth-child(3) { width: 96px; }
+        .registrar-receipt-table th:nth-child(4), .registrar-receipt-table td:nth-child(4) { width: 184px; }
+        .registrar-receipt-table th:nth-child(5), .registrar-receipt-table td:nth-child(5) { width: 112px; }
+        .registrar-receipt-table th:nth-child(6), .registrar-receipt-table td:nth-child(6) { width: 86px; }
+        .registrar-receipt-table th:nth-child(7), .registrar-receipt-table td:nth-child(7) { width: 80px; }
+        .registrar-receipt-table th:not(:nth-child(4)), .registrar-receipt-table td:not(:nth-child(4)) { white-space: nowrap; }
+        .registrar-receipt-table th:nth-child(6), .registrar-receipt-table td:nth-child(6),
+        .registrar-receipt-table th:nth-child(7), .registrar-receipt-table td:nth-child(7) { text-align: center !important; }
+        .registrar-receipt-table .table-action-btn { min-width: 64px; padding: 0 10px; }
+        .registrar-receipt-table .table-status-badge { width: 74px; padding: 0 8px; }
+        .wallet-connect-modal { background: #0f172a; border: 1px solid #263247; box-shadow: 0 24px 80px rgba(15, 23, 42, 0.45); }
+        .wallet-connect-row { width: 100%; display: flex; align-items: center; gap: 14px; padding: 12px 8px; border-radius: 14px; text-align: left; transition: background-color .16s ease, transform .16s ease; }
+        .wallet-connect-row:hover { background: #182235; transform: translateY(-1px); }
+        .wallet-connect-icon { width: 44px; height: 44px; flex: 0 0 44px; display: flex; align-items: center; justify-content: center; border-radius: 12px; background: #f59e0b; color: #fff; }
+        .wallet-connect-label { color: #697386; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
     </style>
 </head>
 <body class="text-gray-900">
@@ -50,7 +71,7 @@
                 </div>
             </div>
             
-            <button onclick="location.href='role-select.html'" class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
+            <button onclick="InvoiceXApi.logout(); location.href='login.html'" class="text-xs text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
                 로그아웃
                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
             </button>
@@ -60,18 +81,19 @@
     <!-- ── HEADER CARD ── -->
     <main class="pt-20 pb-16 max-w-7xl mx-auto px-6">
         
-        <section class="saas-card p-6 mb-8 flex items-center justify-between">
+        <section class="saas-card p-6 mb-8 flex flex-wrap items-center justify-between gap-4">
             <div class="flex items-center gap-5">
                 <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
                 </div>
                 <div>
-                    <h1 class="text-xl fw-bold text-gray-900 mb-1">InvoiceX</h1>
+                    <h1 id="company-name-title" class="text-xl fw-bold text-gray-900 mb-1">InvoiceX</h1>
                     <div id="kyb-status" class="text-gray-400 text-xs flex items-center gap-1.5 uppercase"></div>
                 </div>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center justify-end gap-3">
+                <div id="wallet-summary-actions" class="hidden"></div>
                 <span id="role-badge" class="bg-blue-50 text-blue-600 border border-blue-100 px-5 h-10 inline-flex items-center justify-center rounded-xl text-sm fw-bold gap-2 shadow-sm">역할</span>
                 <button id="wallet-btn" onclick="toggleWallet()" class="bg-gray-900 hover:bg-black text-white px-8 h-11 inline-flex items-center justify-center rounded-xl text-sm transition gap-2 shadow-md">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
@@ -82,9 +104,9 @@
 
         <!-- ── MAIN GRID ── -->
         <div id="main-content" class="hidden">
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 
-                <div class="lg:col-span-8 space-y-8">
+                <div class="lg:col-span-9 space-y-8">
                     <!-- RWA 슬라이더 -->
                     <div id="rwa-section">
                         <div class="flex items-center justify-between mb-4">
@@ -100,18 +122,18 @@
                     <!-- 탭 영역 -->
                     <div class="saas-card overflow-hidden">
                         <div class="flex border-b border-gray-100 bg-white px-1" id="tab-headers"></div>
-                        <div id="tab-content" class="p-8"></div>
+                        <div id="tab-content" class="p-6 lg:p-7"></div>
                     </div>
                 </div>
 
                 <!-- 알림 사이드바 -->
-                <div class="lg:col-span-4">
+                <div class="lg:col-span-3">
                     <div class="saas-card sticky top-20 overflow-hidden shadow-sm">
                         <div class="px-5 py-4 border-b border-gray-50 flex justify-between items-center">
                             <h2 class="text-base fw-bold text-gray-900 uppercase tracking-wider">최신 알림</h2>
                             <button onclick="openReadHistory()" class="text-xs text-gray-400 hover:text-blue-600 transition">알림확인</button>
                         </div>
-                        <div id="alert-list" class="divide-y divide-gray-50 min-h-[300px] max-h-[500px] overflow-y-auto"></div>
+                        <div id="alert-list" class="divide-y divide-gray-50 min-h-[180px] max-h-[240px] overflow-y-auto"></div>
                     </div>
                 </div>
             </div>
@@ -130,13 +152,53 @@
         <div id="modal-container" class="bg-white w-full max-w-sm rounded-2xl p-8 shadow-2xl transform transition-all scale-95 opacity-0 duration-300" onclick="event.stopPropagation()"></div>
     </div>
 
+    <!-- ── WALLET CONNECT MODAL ── -->
+    <div id="wallet-connect-overlay" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center p-4 backdrop-blur-sm" style="z-index:120" onclick="closeWalletConnectModal()">
+        <section class="wallet-connect-modal w-full max-w-sm rounded-2xl overflow-hidden text-white" onclick="event.stopPropagation()">
+            <header class="h-16 px-6 border-b border-[#263247] flex items-center justify-between">
+                <h2 class="text-lg fw-bold">Connect Wallet</h2>
+                <button type="button" onclick="closeWalletConnectModal()" class="w-9 h-9 rounded-full flex items-center justify-center text-gray-400 hover:bg-white hover:bg-opacity-5 hover:text-white transition" aria-label="지갑 연결 모달 닫기">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+            </header>
+
+            <div class="px-6 py-5">
+                <p class="wallet-connect-label mb-3">Browser Extension</p>
+
+                <button id="crossmark-connect-btn" type="button" onclick="connectCrossmarkWallet(this)" class="wallet-connect-row">
+                    <span class="wallet-connect-icon">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M7 7 17 17M17 7 7 17" stroke-linecap="round"/></svg>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block text-sm fw-bold text-white">Crossmark</span>
+                        <span class="block text-xs text-gray-400 mt-0.5">Chrome extension wallet</span>
+                    </span>
+                    <svg class="w-5 h-5 flex-none text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+
+                <p id="wallet-connect-message" class="hidden mt-5 rounded-xl border px-4 py-3 text-xs fw-bold leading-relaxed"></p>
+            </div>
+        </section>
+    </div>
+
+    <script src="../assets/js/api.js"></script>
     <script>
         const params = new URLSearchParams(window.location.search);
-        const role = params.get('role') || 'funder';
-        const isKyb = params.get('kyb') !== 'false';
+        let role = params.get('role') || localStorage.getItem('ix_user_role') || 'funder';
+        let isKyb = params.get('kyb') !== 'false';
+        let currentMyPage = null;
 
-        /* 데모 지갑 주소 */
-        const WALLET_ADDR = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+        function getSavedWalletConnection() {
+            try {
+                return JSON.parse(localStorage.getItem('invoiceXWallet') || 'null');
+            } catch (error) {
+                return null;
+            }
+        }
+
+        let savedWalletConnection = getSavedWalletConnection();
+        let WALLET_ADDR = savedWalletConnection?.address || 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh';
+        let crossmarkSdk = null;
 
         const ROLE_DATA = {
             funder: {
@@ -183,6 +245,150 @@
             location.href = buildRoleUrl(getMyPagePath(), role);
         }
 
+        function renderWalletButton() {
+            const walletBtn = document.getElementById('wallet-btn');
+            if (!walletBtn || !savedWalletConnection?.address) return;
+
+            walletBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M20 12a8 8 0 11-16 0 8 8 0 0116 0z"/></svg>${savedWalletConnection.address.slice(0, 6)}...${savedWalletConnection.address.slice(-4)}`;
+            walletBtn.classList.remove('bg-gray-900', 'hover:bg-black');
+            walletBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+        }
+
+        function openWalletConnectModal() {
+            const overlay = document.getElementById('wallet-connect-overlay');
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeWalletConnectModal() {
+            const overlay = document.getElementById('wallet-connect-overlay');
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        function showWalletConnectMessage(message, type = 'info') {
+            const messageEl = document.getElementById('wallet-connect-message');
+            messageEl.textContent = message;
+            messageEl.className = 'mt-5 rounded-xl border px-4 py-3 text-xs fw-bold leading-relaxed';
+
+            if (type === 'error') {
+                messageEl.classList.add('border-red-400', 'bg-red-900', 'bg-opacity-20', 'text-red-100');
+            } else if (type === 'success') {
+                messageEl.classList.add('border-green-400', 'bg-green-900', 'bg-opacity-20', 'text-green-100');
+            } else {
+                messageEl.classList.add('border-blue-400', 'bg-blue-900', 'bg-opacity-20', 'text-blue-100');
+            }
+        }
+
+        function setWalletConnectLoading(button, isLoading) {
+            if (!button) return;
+
+            button.disabled = isLoading;
+            button.classList.toggle('opacity-70', isLoading);
+            button.classList.toggle('cursor-wait', isLoading);
+        }
+
+        async function getCrossmarkSdk() {
+            if (crossmarkSdk) return crossmarkSdk;
+
+            const globalSdk = window.crossmark || window.Crossmark || window.xrpl?.crossmark || null;
+            if (globalSdk?.methods?.signInAndWait) {
+                crossmarkSdk = globalSdk;
+                return crossmarkSdk;
+            }
+
+            try {
+                const sdkModule = await import('https://esm.sh/@crossmarkio/sdk@0.4.0');
+                crossmarkSdk = sdkModule.default || sdkModule;
+                return crossmarkSdk;
+            } catch (error) {
+                throw new Error('Crossmark SDK를 불러오지 못했습니다. 인터넷 연결과 확장 프로그램 설치 상태를 확인해주세요.');
+            }
+        }
+
+        function extractCrossmarkAddress(signInResult) {
+            return (
+                signInResult?.response?.data?.address ||
+                signInResult?.response?.data?.account ||
+                signInResult?.response?.address ||
+                signInResult?.response?.account ||
+                signInResult?.data?.address ||
+                signInResult?.data?.account ||
+                signInResult?.address ||
+                signInResult?.account ||
+                null
+            );
+        }
+
+        function extractCrossmarkNetwork(signInResult) {
+            return (
+                signInResult?.response?.data?.network ||
+                signInResult?.response?.network ||
+                signInResult?.data?.network ||
+                'XRPL'
+            );
+        }
+
+        async function saveWalletConnection(data) {
+            const saved = await InvoiceXApi.connectWallet({
+                wallet_address: data.address,
+                wallet_type: data.walletType,
+                network: data.network
+            });
+
+            localStorage.setItem('invoiceXWallet', JSON.stringify(data));
+            localStorage.setItem('ix_wallet_connected', 'true');
+            localStorage.setItem('ix_wallet_address', data.address);
+            localStorage.setItem('ix_wallet_type', data.walletType);
+            localStorage.setItem('ix_wallet_network', data.network);
+
+            savedWalletConnection = data;
+            WALLET_ADDR = data.address;
+            if (saved?.wallet?.rlusd_balance !== undefined) {
+                data.rlusdBalance = saved.wallet.rlusd_balance;
+            }
+            renderWalletButton();
+        }
+
+        async function connectCrossmarkWallet(button) {
+            try {
+                setWalletConnectLoading(button, true);
+                showWalletConnectMessage('Crossmark 확장 프로그램에서 연결을 승인해주세요.', 'info');
+
+                const sdk = await getCrossmarkSdk();
+                if (!sdk?.methods?.signInAndWait) {
+                    throw new Error('Crossmark 연결 메서드를 찾지 못했습니다.');
+                }
+
+                const signInResult = await sdk.methods.signInAndWait();
+                const address = extractCrossmarkAddress(signInResult);
+
+                if (!address) {
+                    throw new Error('Crossmark에서 지갑 주소를 가져오지 못했습니다.');
+                }
+
+                const walletData = {
+                    walletType: 'crossmark',
+                    walletName: 'Crossmark',
+                    address,
+                    network: extractCrossmarkNetwork(signInResult),
+                    connectedAt: new Date().toISOString()
+                };
+
+                await saveWalletConnection(walletData);
+                showWalletConnectMessage(`Crossmark 지갑이 연결되었습니다. ${address.slice(0, 6)}...${address.slice(-4)}`, 'success');
+
+                setTimeout(closeWalletConnectModal, 650);
+            } catch (error) {
+                console.error(error);
+                showWalletConnectMessage(error.message || '지갑 연결 중 오류가 발생했습니다.', 'error');
+            } finally {
+                setWalletConnectLoading(button, false);
+            }
+        }
+
         let alerts = [];
         let historyAlerts = [];
 
@@ -202,20 +408,216 @@
             ]
         };
 
-        function init() {
+        async function hydrateMyPageFromApi() {
+            if (!InvoiceXApi.token()) {
+                location.href = 'login.html';
+                return false;
+            }
+
+            try {
+                currentMyPage = await InvoiceXApi.mypage();
+                role = currentMyPage.client_role || role;
+                localStorage.setItem('ix_user_role', role);
+                isKyb = currentMyPage.kyb_status === 'APPROVED';
+
+                if (currentMyPage.wallet_address) {
+                    savedWalletConnection = {
+                        walletType: currentMyPage.wallet_type || 'saved',
+                        walletName: 'XRPL Wallet',
+                        address: currentMyPage.wallet_address,
+                        network: currentMyPage.wallet_network || 'XRPL',
+                        connectedAt: null,
+                        rlusdBalance: currentMyPage.rlusd_balance
+                    };
+                    WALLET_ADDR = currentMyPage.wallet_address;
+                }
+
+                return true;
+            } catch (error) {
+                console.error(error);
+                if (error.status === 401 || error.status === 403) {
+                    InvoiceXApi.logout();
+                    location.href = 'login.html';
+                    return false;
+                }
+                alert(error.message || '마이페이지 정보를 불러오지 못했습니다.');
+                return false;
+            }
+        }
+
+        function kybStatusLabel(status) {
+            if (status === 'APPROVED') return 'KYB 인증 완료';
+            if (status === 'PENDING') return 'KYB 심사 대기';
+            if (status === 'REJECTED') return 'KYB 반려';
+            return '인증 미완료';
+        }
+
+        function getDisplayCompanyName() {
+            if (currentMyPage?.company_name) return currentMyPage.company_name;
+
+            try {
+                const signupData = JSON.parse(localStorage.getItem('invoiceXSignupData') || '{}');
+                return signupData.companyName || 'InvoiceX';
+            } catch (_error) {
+                return 'InvoiceX';
+            }
+        }
+
+        function headerBalanceStorageKey() {
+            const ownerKey = currentMyPage?.company_id || currentMyPage?.user?.user_id || getDisplayCompanyName();
+            return `ix_demo_rlusd_balance_${role}_${ownerKey}`;
+        }
+
+        function getDefaultHeaderBalance() {
+            if (role === 'registrar') {
+                const summary = getRegistrarReceiptSummary();
+                return Math.round(summary.completedAmount / 1000) || 6500;
+            }
+
+            if (role === 'payer') return 85000;
+            return 57000;
+        }
+
+        function getHeaderBalance() {
+            const savedBalance = localStorage.getItem(headerBalanceStorageKey());
+            if (savedBalance !== null) return parseRLUSDAmount(savedBalance);
+
+            const apiBalance = parseRLUSDAmount(currentMyPage?.rlusd_balance);
+            return apiBalance > 0 ? apiBalance : getDefaultHeaderBalance();
+        }
+
+        function setHeaderBalance(nextBalance) {
+            localStorage.setItem(headerBalanceStorageKey(), String(Math.max(0, nextBalance)));
+        }
+
+        function renderHeaderWalletSummary() {
+            const wrap = document.getElementById('wallet-summary-actions');
+            if (!wrap) return;
+            const hasWallet = Boolean(currentMyPage?.wallet_address || savedWalletConnection?.address);
+
+            const balance = formatRLUSDAmount(getHeaderBalance());
+            const isRegistrar = role === 'registrar';
+            const canTopUp = role === 'funder' || role === 'payer';
+
+            if (!hasWallet || (!isRegistrar && !canTopUp)) {
+                wrap.className = 'hidden';
+                wrap.innerHTML = '';
+                return;
+            }
+
+            wrap.className = 'header-balance-panel';
+            wrap.innerHTML = `
+                <div class="min-w-0">
+                    <p class="text-[10px] fw-bold text-blue-500 uppercase leading-none">보유 RLUSD</p>
+                    <p class="mt-1 text-sm fw-bold text-gray-900 whitespace-nowrap">${balance} RLUSD</p>
+                </div>
+                <button type="button" onclick="${isRegistrar ? 'openRegistrarRecentSettlements()' : 'openTopUpModal()'}"
+                    class="header-balance-action ${isRegistrar ? 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50' : 'bg-blue-600 text-white hover:bg-blue-700'}">
+                    ${isRegistrar ? '내역' : '충전'}
+                </button>`;
+        }
+
+        function selectTopUpAmount(amount) {
+            const input = document.getElementById('topup-amount-input');
+            if (input) input.value = formatRLUSDAmount(amount);
+        }
+
+        function openTopUpModal() {
+            const con = document.getElementById('modal-container');
+            const currentBalance = formatRLUSDAmount(getHeaderBalance());
+            con.innerHTML = `
+                <h3 class="text-lg fw-bold mb-2">RLUSD 충전</h3>
+                <p class="text-sm text-gray-400 mb-5">데모 지갑 잔액에 충전 금액을 반영합니다.</p>
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-5">
+                    <p class="text-xs fw-bold text-blue-500 mb-1 uppercase">현재 보유</p>
+                    <p class="text-2xl fw-bold text-blue-700">${currentBalance} <span class="text-sm text-blue-400">RLUSD</span></p>
+                </div>
+                <div class="grid grid-cols-3 gap-2 mb-4">
+                    <button type="button" onclick="selectTopUpAmount(10000)" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">10,000</button>
+                    <button type="button" onclick="selectTopUpAmount(50000)" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">50,000</button>
+                    <button type="button" onclick="selectTopUpAmount(100000)" class="h-10 rounded-xl bg-gray-100 text-gray-700 text-xs fw-bold hover:bg-blue-50 hover:text-blue-600 transition">100,000</button>
+                </div>
+                <label class="block text-xs fw-bold text-gray-500 mb-2">충전 금액</label>
+                <div class="flex items-center gap-2 mb-6">
+                    <input id="topup-amount-input" type="text" inputmode="numeric" value="10,000"
+                        class="min-w-0 flex-1 h-11 rounded-xl border border-gray-200 px-4 text-sm fw-bold text-gray-900 focus:outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-50">
+                    <span class="text-sm fw-bold text-gray-400">RLUSD</span>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closeModal()" class="flex-1 h-10 flex items-center justify-center bg-gray-100 text-gray-400 rounded-xl text-sm fw-bold">취소</button>
+                    <button onclick="confirmTopUp()" class="flex-1 h-10 flex items-center justify-center bg-blue-600 text-white rounded-xl text-sm fw-bold hover:bg-blue-700 transition">충전하기</button>
+                </div>`;
+            showModal();
+        }
+
+        function confirmTopUp() {
+            const input = document.getElementById('topup-amount-input');
+            const amount = parseRLUSDAmount(input?.value);
+
+            if (amount <= 0) {
+                alert('충전 금액을 입력해주세요.');
+                return;
+            }
+
+            setHeaderBalance(getHeaderBalance() + amount);
+            renderHeaderWalletSummary();
+            closeModal();
+            setTimeout(() => openInfoModal('충전 완료', `${formatRLUSDAmount(amount)} RLUSD가 데모 지갑 잔액에 반영되었습니다.`), 250);
+        }
+
+        function registrarReceiptRLUSDAmount(item) {
+            return Math.round(parseKRWAmount(item.finalAmount) / 1000);
+        }
+
+        function openRegistrarRecentSettlements() {
+            const completed = REGISTRAR_RECEIPTS
+                .map((item, index) => ({ ...item, originalIndex: index }))
+                .filter(item => item.status === 'completed')
+                .slice(0, 5);
+            const con = document.getElementById('modal-container');
+            const body = completed.length
+                ? completed.map(item => `
+                    <button type="button" onclick="openRegistrarReceiptDone(${item.originalIndex})"
+                        class="w-full rounded-xl border border-gray-100 bg-gray-50 p-4 text-left transition hover:border-blue-100 hover:bg-blue-50">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0">
+                                <p class="text-sm fw-bold text-gray-900 text-wrap-safe">${item.id} · ${item.buyer}</p>
+                                <p class="mt-1 text-xs text-gray-400 text-wrap-safe">${item.asset}</p>
+                            </div>
+                            <span class="whitespace-nowrap text-sm fw-bold text-blue-600">${formatRLUSDAmount(registrarReceiptRLUSDAmount(item))} RLUSD</span>
+                        </div>
+                    </button>`).join('')
+                : '<p class="py-8 text-center text-sm text-gray-400">최근 정산 수령 내역이 없습니다.</p>';
+
+            con.innerHTML = `
+                <h3 class="text-lg fw-bold mb-2">최근 정산 수령 내역</h3>
+                <p class="text-sm text-gray-400 mb-5">완료된 정산 금액을 최근 항목부터 확인할 수 있습니다.</p>
+                <div class="space-y-2.5 mb-6 max-h-[360px] overflow-y-auto">${body}</div>
+                <button onclick="closeModal()" class="w-full h-10 flex items-center justify-center bg-gray-900 text-white rounded-xl text-sm fw-bold">닫기</button>`;
+            showModal();
+        }
+
+        async function init() {
+            const loaded = await hydrateMyPageFromApi();
+            if (!loaded) return;
+
             const config = ROLE_DATA[role];
             alerts = ROLE_ALERTS[role] || ROLE_ALERTS.funder;
+            document.getElementById('company-name-title').textContent = getDisplayCompanyName();
             document.getElementById('role-badge').innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5"/></svg>${config.label}`;
+            renderWalletButton();
+            renderHeaderWalletSummary();
             
             if (isKyb) {
-                document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>KYB 인증 완료`;
+                document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span>${kybStatusLabel(currentMyPage.kyb_status)}`;
                 document.getElementById('main-content').classList.remove('hidden');
                 renderNav(config.nav);
                 renderAlerts();
                 if(role === 'registrar') renderRWA(); else document.getElementById('rwa-section').style.display='none';
                 renderTabs(config.tabs);
             } else {
-                document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-red-500"></span>인증 미완료`;
+                const dot = currentMyPage.kyb_status === 'PENDING' ? 'bg-orange-500' : 'bg-red-500';
+                document.getElementById('kyb-status').innerHTML = `<span class="w-1.5 h-1.5 rounded-full ${dot}"></span>${kybStatusLabel(currentMyPage.kyb_status)}`;
                 document.getElementById('kyb-notice').classList.remove('hidden');
             }
         }
@@ -447,8 +849,8 @@
                     </div>
                     <span id="receipt-count-badge" class="inline-flex items-center justify-center px-3 h-8 rounded-full bg-blue-50 text-blue-600 text-xs fw-bold border border-blue-100">대기 중</span>
                 </div>
-                <div class="overflow-x-auto border border-gray-100 rounded-2xl">
-                    <table class="w-full text-left text-sm">
+                <div class="overflow-hidden border border-gray-100 rounded-2xl">
+                    <table class="registrar-receipt-table w-full text-left text-xs">
                         <thead class="text-gray-400 text-xs uppercase border-b border-gray-100 bg-gray-50">
                             <tr>
                                 <th class="py-3 px-4 fw-bold">인보이스 ID</th>
@@ -547,9 +949,11 @@
         function executeRegistrarReceipt(index) {
             const item = REGISTRAR_RECEIPTS[index];
             if (!item) return;
+            setHeaderBalance(getHeaderBalance() + registrarReceiptRLUSDAmount(item));
             item.status = 'completed';
             item.tx = '0xRCPT...' + item.id.replace(/[^0-9]/g, '').slice(-4);
             renderRegistrarReceiptList();
+            renderHeaderWalletSummary();
             closeModal();
             setTimeout(() => openInfoModal('수령 완료', `${item.id} 건의 ₩${item.finalAmount} 상당 RLUSD가 연결된 지갑으로 입금되었습니다.`), 250);
         }
@@ -1040,10 +1444,10 @@
             showModal();
         }
 
-        /* ── 지갑 연결: 전체 역할 공통 지갑 수집 페이지 이동 ── */
+        /* ── 지갑 연결: 마이페이지 안에서 Crossmark 연결 ── */
         let walletConnected = false;
         function toggleWallet() {
-            window.location.href = 'wallet-collect.html';
+            openWalletConnectModal();
         }
 
         /* ── 출금 모달: 지갑 주소 + 네트워크 정보 포함 ── */

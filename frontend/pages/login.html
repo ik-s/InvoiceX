@@ -97,46 +97,6 @@
           />
         </div>
 
-        <!-- Role Selection -->
-        <div class="mb-5">
-          <label class="mb-3 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]">
-            역할 선택
-          </label>
-
-          <div class="grid grid-cols-3 gap-3 max-md:grid-cols-1">
-            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
-              <input
-                type="radio"
-                name="role"
-                value="invoice"
-                required
-                class="sr-only"
-              />
-              인보이스 등록
-            </label>
-
-            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
-              <input
-                type="radio"
-                name="role"
-                value="rwa"
-                class="sr-only"
-              />
-              RWA 참여
-            </label>
-
-            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
-              <input
-                type="radio"
-                name="role"
-                value="payment"
-                class="sr-only"
-              />
-              대금 지급
-            </label>
-          </div>
-        </div>
-
         <!-- Options -->
         <div class="mb-6 flex items-center justify-between gap-2 max-sm:flex-col max-sm:items-start">
           <label class="flex cursor-pointer items-center gap-2 text-[11px] font-medium text-[#7c8492]">
@@ -186,15 +146,20 @@
     </article>
   </main>
 
+  <script src="../assets/js/api.js"></script>
   <script>
     const loginForm = document.querySelector('form');
+    const roleRouteMap = {
+      invoice: 'registrar',
+      rwa: 'funder',
+      payment: 'payer'
+    };
 
-    loginForm.addEventListener('submit', function(event) {
+    loginForm.addEventListener('submit', async function(event) {
       event.preventDefault();
 
       const email = document.querySelector('#email').value.trim();
       const password = document.querySelector('#password').value.trim();
-      const role = document.querySelector('input[name="role"]:checked');
       const remember = document.querySelector('#remember').checked;
 
       if (!email || !password) {
@@ -202,49 +167,25 @@
         return;
       }
 
-      if (!role) {
-        alert('역할을 선택해주세요.');
-        return;
+      try {
+        const data = await InvoiceXApi.login({ email, password });
+
+        if (remember) {
+          localStorage.setItem("ix_remember_login", "true");
+        } else {
+          localStorage.removeItem("ix_remember_login");
+        }
+
+        const signupData = JSON.parse(localStorage.getItem("invoiceXSignupData") || "{}");
+        if (signupData.role && !data.role) {
+          localStorage.setItem("ix_user_role", roleRouteMap[signupData.role] || signupData.role);
+        }
+
+        window.location.href = data.redirect_to || InvoiceXApi.redirectForRole(data.role || data.user?.role);
+      } catch (error) {
+        console.error(error);
+        alert(error.message || '로그인에 실패했습니다.');
       }
-
-      // 로그인 상태 저장
-      localStorage.setItem("ix_logged_in", "true");
-      localStorage.setItem("ix_user_role", role.value);
-
-      if (remember) {
-        localStorage.setItem("ix_remember_login", "true");
-      } else {
-        localStorage.removeItem("ix_remember_login");
-      }
-
-      /*
-        기존:
-        window.location.href = "mypage.html?role=" + role.value;
-
-        수정:
-        로그인 후 바로 마이페이지가 아니라 지갑 연결 페이지로 이동.
-        wallet-connect.html에서 지갑 연결 성공 후 다시 mypage.html로 이동함.
-      */
-      window.location.href = "wallet-connect.html?role=" + encodeURIComponent(role.value);
-    });
-
-    // 역할 선택 시각적 효과
-    const roleOptions = document.querySelectorAll('.role-option');
-
-    roleOptions.forEach(option => {
-      const radio = option.querySelector('input[type="radio"]');
-
-      option.addEventListener('click', function() {
-        roleOptions.forEach(opt => {
-          opt.classList.remove('border-[#2563eb]', 'bg-[#2563eb]', 'text-white');
-          opt.classList.add('border-[#d9dee8]', 'bg-[#f9fafc]', 'text-[#a5adbb]');
-        });
-
-        radio.checked = true;
-
-        option.classList.remove('border-[#d9dee8]', 'bg-[#f9fafc]', 'text-[#a5adbb]');
-        option.classList.add('border-[#2563eb]', 'bg-[#2563eb]', 'text-white');
-      });
     });
   </script>
 </body>
