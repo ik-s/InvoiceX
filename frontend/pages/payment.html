@@ -3,374 +3,479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>대금 지급 - InvoiceX</title>
+    <title>대금지급 - InvoiceX</title>
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
-        body { font-family: "Inter", sans-serif; }
+        body { font-family: "Pretendard", sans-serif; font-weight: 300; -webkit-font-smoothing: antialiased; letter-spacing: -0.02em; background-color: #f8fafc; }
+        .fw-bold { font-weight: 600 !important; }
+        .saas-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .wallet-addr { font-family: "Pretendard", monospace; font-size: 11px; letter-spacing: 0.02em; word-break: break-all; color: #64748b; }
+        .doc-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .doc-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .doc-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .doc-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .modal-panel { transform: scale(.96); opacity: 0; transition: all .22s ease; }
+        .modal-panel.show { transform: scale(1); opacity: 1; }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen font-sans text-gray-900">
+<body class="text-gray-900">
 
-    <!-- Nav -->
-    <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-200 z-50">
-        <div class="max-w-screen-xl mx-auto flex items-center justify-between px-4 sm:px-6 lg:px-8 h-16">
-            <div class="flex items-center">
-                <a href="mypage.html?role=payer" class="text-blue-600 text-xl font-bold mr-3">InvoiceX</a>
-                <span class="bg-indigo-50 text-indigo-700 text-xs font-bold py-1 px-2 rounded-md">대금 지급 기업</span>
-                
-                <div class="hidden sm:flex items-center ml-10 space-x-8 h-full">
-                    <a href="debt.html" class="text-gray-500 hover:text-gray-900 text-sm font-medium">채무 현황</a>
-                    <a href="invoice.html" class="text-gray-500 hover:text-gray-900 text-sm font-medium">인보이스 확인</a>
-                    <!-- 활성화 탭 -->
-                    <a href="payment.html" class="text-blue-600 text-sm font-bold relative h-16 flex items-center border-b-2 border-blue-600">
-                        대금 지급
-                    </a>
+    <!-- NAV: mypage.html payer 기준 -->
+    <nav class="fixed top-0 left-0 w-full bg-white border-b border-gray-100 z-50 h-14 flex items-center">
+        <div class="max-w-7xl mx-auto w-full flex items-center justify-between px-6">
+            <div class="flex items-center space-x-10">
+                <div class="text-blue-600 text-xl fw-bold cursor-pointer" onclick="location.href='mypage.html?role=payer'">InvoiceX</div>
+                <div class="hidden md:flex space-x-8 text-sm text-gray-400">
+                    <a href="mypage.html?role=payer" class="hover:text-blue-600 transition">마이페이지</a>
+                    <a href="invoice.html" class="hover:text-blue-600 transition">인보이스 확인</a>
+                    <a href="payment.html" class="text-blue-600 fw-bold border-b-2 border-blue-600 pb-0.5">대금지급</a>
                 </div>
             </div>
-            <div class="flex items-center space-x-2 bg-gray-50 border border-gray-200 rounded-full py-1 px-3">
-                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span class="text-gray-800 text-sm font-bold">Testnet</span>
-                <span class="text-gray-500 text-sm ml-1">rN7d...x3Kq</span>
+
+            <div class="h-9 px-4 bg-blue-50 text-blue-600 border border-blue-100 rounded-xl inline-flex items-center gap-2 text-sm fw-bold">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                대금지급기업
             </div>
         </div>
     </nav>
 
-    <!-- Main -->
-    <main class="max-w-screen-xl mx-auto pt-28 pb-16 px-4 sm:px-6 lg:px-8">
-
-        <!-- Header -->
-        <div class="mb-10 text-center flex flex-col items-center">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">구매기업 대금 지급</h1>
-            <p class="text-sm text-gray-500">협력사의 인보이스 내역과 증빙을 확인하고 대금을 결제합니다.</p>
-        </div>
-
-        <!-- 대기 중인 청구서 목록 -->
-        <div class="mb-8">
-            <h2 class="text-sm font-bold text-gray-900 mb-4 px-2">대기 중인 청구서 (3)</h2>
-            
-            <div class="grid grid-cols-6 gap-4 px-6 py-2 text-xs font-medium text-gray-400">
-                <div class="col-span-1">인보이스 ID</div>
-                <div class="col-span-1">발행기업</div>
-                <div class="col-span-1">청구 금액</div>
-                <div class="col-span-1">만기일</div>
-                <div class="col-span-1">상태</div>
-                <div class="col-span-1 text-right"></div>
-            </div>
-
-            <!-- 목록 리스트 -->
-            <div id="invoice-list" class="space-y-3">
-                <!-- JS 랜더링 -->
-            </div>
-        </div>
-
-        <!-- 상세 내역 카드 (토글 대상) -->
-        <div id="detail-card" class="bg-white border border-gray-200 rounded-2xl p-6 sm:p-8 shadow-sm transition-all hidden">
-            <!-- 상세 내역 헤더 -->
-            <div class="flex items-end gap-3 mb-8 border-b border-gray-100 pb-4">
-                <h2 id="detail-title" class="text-lg sm:text-xl font-bold text-gray-900">상세 내역</h2>
-                <span id="detail-order-no" class="text-sm text-gray-500 pb-0.5"></span>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-5 gap-10">
-                
-                <!-- Left: 기본 정보 및 필수 증빙 서류 -->
-                <div class="lg:col-span-3 flex flex-col gap-8">
-                    <!-- 기본 정보 -->
-                    <div>
-                        <h3 class="text-xs font-bold text-gray-500 mb-4">기본 정보</h3>
-                        <div class="grid grid-cols-3 gap-4">
-                            <div>
-                                <p class="text-xs text-gray-400 mb-1">발행 기업</p>
-                                <p id="detail-corp" class="text-sm font-bold text-gray-900"></p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-400 mb-1">납품 완료일</p>
-                                <p id="detail-delivery-date" class="text-sm font-bold text-gray-900"></p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-gray-400 mb-1">납품 내역</p>
-                                <p id="detail-items" class="text-sm font-bold text-gray-900 truncate"></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 필수 증빙 서류 -->
-                    <div>
-                        <h3 class="text-xs font-bold text-gray-500 mb-3">필수 증빙 서류</h3>
-                        <div class="space-y-2">
-                            <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-100">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-base">📄</span>
-                                    <span class="text-sm font-bold text-gray-800">전자세금계산서</span>
-                                    <span class="text-xs text-gray-400 ml-2 hidden sm:inline">국세청 승인 완료</span>
-                                </div>
-                                <button id="btn-doc-tax" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors px-2 py-1">보기</button>
-                            </div>
-                            <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-100">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-base">📊</span>
-                                    <span class="text-sm font-bold text-gray-800">거래명세서 원본</span>
-                                </div>
-                                <button id="btn-doc-receipt" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors px-2 py-1">보기</button>
-                            </div>
-                            <div class="flex items-center justify-between bg-gray-50 rounded-lg p-3 border border-gray-100">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-base">📦</span>
-                                    <span class="text-sm font-bold text-gray-800">납품 완료 확인서</span>
-                                    <span class="text-xs text-gray-400 ml-2 hidden sm:inline">물류 시스템 교차 검증</span>
-                                </div>
-                                <button id="btn-doc-delivery" class="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors px-2 py-1">보기</button>
-                            </div>
-                        </div>
-                    </div>
+    <main class="pt-20 pb-16 max-w-7xl mx-auto px-6">
+        <!-- Header card -->
+        <section class="saas-card p-6 mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-5">
+            <div class="flex items-center gap-5">
+                <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-inner">
+                    <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
                 </div>
-
-                <!-- Right: 결제 상세 정보 -->
-                <div class="lg:col-span-2 flex flex-col">
-                    <h3 class="text-xs font-bold text-gray-500 mb-4">결제 상세 정보</h3>
-                    
-                    <div class="bg-gray-50 rounded-xl border border-gray-100 p-6 flex-1 flex flex-col">
-                        <div class="space-y-4 mb-6">
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm text-gray-500">청구 원금액</span>
-                                <span id="detail-amount" class="text-sm font-bold text-gray-900"></span>
-                            </div>
-                            <div class="flex justify-between items-center">
-                                <span class="text-sm font-bold text-green-600">조기 지불 할인 (-2%)</span>
-                                <span id="detail-discount" class="text-sm font-bold text-green-600"></span>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-dashed border-gray-300 pt-6 mb-8 flex justify-between items-center">
-                            <span class="text-sm font-bold text-gray-900">최종 결제 금액</span>
-                            <span id="detail-final-amount" class="text-2xl font-bold text-blue-600"></span>
-                        </div>
-
-                        <div class="flex gap-3 mt-auto">
-                            <button onclick="openModal('modal-reject')" class="w-1/3 py-3 bg-white border border-gray-200 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
-                                거절
-                            </button>
-                            <!-- 대금지급화면.html 연결 -->
-                            <button onclick="window.location.href='payment-page.html'" class="w-2/3 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                                대금 지급 실행
-                            </button>
-                        </div>
-                    </div>
+                <div>
+                    <h1 class="text-xl fw-bold text-gray-900 mb-1">대금지급</h1>
+                    <p class="text-xs text-gray-400">협력사의 청구 내역과 증빙을 확인한 뒤, 이 페이지에서 바로 지급을 완료합니다.</p>
                 </div>
-
             </div>
-        </div>
+            <div class="grid grid-cols-2 gap-3 w-full md:w-auto">
+                <div class="bg-gray-50 border border-gray-100 rounded-2xl px-5 py-3">
+                    <p class="text-xs text-gray-400 mb-1 uppercase">지급 대기</p>
+                    <p id="pending-count" class="text-lg fw-bold text-gray-900">0건</p>
+                </div>
+                <div class="bg-blue-50 border border-blue-100 rounded-2xl px-5 py-3">
+                    <p class="text-xs text-blue-600 mb-1 uppercase">지급 완료</p>
+                    <p id="paid-count" class="text-lg fw-bold text-blue-700">0건</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Pending list -->
+        <section class="saas-card overflow-hidden mb-8">
+            <div class="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+                <h2 class="text-base fw-bold text-gray-900 uppercase tracking-wider">지급 대기 목록</h2>
+                <span class="text-xs text-gray-400">상세보기 후 지급 실행</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-gray-400 text-xs uppercase border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 fw-bold">인보이스 ID</th>
+                            <th class="px-6 py-3 fw-bold">발행기업</th>
+                            <th class="px-6 py-3 fw-bold text-right">청구 금액</th>
+                            <th class="px-6 py-3 fw-bold">만기일</th>
+                            <th class="px-6 py-3 fw-bold">상태</th>
+                            <th class="px-6 py-3 text-right fw-bold">상세보기</th>
+                        </tr>
+                    </thead>
+                    <tbody id="pending-list" class="divide-y divide-gray-50 text-gray-700"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Paid list -->
+        <section class="saas-card overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-50 flex items-center justify-between">
+                <h2 class="text-base fw-bold text-gray-900 uppercase tracking-wider">지급 완료 목록</h2>
+                <span class="text-xs text-gray-400">완료된 지급 내역</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead class="text-gray-400 text-xs uppercase border-b border-gray-100">
+                        <tr>
+                            <th class="px-6 py-3 fw-bold">인보이스 ID</th>
+                            <th class="px-6 py-3 fw-bold">발행기업</th>
+                            <th class="px-6 py-3 fw-bold text-right">지급 금액</th>
+                            <th class="px-6 py-3 fw-bold">처리일시</th>
+                            <th class="px-6 py-3 fw-bold">Tx Hash</th>
+                        </tr>
+                    </thead>
+                    <tbody id="paid-list" class="divide-y divide-gray-50 text-gray-700"></tbody>
+                </table>
+            </div>
+        </section>
     </main>
 
-    <!-- 거절 모달 -->
-    <div id="modal-reject" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4">
-        <div class="absolute inset-0 bg-gray-900 bg-opacity-40 transition-opacity" onclick="closeModal('modal-reject')"></div>
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm relative z-10 p-6 text-center transform transition-all">
-            <h3 class="text-lg font-bold text-gray-900 mb-2">대금 지급 거절</h3>
-            <p class="text-xs text-gray-500 mb-6">청구된 내역에 문제가 있어 거절하시겠습니까?</p>
-            <textarea class="w-full border border-gray-300 rounded-lg p-3 text-sm mb-4 resize-none focus:ring-1 focus:ring-blue-500 outline-none" rows="3" placeholder="거절 사유를 입력해주세요."></textarea>
-            <div class="flex gap-3">
-                <button onclick="closeModal('modal-reject')" class="flex-1 py-3 bg-gray-100 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-200">취소</button>
-                <button onclick="closeModal('modal-reject')" class="flex-1 py-3 bg-red-500 text-white text-sm font-bold rounded-lg hover:bg-red-600">거절 확정</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 서류 뷰어 모달 -->
-    <div id="modal-doc-viewer" class="fixed inset-0 z-[110] hidden flex items-center justify-center px-4">
-        <div class="absolute inset-0 bg-gray-900 bg-opacity-60 transition-opacity" onclick="closeModal('modal-doc-viewer')"></div>
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl relative z-10 p-6 flex flex-col h-[85vh]">
-            
+    <!-- Doc viewer modal -->
+    <div id="modal-doc-viewer" class="fixed inset-0 z-[110] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" onclick="closeModal('modal-doc-viewer')"></div>
+        <div class="modal-panel bg-white rounded-2xl shadow-2xl w-full max-w-3xl relative z-10 p-6 flex flex-col h-[85vh]">
             <div class="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
-                <h3 id="doc-viewer-title" class="text-lg font-bold text-gray-900">서류 보기</h3>
-                <button onclick="closeModal('modal-doc-viewer')" class="text-gray-400 hover:text-gray-600 focus:outline-none">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <h3 id="doc-viewer-title" class="text-lg fw-bold text-gray-900">서류 보기</h3>
+                <button onclick="closeModal('modal-doc-viewer')" class="text-gray-400 hover:text-gray-700 transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            
-            <!-- 문서 이미지 영역 -->
-            <div class="flex-1 bg-gray-100 rounded-xl overflow-auto flex items-center justify-center p-4">
-                <img id="doc-viewer-img" src="" alt="Document" class="max-w-full h-auto shadow-sm">
+            <div class="flex-1 bg-gray-100 rounded-xl overflow-auto doc-scroll flex items-center justify-center p-4">
+                <img id="doc-viewer-img" src="" alt="Document" class="max-w-full h-auto shadow-sm bg-white">
             </div>
-            
-            <!-- 하단 버튼 -->
             <div class="mt-4 flex gap-3">
-                <button onclick="closeModal('modal-doc-viewer')" class="flex-1 py-3 bg-gray-100 text-gray-700 text-sm font-bold rounded-lg hover:bg-gray-200 transition-colors">닫기</button>
-                <button onclick="downloadCurrentDoc()" class="flex-1 py-3 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
-                    다운로드
-                </button>
+                <button onclick="closeModal('modal-doc-viewer')" class="flex-1 h-10 bg-gray-100 text-gray-600 text-sm fw-bold rounded-xl hover:bg-gray-200 transition">닫기</button>
+                <button onclick="downloadCurrentDoc()" class="flex-1 h-10 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition">다운로드</button>
             </div>
         </div>
     </div>
 
-    <!-- JS 스크립트 -->
+    <!-- Payment execution modal: payment-page.html 흡수 -->
+    <div id="modal-payment-execute" class="fixed inset-0 z-[120] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm" onclick="closeModal('modal-payment-execute')"></div>
+        <div class="modal-panel bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10 p-8">
+            <div class="text-center mb-7">
+                <h3 class="text-lg fw-bold text-gray-900 mb-1">대금 지급 실행</h3>
+                <p class="text-xs text-gray-400">지급 정보를 확인하고 결제하기를 누르면 바로 지급이 실행됩니다.</p>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-100 rounded-2xl p-5 mb-5 flex items-center justify-between gap-4">
+                <div>
+                    <p class="text-xs text-gray-400 mb-1 uppercase">결제 수단</p>
+                    <p class="wallet-addr fw-bold">rN7d...x3Kq · Main Treasury</p>
+                </div>
+                <div class="text-sm fw-bold text-blue-600">120,500 RLUSD</div>
+            </div>
+
+            <div class="space-y-3 mb-6 bg-white border border-gray-100 rounded-2xl p-5">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-400">인보이스 번호</span>
+                    <span id="pay-modal-id" class="text-sm fw-bold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-400">수취대상</span>
+                    <span id="pay-modal-corp" class="text-sm fw-bold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-400">지급 후 상태</span>
+                    <span class="text-sm fw-bold text-blue-600">지급 완료</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-400">청구 원금액</span>
+                    <span id="pay-modal-amount" class="text-sm fw-bold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-400">조기 지불 할인</span>
+                    <span id="pay-modal-discount" class="text-sm fw-bold text-green-600"></span>
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-100 rounded-2xl p-5 mb-6 flex justify-between items-center">
+                <span class="text-sm fw-bold text-blue-600">최종 결제 금액</span>
+                <span id="pay-modal-final" class="text-2xl fw-bold text-blue-700"></span>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="execute-cancel-btn" onclick="closeModal('modal-payment-execute')" class="flex-1 h-11 bg-gray-100 text-gray-500 text-sm fw-bold rounded-xl hover:bg-gray-200 transition">취소</button>
+                <button id="execute-pay-btn" onclick="executePayment()" class="flex-1 h-11 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-100">결제하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success modal -->
+    <div id="modal-payment-success" class="fixed inset-0 z-[140] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm"></div>
+        <div class="modal-panel bg-white rounded-2xl shadow-2xl w-full max-w-sm relative z-10 p-8 text-center">
+            <div class="w-14 h-14 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <h3 class="text-lg fw-bold text-gray-900 mb-2">지급이 완료되었습니다</h3>
+            <p class="text-xs text-gray-400 mb-6">지급 완료 목록에서 처리 내역을 확인할 수 있습니다.</p>
+            <div class="bg-gray-50 rounded-2xl p-5 mb-6 text-left space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">인보이스 번호</span>
+                    <span id="success-id" class="text-xs fw-bold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">지급 금액</span>
+                    <span id="success-amount" class="text-xs fw-bold text-gray-900"></span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-xs text-gray-400">지급 후 상태</span>
+                    <span class="text-xs fw-bold text-blue-600">지급 완료</span>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-400 mb-1">Tx Hash</p>
+                    <p id="success-tx" class="wallet-addr fw-bold text-blue-600"></p>
+                </div>
+            </div>
+            <button onclick="closeModal('modal-payment-success')" class="w-full h-10 bg-gray-900 text-white text-sm fw-bold rounded-xl hover:bg-black transition">확인</button>
+        </div>
+    </div>
+
     <script>
-        // 더미 데이터 (서류 이미지 URL 추가)
         const invoices = [
-            { 
-                id: '#INV-2026-0042', corp: '(주)한빛테크', amount: '50,000,000', date: '2026.07.15', status: '확인 대기', orderNo: 'PO-HAN-1138', deliveryDate: '2026.04.20', items: 'LED 모듈 외 2건 (500세트)', discount: '- ₩1,000,000', finalAmount: '₩49,000,000',
-                docs: {
-                    tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Hanbit)',
-                    receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Hanbit)',
-                    delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Hanbit)'
-                }
-            },
-            { 
-                id: '#INV-2026-0041', corp: '(주)스마트솔루션', amount: '32,000,000', date: '2026.08.01', status: '확인 대기', orderNo: 'PO-SMART-992', deliveryDate: '2026.05.02', items: '센서 모듈 (300세트)', discount: '- ₩0', finalAmount: '₩32,000,000',
-                docs: {
-                    tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Smart)',
-                    receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Smart)',
-                    delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Smart)'
-                }
-            },
-            { 
-                id: '#INV-2026-0038', corp: '(주)그린파츠', amount: '13,500,000', date: '2026.06.30', status: '확인 대기', orderNo: 'PO-GRN-105', deliveryDate: '2026.04.10', items: '외장 케이스 (1,000개)', discount: '- ₩270,000', finalAmount: '₩13,230,000',
-                docs: {
-                    tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Green)',
-                    receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Green)',
-                    delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Green)'
-                }
-            }
+            { id: '#INV-2026-0042', corp: '(주)한빛테크', amount: '50,000,000', date: '2026.05.15', status: 'pending', orderNo: 'PO-HAN-1138', deliveryDate: '2026.04.20', items: 'LED 모듈 외 2건 (500세트)', discount: '- ₩1,000,000', finalAmount: '₩49,000,000', paidAt: '', txHash: '', docs: { tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Hanbit)', receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Hanbit)', delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Hanbit)' } },
+            { id: '#INV-2026-0041', corp: '(주)스마트솔루션', amount: '32,000,000', date: '2026.08.01', status: 'pending', orderNo: 'PO-SMART-992', deliveryDate: '2026.05.02', items: '센서 모듈 (300세트)', discount: '- ₩0', finalAmount: '₩32,000,000', paidAt: '', txHash: '', docs: { tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Smart)', receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Smart)', delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Smart)' } },
+            { id: '#INV-2026-0038', corp: '(주)그린파츠', amount: '13,500,000', date: '2026.06.30', status: 'pending', orderNo: 'PO-GRN-105', deliveryDate: '2026.04.10', items: '외장 케이스 (1,000개)', discount: '- ₩270,000', finalAmount: '₩13,230,000', paidAt: '', txHash: '', docs: { tax: 'https://via.placeholder.com/800x1131.png?text=Tax+Invoice+(Green)', receipt: 'https://via.placeholder.com/800x1131.png?text=Transaction+Receipt+(Green)', delivery: 'https://via.placeholder.com/800x1131.png?text=Delivery+Confirmation+(Green)' } },
+            { id: '#INV-2026-0031', corp: '(주)세명패키징', amount: '21,000,000', date: '2026.05.22', status: 'paid', orderNo: 'PO-SMP-771', deliveryDate: '2026.03.18', items: '패키징 박스 2,000개', discount: '- ₩420,000', finalAmount: '₩20,580,000', paidAt: '2026.05.10 14:32', txHash: '0xA3F8...9e2C', docs: { tax: '', receipt: '', delivery: '' } }
         ];
 
-        let currentId = invoices[0].id; // 초기 활성 ID
+        let openDetailId = null;
+        let activePaymentId = null;
+        let isPaymentProcessing = false;
 
-        // 리스트 렌더링
-        function renderList() {
-            const listContainer = document.getElementById('invoice-list');
-            listContainer.innerHTML = '';
-
-            invoices.forEach(inv => {
-                const isActive = (inv.id === currentId);
-                
-                // 상태에 따른 스타일 변경
-                const wrapperClass = isActive 
-                    ? "bg-white border-y border-r border-l-4 border-blue-600 rounded-r-xl border-gray-200 shadow-sm" 
-                    : "bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer";
-                
-                const textClass = isActive ? "font-bold text-blue-600" : "font-medium text-gray-500";
-                const corpClass = isActive ? "font-bold text-gray-900" : "font-medium text-gray-500";
-                
-                const btnClass = isActive 
-                    ? "bg-blue-50 text-blue-600 border border-blue-100" 
-                    : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50";
-                const btnText = isActive ? "상세 보기 닫기" : "상세 보기";
-
-                const html = `
-                    <div onclick="toggleInvoice('${inv.id}')" class="grid grid-cols-6 gap-4 px-6 py-4 items-center ${wrapperClass}">
-                        <div class="col-span-1 text-sm ${textClass}">${inv.id}</div>
-                        <div class="col-span-1 text-sm ${corpClass}">${inv.corp}</div>
-                        <div class="col-span-1 text-sm font-bold text-gray-900">₩${inv.amount}</div>
-                        <div class="col-span-1 text-sm text-gray-500">${inv.date}</div>
-                        <div class="col-span-1">
-                            <span class="bg-orange-50 text-orange-600 text-xs font-bold px-3 py-1 rounded-full border border-orange-100">${inv.status}</span>
-                        </div>
-                        <div class="col-span-1 text-right">
-                            <button class="px-4 py-2 text-xs font-bold rounded-lg transition-colors ${btnClass}">${btnText}</button>
-                        </div>
-                    </div>
-                `;
-                listContainer.insertAdjacentHTML('beforeend', html);
-            });
+        function renderAll() {
+            renderPendingList();
+            renderPaidList();
+            document.getElementById('pending-count').textContent = `${invoices.filter(i => i.status === 'pending').length}건`;
+            document.getElementById('paid-count').textContent = `${invoices.filter(i => i.status === 'paid').length}건`;
         }
 
-        // 인보이스 토글 (열기/닫기)
-        function toggleInvoice(id) {
-            if (currentId === id) {
-                // 이미 열려있는 항목을 클릭하면 닫음
-                currentId = null;
-            } else {
-                // 다른 항목을 클릭하면 엶
-                currentId = id;
-            }
-            renderList();
-            updateDetailCard();
-        }
-
-        // 하단 상세 정보 업데이트
-        function updateDetailCard() {
-            const detailCard = document.getElementById('detail-card');
-            
-            // 활성된 항목이 없으면 카드 숨기기
-            if (!currentId) {
-                detailCard.classList.add('hidden');
+        function renderPendingList() {
+            const tbody = document.getElementById('pending-list');
+            const pending = invoices.filter(i => i.status === 'pending');
+            if (!pending.length) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-14 text-center text-sm text-gray-400">지급 대기 중인 인보이스가 없습니다.</td></tr>`;
                 return;
             }
-            
-            // 활성된 항목이 있으면 데이터 세팅 후 카드 표시
-            detailCard.classList.remove('hidden');
-            const inv = invoices.find(i => i.id === currentId);
 
-            document.getElementById('detail-title').textContent = `${inv.id} 상세 내역`;
-            document.getElementById('detail-order-no').textContent = `발주서: ${inv.orderNo}`;
-            document.getElementById('detail-corp').textContent = inv.corp;
-            document.getElementById('detail-delivery-date').textContent = inv.deliveryDate;
-            document.getElementById('detail-items').textContent = inv.items;
-            document.getElementById('detail-amount').textContent = `₩${inv.amount}`;
-            document.getElementById('detail-discount').textContent = inv.discount;
-            document.getElementById('detail-final-amount').textContent = inv.finalAmount;
-
-            // 서류 보기 버튼 이벤트 연결
-            document.getElementById('btn-doc-tax').onclick = () => openDocViewer('전자세금계산서', inv.docs.tax);
-            document.getElementById('btn-doc-receipt').onclick = () => openDocViewer('거래명세서 원본', inv.docs.receipt);
-            document.getElementById('btn-doc-delivery').onclick = () => openDocViewer('납품 완료 확인서', inv.docs.delivery);
+            tbody.innerHTML = pending.map(inv => {
+                const isOpen = openDetailId === inv.id;
+                return `
+                    <tr class="cursor-pointer hover:bg-gray-50 transition ${isOpen ? 'bg-blue-50' : 'bg-white'}" onclick="toggleDetail('${inv.id}')">
+                        <td class="px-6 py-4 text-blue-600 fw-bold">${inv.id}</td>
+                        <td class="px-6 py-4 fw-bold text-gray-900">${inv.corp}</td>
+                        <td class="px-6 py-4 text-right fw-bold text-gray-900">₩${inv.amount}</td>
+                        <td class="px-6 py-4 text-gray-400">${inv.date}</td>
+                        <td class="px-6 py-4">${dueBadge(inv.date)}</td>
+                        <td class="px-6 py-4 text-right"><button onclick="event.stopPropagation(); toggleDetail('${inv.id}')" class="px-4 h-8 rounded-xl text-xs fw-bold transition ${isOpen ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-50'}">${isOpen ? '닫기' : '상세보기'}</button></td>
+                    </tr>
+                    ${isOpen ? detailRow(inv) : ''}
+                `;
+            }).join('');
         }
 
-        // 모달 제어
-        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
-        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        function detailRow(inv) {
+            return `
+                <tr class="bg-white">
+                    <td colspan="6" class="px-6 pb-6">
+                        <div class="border border-blue-100 bg-blue-50 bg-opacity-30 rounded-2xl p-6">
+                            <div class="flex items-start justify-between gap-4 mb-6">
+                                <div>
+                                    <h3 class="text-lg fw-bold text-gray-900 mb-1">${inv.id} 상세 내역</h3>
+                                    <p class="text-xs text-gray-400">발주서 ${inv.orderNo} · 납품 완료일 ${inv.deliveryDate}</p>
+                                </div>
+                                <span class="text-xs text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-3 py-1 fw-bold">증빙 확인 가능</span>
+                            </div>
 
-        // 서류 뷰어 열기
+                            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                                <div class="lg:col-span-7 space-y-6">
+                                    <div class="bg-white border border-gray-100 rounded-2xl p-5">
+                                        <h4 class="text-xs fw-bold text-gray-400 mb-4 uppercase tracking-widest">기본 정보</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div><p class="text-xs text-gray-400 mb-1">발행 기업</p><p class="text-sm fw-bold text-gray-900">${inv.corp}</p></div>
+                                            <div><p class="text-xs text-gray-400 mb-1">납품 내역</p><p class="text-sm fw-bold text-gray-900 truncate">${inv.items}</p></div>
+                                            <div><p class="text-xs text-gray-400 mb-1">만기일</p><p class="text-sm fw-bold text-gray-900">${inv.date}</p></div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-white border border-gray-100 rounded-2xl p-5">
+                                        <h4 class="text-xs fw-bold text-gray-400 mb-3 uppercase tracking-widest">필수 증빙 서류</h4>
+                                        <div class="space-y-2">
+                                            ${docItem('전자세금계산서', '국세청 승인 완료', inv.docs.tax)}
+                                            ${docItem('거래명세서 원본', '발행기업 업로드', inv.docs.receipt)}
+                                            ${docItem('납품 완료 확인서', '물류 시스템 교차 검증', inv.docs.delivery)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="lg:col-span-5">
+                                    <div class="bg-white border border-gray-100 rounded-2xl p-5 h-full flex flex-col">
+                                        <h4 class="text-xs fw-bold text-gray-400 mb-4 uppercase tracking-widest">결제 상세 정보</h4>
+                                        <div class="space-y-4 mb-6">
+                                            <div class="flex justify-between items-center"><span class="text-sm text-gray-400">청구 원금액</span><span class="text-sm fw-bold text-gray-900">₩${inv.amount}</span></div>
+                                            <div class="flex justify-between items-center"><span class="text-sm text-green-600 fw-bold">조기 지불 할인</span><span class="text-sm fw-bold text-green-600">${inv.discount}</span></div>
+                                        </div>
+                                        <div class="border-t border-dashed border-gray-200 pt-5 mb-6 flex justify-between items-center">
+                                            <span class="text-sm fw-bold text-gray-900">최종 결제 금액</span>
+                                            <span class="text-2xl fw-bold text-blue-600">${inv.finalAmount}</span>
+                                        </div>
+                                        <button onclick="event.stopPropagation(); openPaymentExecute('${inv.id}')" class="w-full h-10 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition shadow-md shadow-blue-100 mt-auto">대금 지급 실행</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }
+
+        function docItem(title, caption, url) {
+            return `
+                <div class="flex items-center justify-between bg-gray-50 rounded-xl p-3 border border-gray-100">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="w-8 h-8 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </span>
+                        <div class="min-w-0"><p class="text-sm fw-bold text-gray-900 truncate">${title}</p><p class="text-xs text-gray-400 truncate">${caption}</p></div>
+                    </div>
+                    <button onclick="event.stopPropagation(); openDocViewer('${title}', '${url}')" class="text-xs fw-bold text-blue-600 hover:text-blue-700 px-2 py-1">보기</button>
+                </div>
+            `;
+        }
+
+        function renderPaidList() {
+            const tbody = document.getElementById('paid-list');
+            const paid = invoices.filter(i => i.status === 'paid');
+            if (!paid.length) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-14 text-center text-sm text-gray-400">지급 완료 내역이 없습니다.</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = paid.map(inv => `
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-6 py-4 text-blue-600 fw-bold">${inv.id}</td>
+                    <td class="px-6 py-4 fw-bold text-gray-900">${inv.corp}</td>
+                    <td class="px-6 py-4 text-right fw-bold text-blue-600">${inv.finalAmount}</td>
+                    <td class="px-6 py-4 text-gray-400 text-xs">${inv.paidAt}</td>
+                    <td class="px-6 py-4"><span class="wallet-addr fw-bold text-blue-600">${inv.txHash}</span></td>
+                </tr>
+            `).join('');
+        }
+        function dueBadge(dateString) {
+            const today = new Date(2026, 4, 12); // 데모 기준일: 2026.05.12
+            const [year, month, day] = dateString.split('.').map(Number);
+            const due = new Date(year, month - 1, day);
+            const diffDays = Math.ceil((due - today) / (1000 * 60 * 60 * 24));
+            if (diffDays < 0) {
+                return `<span class="bg-red-50 text-red-600 text-xs fw-bold px-3 py-1 rounded-full border border-red-100">기한 경과 D+${Math.abs(diffDays)}</span>`;
+            }
+            if (diffDays <= 7) {
+                return `<span class="bg-red-50 text-red-600 text-xs fw-bold px-3 py-1 rounded-full border border-red-100">만기 임박 D-${diffDays}</span>`;
+            }
+            if (diffDays <= 14) {
+                return `<span class="bg-orange-50 text-orange-600 text-xs fw-bold px-3 py-1 rounded-full border border-orange-100">지급 대기 D-${diffDays}</span>`;
+            }
+            return `<span class="bg-gray-50 text-gray-500 text-xs fw-bold px-3 py-1 rounded-full border border-gray-100">지급 대기</span>`;
+        }
+
+
+        function toggleDetail(id) {
+            openDetailId = openDetailId === id ? null : id;
+            renderPendingList();
+        }
+
+        function openPaymentExecute(id) {
+            activePaymentId = id;
+            const inv = invoices.find(i => i.id === id);
+            document.getElementById('pay-modal-id').textContent = inv.id;
+            document.getElementById('pay-modal-corp').textContent = inv.corp;
+            document.getElementById('pay-modal-amount').textContent = `₩${inv.amount}`;
+            document.getElementById('pay-modal-discount').textContent = inv.discount;
+            document.getElementById('pay-modal-final').textContent = inv.finalAmount;
+            resetPaymentButtons();
+            openModal('modal-payment-execute');
+        }
+
+
+        function executePayment() {
+            if (isPaymentProcessing) return;
+            const inv = invoices.find(i => i.id === activePaymentId);
+            if (!inv || inv.status !== 'pending') return;
+
+            isPaymentProcessing = true;
+            const payBtn = document.getElementById('execute-pay-btn');
+            const cancelBtn = document.getElementById('execute-cancel-btn');
+            payBtn.disabled = true;
+            cancelBtn.disabled = true;
+            payBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            cancelBtn.classList.add('opacity-60', 'cursor-not-allowed');
+            payBtn.textContent = '처리 중...';
+
+            setTimeout(() => {
+                inv.status = 'paid';
+                inv.paidAt = getCurrentDateTime();
+                inv.txHash = makeTxHash();
+                document.getElementById('success-id').textContent = inv.id;
+                document.getElementById('success-amount').textContent = inv.finalAmount;
+                document.getElementById('success-tx').textContent = inv.txHash;
+                if (openDetailId === inv.id) openDetailId = null;
+                closeModal('modal-payment-execute');
+                renderAll();
+                setTimeout(() => {
+                    resetPaymentButtons();
+                    openModal('modal-payment-success');
+                }, 180);
+            }, 650);
+        }
+
+        function resetPaymentButtons() {
+            isPaymentProcessing = false;
+            const payBtn = document.getElementById('execute-pay-btn');
+            const cancelBtn = document.getElementById('execute-cancel-btn');
+            if (!payBtn || !cancelBtn) return;
+            payBtn.disabled = false;
+            cancelBtn.disabled = false;
+            payBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            cancelBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            payBtn.textContent = '결제하기';
+        }
+
         function openDocViewer(title, url) {
             document.getElementById('doc-viewer-title').textContent = title;
             document.getElementById('doc-viewer-img').src = url;
             openModal('modal-doc-viewer');
         }
 
-        // 실제 서류 다운로드 실행 함수
         async function downloadCurrentDoc() {
             const imgUrl = document.getElementById('doc-viewer-img').src;
             const title = document.getElementById('doc-viewer-title').textContent;
-            
             try {
-                // fetch를 통해 이미지를 Blob 데이터로 변환 (CORS 허용 이미지 기준)
                 const response = await fetch(imgUrl);
                 const blob = await response.blob();
-                
-                // 가상 URL 생성
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
-                a.style.display = 'none';
                 a.href = url;
-                a.download = `${title}_${currentId}.png`; // 파일명 설정
+                a.download = `${title}_${openDetailId || 'invoice'}.png`;
                 document.body.appendChild(a);
-                
-                // 다운로드 트리거
                 a.click();
-                
-                // 메모리 정리
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
             } catch (error) {
-                console.error("다운로드 실패 (CORS 등 문제 시 Fallback 실행): ", error);
-                // Fallback: 새 탭에서 열기 또는 직접 링크 연결
-                const a = document.createElement('a');
-                a.href = imgUrl;
-                a.download = `${title}_${currentId}.png`;
-                a.target = '_blank';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
+                window.open(imgUrl, '_blank');
             }
         }
 
-        // 초기 실행
-        window.onload = () => {
-            renderList();
-            updateDetailCard();
-        };
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            setTimeout(() => modal.querySelector('.modal-panel')?.classList.add('show'), 10);
+        }
+
+        function closeModal(id) {
+            if (id === 'modal-payment-execute' && isPaymentProcessing) return;
+            const modal = document.getElementById(id);
+            modal.querySelector('.modal-panel')?.classList.remove('show');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (!document.querySelector('.fixed.inset-0:not(.hidden)')) document.body.style.overflow = '';
+            }, 180);
+        }
+
+        function getCurrentDateTime() {
+            const d = new Date();
+            const pad = n => String(n).padStart(2, '0');
+            return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        function makeTxHash() {
+            const chars = '0123456789abcdef';
+            let s = '0x';
+            for (let i = 0; i < 8; i++) s += chars[Math.floor(Math.random() * chars.length)].toUpperCase();
+            return `${s}...${chars[Math.floor(Math.random()*16)]}${chars[Math.floor(Math.random()*16)]}${chars[Math.floor(Math.random()*16)]}${chars[Math.floor(Math.random()*16)]}`;
+        }
+
+        window.onload = renderAll;
     </script>
 </body>
 </html>
