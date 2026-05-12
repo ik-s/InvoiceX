@@ -299,7 +299,7 @@
           지갑 연결 완료
         </h2>
         <p class="body-main mt-2 text-[#7d8594]">
-          InvoiceX에서 지갑 정보를 확인했어요.
+          마이페이지로 이동할 수 있어요.
         </p>
       </div>
 
@@ -338,11 +338,11 @@
         </button>
 
         <button
-          id="confirmResultModal"
+          id="goToMypageButton"
           type="button"
           class="h-11 flex-1 rounded-lg bg-[#2563eb] text-[13px] font-bold text-white transition hover:bg-[#1d4ed8]"
         >
-          확인
+          마이페이지로 이동
         </button>
       </div>
     </section>
@@ -366,7 +366,7 @@
 
     const walletResultModal = document.getElementById("walletResultModal");
     const closeResultModal = document.getElementById("closeResultModal");
-    const confirmResultModal = document.getElementById("confirmResultModal");
+    const goToMypageButton = document.getElementById("goToMypageButton");
     const disconnectFromResult = document.getElementById("disconnectFromResult");
 
     const resultWalletName = document.getElementById("resultWalletName");
@@ -398,6 +398,19 @@
       10: "Optimism",
       11155420: "Optimism Sepolia"
     };
+
+    function getCurrentRole() {
+      const roleFromUrl = new URLSearchParams(window.location.search).get("role");
+      const roleFromStorage = localStorage.getItem("ix_user_role");
+
+      return roleFromUrl || roleFromStorage || "funder";
+    }
+
+    function redirectToMypage() {
+      const role = getCurrentRole();
+
+      window.location.href = `mypage.html?role=${encodeURIComponent(role)}`;
+    }
 
     function openModal() {
       walletModal.classList.remove("hidden");
@@ -485,6 +498,10 @@
     }
 
     function renderMainWalletStatus(data) {
+      if (!mainWalletStatus || !mainWalletName || !mainWalletAddress || !mainWalletNetwork) {
+        return;
+      }
+
       mainWalletStatus.classList.remove("hidden");
       mainWalletName.textContent = data.walletName;
       mainWalletAddress.textContent = `주소: ${data.address}`;
@@ -541,11 +558,13 @@
         }
       }
 
-      mainWalletStatus.classList.add("hidden");
+      if (mainWalletStatus) {
+        mainWalletStatus.classList.add("hidden");
+      }
 
-      mainWalletName.textContent = "";
-      mainWalletAddress.textContent = "";
-      mainWalletNetwork.textContent = "";
+      if (mainWalletName) mainWalletName.textContent = "";
+      if (mainWalletAddress) mainWalletAddress.textContent = "";
+      if (mainWalletNetwork) mainWalletNetwork.textContent = "";
 
       resultWalletName.textContent = "";
       resultWalletAddress.textContent = "";
@@ -848,7 +867,7 @@
 
     closeResultModal.addEventListener("click", closeWalletResultModal);
 
-    confirmResultModal.addEventListener("click", closeWalletResultModal);
+    goToMypageButton.addEventListener("click", redirectToMypage);
 
     disconnectFromResult.addEventListener("click", function() {
       renderDisconnectedWallet();

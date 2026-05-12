@@ -4,7 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>InvoiceX - 회원가입</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Pretendard -->
   <link
     rel="stylesheet"
     href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
@@ -21,57 +24,18 @@
       line-height: 1.5;
     }
 
-    .heading-1 {
-      font-size: 30px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .heading-2 {
-      font-size: 20px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .heading-3 {
-      font-size: 18px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .body-main {
-      font-size: 14px;
-      font-weight: 500;
-      line-height: 1.5;
-    }
-
-    .nav-menu {
-      font-size: 14px;
-      font-weight: 700;
-      line-height: 1.2;
-    }
-
-    .data-small {
-      font-size: 12px;
-      font-weight: 700;
-      line-height: 1.5;
-    }
-
-    .price-amount {
-      font-size: 24px;
-      font-weight: 700;
+    h1 {
       line-height: 1.2;
     }
   </style>
 </head>
 
-
-<body class="min-h-screen bg-[#f6f8fc] font-sans text-[#171923]">
+<body class="min-h-screen bg-[#f6f8fc] text-[#171923]">
   <!-- Header -->
   <header class="flex h-[39px] w-full items-center justify-center border-b border-[#e5e8f0] bg-white">
     <a
       href="start.html"
-      class="text-[14px] font-extrabold tracking-[-0.02em] text-[#2563eb] no-underline"
+      class="text-[14px] font-bold tracking-[-0.02em] text-[#2563eb] no-underline"
     >
       InvoiceX
     </a>
@@ -83,10 +47,11 @@
       
       <!-- Title -->
       <section class="mb-8 text-center">
-        <h1 class="mb-2 text-[28px] font-extrabold leading-tight tracking-tight text-[#151923]">
+        <h1 class="mb-2 text-[28px] font-bold leading-[1.2] tracking-[-0.02em] text-[#151923]">
           회원가입
         </h1>
-        <p class="text-[14px] leading-relaxed tracking-tight text-[#7b8494]">
+
+        <p class="text-[14px] font-medium leading-[1.5] tracking-[-0.02em] text-[#7b8494]">
           InvoiceX 서비스 이용을 위해 회원가입하세요.
         </p>
       </section>
@@ -101,17 +66,18 @@
           <div>
             <label
               for="email-signup"
-              class="mb-2 block text-[12px] font-bold tracking-tight text-[#242936]"
+              class="mb-2 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]"
             >
               이메일 주소
             </label>
+
             <input
               id="email-signup"
               name="email"
               type="email"
               placeholder="example@company.com"
               required
-              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
+              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] font-medium text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
             />
           </div>
 
@@ -120,7 +86,7 @@
             <div class="mb-2 flex items-center justify-between">
               <label
                 for="email-verification"
-                class="block text-[12px] font-bold tracking-tight text-[#242936]"
+                class="block text-[12px] font-bold tracking-[-0.02em] text-[#242936]"
               >
                 이메일 인증
               </label>
@@ -140,7 +106,7 @@
               type="text"
               placeholder="인증번호를 입력하세요"
               required
-              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
+              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] font-medium text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
             />
           </div>
 
@@ -148,17 +114,18 @@
           <div>
             <label
               for="password-signup"
-              class="mb-2 block text-[12px] font-bold tracking-tight text-[#242936]"
+              class="mb-2 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]"
             >
               비밀번호
             </label>
+
             <input
               id="password-signup"
               name="password"
               type="password"
               placeholder="영어+숫자 10자 이상"
               required
-              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
+              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] font-medium text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
             />
           </div>
 
@@ -166,29 +133,30 @@
           <div>
             <label
               for="password-confirm"
-              class="mb-2 block text-[12px] font-bold tracking-tight text-[#242936]"
+              class="mb-2 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]"
             >
               비밀번호 확인
             </label>
+
             <input
               id="password-confirm"
               name="password_confirm"
               type="password"
               placeholder="비밀번호를 다시 입력하세요"
               required
-              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
+              class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] font-medium text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
             />
           </div>
         </div>
 
         <!-- Role Selection -->
         <div class="mt-7">
-          <label class="mb-3 block text-[12px] font-bold tracking-tight text-[#242936]">
+          <label class="mb-3 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]">
             역할 선택
           </label>
 
           <div class="grid grid-cols-3 gap-3 max-md:grid-cols-1">
-            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-semibold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
+            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
               <input
                 type="radio"
                 name="role"
@@ -199,7 +167,7 @@
               인보이스 등록
             </label>
 
-            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-semibold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
+            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
               <input
                 type="radio"
                 name="role"
@@ -209,7 +177,7 @@
               RWA 참여
             </label>
 
-            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-semibold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
+            <label class="role-option cursor-pointer rounded-lg border-2 border-[#d9dee8] bg-[#f9fafc] p-4 text-center text-[13px] font-bold text-[#a5adbb] transition-all duration-200 hover:border-[#536be8] hover:bg-[#f0f4ff] hover:text-[#536be8]">
               <input
                 type="radio"
                 name="role"
@@ -225,17 +193,18 @@
         <div class="mt-5">
           <label
             for="company-name"
-            class="mb-2 block text-[12px] font-bold tracking-tight text-[#242936]"
+            class="mb-2 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]"
           >
             기업명
           </label>
+
           <input
             id="company-name"
             name="company_name"
             type="text"
             placeholder="기업명을 입력하세요"
             required
-            class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
+            class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] font-medium text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
           />
         </div>
 
@@ -248,7 +217,7 @@
         </button>
 
         <!-- Login Link -->
-        <p class="mt-5 text-center text-[12px] text-[#7d8594]">
+        <p class="mt-5 text-center text-[12px] font-medium text-[#7d8594]">
           이미 계정이 있으신가요?
           <a
             href="login.html"
