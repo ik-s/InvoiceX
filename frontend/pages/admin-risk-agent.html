@@ -277,6 +277,24 @@
     </main>
 
     <script>
+      const API_BASE_URL = window.INVOICEX_API_BASE_URL || 'http://localhost:3000';
+      function apiUrl(path) { return `${API_BASE_URL}${path}`; }
+      async function parseApiResponse(response) {
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload.message || payload.error || '서버 요청 처리에 실패했습니다.');
+        return payload;
+      }
+      function formatAmount(value) {
+        const numeric = Number(String(value || '').replace(/[^0-9]/g, ''));
+        return numeric ? `₩${numeric.toLocaleString('ko-KR')}` : String(value || '₩0');
+      }
+      function formatDate(value) {
+        return value ? String(value).slice(0, 10).replaceAll('-', '.') : '-';
+      }
+      function caseKeyFromPublicId(id) {
+        return String(id || '').replace(/^#/, '').replace(/[^a-zA-Z0-9가-힣]/g, '_').toLowerCase();
+      }
+
       const cases = {
         hanbit: {
           id: "#INV-2026-0042",
@@ -375,6 +393,84 @@
       };
       let selectedCaseKey = "hanbit";
       let activeFilter = "all";
+
+
+      function buildCaseFromInvoice(row) {
+        const publicId = row.public_id || row.id;
+        const company = row.issuer_name || row.company || 'InvoiceX 등록기업';
+        const buyer = row.buyer_name || row.buyer || '지급기업';
+        const amount = formatAmount(row.amount || row.invoice_amount);
+        const due = formatDate(row.due_date || row.date);
+        const delivery = formatDate(row.delivery_date);
+        const fileName = row.file_name || '첨부 서류';
+        return {
+          id: publicId,
+          publicId,
+          fromBackend: true,
+          company,
+          buyer,
+          amount,
+          due,
+          status: '발행 후보',
+          statusTone: 'ready',
+          filter: 'ready',
+          passportIssued: Boolean(row.passport_issued),
+          riskGrade: row.risk_grade || 'A',
+          subtitle: '지급기업 서류대조 승인이 완료되어 Admin 최종 검증 대기열로 넘어온 요청입니다.',
+          summary: '등록 인보이스, 지급기업 확인, 금액, 만기일을 기준으로 Admin 최종 검증을 진행합니다. Risk Passport 확정 후 Invoice RWA 발행 승인이 가능합니다.',
+          checks: [
+            ['Buyer Confirmation', 'PASS', `${buyer}가 지급기업 서류대조를 승인했습니다.`],
+            ['Invoice Amount', 'PASS', `등록 금액 ${amount} 확인`],
+            ['Due Date', 'PASS', `만기일 ${due} 확인`],
+            ['Duplicate Check', 'PASS', '현재 대기열 기준 중복 경고 없음']
+          ],
+          invoice: [
+            ['첨부파일', fileName],
+            ['거래 설명', row.description || row.invoice_desc || '등록된 거래 설명 없음'],
+            ['납품 완료일', delivery],
+            ['만기일', due]
+          ],
+          buyerInfo: [
+            ['확인 상태', 'Verified'],
+            ['확인자', row.buyer_email || `${buyer} 담당자`],
+            ['확인 시각', formatDate(row.updated_at || row.created_at)],
+            ['지급 의무', '지급기업 확인 완료']
+          ],
+          passport: [
+            ['지급 확인 여부', '확인 완료', '지급기업이 해당 인보이스의 지급 예정 사실을 확인했습니다.'],
+            ['분쟁 여부', '분쟁 없음', '등록 단계에서 분쟁 정보가 확인되지 않았습니다.'],
+            ['과거 지급 이력', '검증 필요', 'Admin 검증 단계에서 추가 확인합니다.'],
+            ['지급 지연 이력', '검증 필요', 'Admin 검증 단계에서 추가 확인합니다.'],
+            ['검증 상태', 'Admin 최종 검증 대기', '서류대조 완료 후 관리자 대기열로 이동했습니다.'],
+            ['예상 수령액', amount, '등록 인보이스 원금 기준 금액입니다.']
+          ],
+          gates: row.passport_issued
+            ? [['Risk Passport', 'ready', '발급 완료'], ['Invoice RWA', 'ready', 'Admin 확인 후 발행 가능']]
+            : [['Risk Passport', 'ready', '초안 확정 가능'], ['Invoice RWA', 'ready', 'Admin 확인 후 발행 가능']]
+        };
+      }
+
+      async function loadAdminInvoices() {
+        try {
+          const payload = await parseApiResponse(await fetch(apiUrl('/api/admin/invoices?status=admin_pending')));
+          (payload.invoices || []).forEach((row) => {
+            const item = buildCaseFromInvoice(row);
+            cases[caseKeyFromPublicId(item.publicId)] = item;
+          });
+        } catch (error) {
+          console.warn('InvoiceX Admin API 연결 실패. 기본 데모 데이터를 표시합니다.', error);
+        }
+
+        const focusId = new URLSearchParams(window.location.search).get('invoice');
+        if (focusId) {
+          const focusKey = caseKeyFromPublicId(focusId);
+          if (cases[focusKey]) selectedCaseKey = focusKey;
+        }
+
+        renderStats();
+        renderQueue();
+        renderCase();
+      }
 
       function visibleCases() {
         return Object.entries(cases).filter(([, item]) => activeFilter === "all" || item.filter === activeFilter);
@@ -533,21 +629,45 @@
         event.currentTarget.className = "h-[38px] rounded-lg border border-[#fed7aa] bg-[#fff7ed] px-3 text-[12px] font-bold text-[#d97706]";
         alert("Agent에게 Invoice 재검토를 요청합니다.");
       });
-      document.getElementById("issuePassportBtn").addEventListener("click", () => {
+      document.getElementById("issuePassportBtn").addEventListener("click", async () => {
         const item = cases[selectedCaseKey];
         if (item.statusTone === "blocked") {
           alert("필수 조건 미충족으로 Risk Passport를 확정할 수 없습니다.");
           return;
         }
+        if (item.fromBackend && item.publicId) {
+          try {
+            await parseApiResponse(await fetch(apiUrl(`/api/admin/invoices/${encodeURIComponent(item.publicId)}/passport`), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ riskGrade: item.riskGrade })
+            }));
+          } catch (error) {
+            alert(error.message);
+            return;
+          }
+        }
         item.passportIssued = true;
         document.getElementById("issuePassportBtn").textContent = "Risk Passport 발급 완료";
         alert(`${item.id} Risk Passport가 확정되었습니다.`);
       });
-      document.getElementById("approveRwaBtn").addEventListener("click", () => {
+      document.getElementById("approveRwaBtn").addEventListener("click", async () => {
         const item = cases[selectedCaseKey];
         if (!item.passportIssued) {
           alert("Risk Passport를 발급해주세요.");
           return;
+        }
+        if (item.fromBackend && item.publicId) {
+          try {
+            await parseApiResponse(await fetch(apiUrl(`/api/admin/invoices/${encodeURIComponent(item.publicId)}/approve-rwa`), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ memo: document.getElementById('verifierMemo').value.trim() })
+            }));
+          } catch (error) {
+            alert(error.message);
+            return;
+          }
         }
         item.status = "발행 완료";
         item.statusTone = "done";
@@ -561,9 +681,7 @@
       });
       document.getElementById("requestSupplementBtn").addEventListener("click", () => alert(`${cases[selectedCaseKey].id} 보완 요청이 생성되었습니다. Admin Memo를 함께 저장하세요.`));
 
-      renderStats();
-      renderQueue();
-      renderCase();
+      loadAdminInvoices();
     </script>
   </body>
 
