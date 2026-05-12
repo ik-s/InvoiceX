@@ -4,7 +4,9 @@ const { promisify } = require('util');
 const express = require('express');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 const { createClient } = require('@supabase/supabase-js');
+const xrpl = require('xrpl');
 
 require('dotenv').config({
     path: path.resolve(__dirname, '..', '.env'),
@@ -18,7 +20,8 @@ const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DEMO_AUTO_APPROVE_KYB = process.env.DEMO_AUTO_APPROVE_KYB !== 'false';
+const INVOICE_STORAGE_BUCKET = process.env.INVOICE_STORAGE_BUCKET || 'invoice-documents';
+const XRPL_TESTNET_URL = process.env.XRPL_TESTNET_URL || 'wss://s.altnet.rippletest.net:51233';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.warn('[config] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for database access.');
@@ -46,6 +49,11 @@ function getSupabase() {
 
     return supabase;
 }
+
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 const repoRoot = path.resolve(__dirname, '..', '..');
 const pagesDir = path.join(repoRoot, 'frontend', 'pages');
@@ -86,6 +94,8 @@ const REDIRECT_BY_ROLE = {
     FUNDER: '/mypage.html?role=funder',
     ADMIN: '/admin-kyb-review.html'
 };
+
+const PUBLIC_SIGNUP_ROLES = new Set(['SME', 'BUYER', 'FUNDER']);
 
 function normalizeRole(role) {
     if (!role) return null;
@@ -224,10 +234,27 @@ async function getUserWallet(userId) {
     return data;
 }
 
-function shapeMyPage(user, wallet) {
+async function getLatestKybVerification(companyId) {
+    if (!companyId) return null;
+
+    const { data, error } = await getSupabase()
+        .from('verifications')
+        .select('*')
+        .eq('target_type', 'COMPANY')
+        .eq('target_id', companyId)
+        .eq('verification_type', 'KYB')
+        .order('submitted_at', { ascending: false, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+
+    if (error) throw error;
+    return data;
+}
+
+function shapeMyPage(user, wallet, latestKybVerification = null) {
     const company = user.companies || {};
-    const kybStatus = company.kyb_status || 'NOT_SUBMITTED';
-    const hasBadge = Boolean(company.badge_status) || kybStatus === 'APPROVED';
+    const kybStatus = latestKybVerification?.status || company.kyb_status || 'NOT_SUBMITTED';
+    const hasBadge = kybStatus === 'APPROVED' && Boolean(company.badge_status);
 
     return {
         user: publicUser(user),
@@ -240,6 +267,7 @@ function shapeMyPage(user, wallet) {
         kyb_status: kybStatus,
         has_badge: hasBadge,
         kyb_badge: hasBadge,
+        latest_kyb_verification: latestKybVerification,
         is_wallet_connected: Boolean(wallet),
         wallet_address: wallet?.wallet_address || null,
         wallet_type: wallet?.credential_status || null,
@@ -253,8 +281,456 @@ function demoBusinessNumber(role) {
     return `DEMO-${normalizeRole(role) || 'USER'}-${Date.now()}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
 }
 
+function parsePositiveXrp(value, fallback = '1') {
+    const raw = value === undefined || value === null || value === '' ? fallback : value;
+    const amount = Number(raw);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+        const error = new Error('A positive XRP amount is required.');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    if (amount > 1000) {
+        const error = new Error('Demo Testnet payments are limited to 1000 XRP.');
+        error.statusCode = 400;
+        throw error;
+    }
+
+    return String(amount);
+}
+
+function hexMemo(value) {
+    return Buffer.from(String(value || '').slice(0, 256), 'utf8').toString('hex').toUpperCase();
+}
+
+const INVOICE_STATUSES = new Set([
+    'needs_review',
+    'admin_pending',
+    'rejected',
+    'supplement_requested',
+    'rwa_approved'
+]);
+
+function normalizeInvoiceAmount(value) {
+    const amount = Number(String(value || '').replace(/[^0-9]/g, ''));
+    return Number.isFinite(amount) ? amount : 0;
+}
+
+function generateInvoicePublicId() {
+    const year = new Date().getFullYear();
+    const serial = String(Date.now()).slice(-6);
+    const rand = crypto.randomBytes(2).toString('hex').toUpperCase();
+    return `#INV-${year}-${serial}${rand}`;
+}
+
+function cleanInvoicePublicId(raw) {
+    return decodeURIComponent(String(raw || '')).trim();
+}
+
+function publicInvoice(row) {
+    if (!row) return null;
+    return {
+        id: row.public_id,
+        public_id: row.public_id,
+        uuid: row.id,
+        issuer_name: row.issuer_name,
+        buyer_name: row.buyer_name,
+        buyer_email: row.buyer_email,
+        amount: row.amount,
+        currency: row.currency,
+        due_date: row.due_date,
+        delivery_date: row.delivery_date,
+        description: row.description,
+        file_name: row.file_name,
+        file_mime_type: row.file_mime_type,
+        file_size_bytes: row.file_size_bytes,
+        doc_url: row.doc_url,
+        status: row.status,
+        admin_approval: row.admin_approval,
+        passport_issued: row.passport_issued,
+        risk_grade: row.risk_grade,
+        admin_memo: row.admin_memo,
+        created_at: row.created_at,
+        updated_at: row.updated_at
+    };
+}
+
+async function ensureInvoiceBucket() {
+    const db = getSupabase();
+    const { data: buckets, error: listError } = await db.storage.listBuckets();
+    if (listError) throw listError;
+    if ((buckets || []).some((bucket) => bucket.name === INVOICE_STORAGE_BUCKET)) return;
+
+    const { error: createError } = await db.storage.createBucket(INVOICE_STORAGE_BUCKET, {
+        public: true,
+        fileSizeLimit: 10 * 1024 * 1024,
+        allowedMimeTypes: ['application/pdf', 'image/png', 'image/jpeg']
+    });
+
+    if (createError && !String(createError.message || '').includes('already exists')) {
+        throw createError;
+    }
+}
+
+async function uploadInvoiceDocument(publicId, file) {
+    if (!file) return null;
+
+    await ensureInvoiceBucket();
+    const db = getSupabase();
+    const safeId = publicId.replace(/^#/, '').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const ext = file.originalname && file.originalname.includes('.')
+        ? file.originalname.split('.').pop().toLowerCase()
+        : 'bin';
+    const objectPath = `${safeId}/${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await db.storage
+        .from(INVOICE_STORAGE_BUCKET)
+        .upload(objectPath, file.buffer, {
+            contentType: file.mimetype,
+            upsert: false
+        });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = db.storage.from(INVOICE_STORAGE_BUCKET).getPublicUrl(objectPath);
+    return data.publicUrl;
+}
+
+function requireInvoiceFields(fields) {
+    const missing = Object.entries(fields)
+        .filter(([, value]) => value === undefined || value === null || String(value).trim() === '')
+        .map(([key]) => key);
+
+    if (missing.length) {
+        const error = new Error(`Missing required invoice fields: ${missing.join(', ')}`);
+        error.statusCode = 400;
+        throw error;
+    }
+}
+
+async function withXrplClient(callback) {
+    const client = new xrpl.Client(XRPL_TESTNET_URL);
+    await client.connect();
+
+    try {
+        return await callback(client);
+    } finally {
+        await client.disconnect();
+    }
+}
+
+function publicTestnetWallet(wallet, balance) {
+    return {
+        address: wallet.classicAddress || wallet.address,
+        seed: wallet.seed,
+        network: 'XRPL_TESTNET',
+        balance_xrp: balance
+    };
+}
+
 app.get('/api/health', (_req, res) => {
-    res.json({ ok: true, service: 'InvoiceX backend' });
+    res.json({ ok: true, service: 'InvoiceX backend', storage_bucket: INVOICE_STORAGE_BUCKET });
+});
+
+app.post('/api/invoices', upload.single('document'), async (req, res) => {
+    try {
+        const buyerName = req.body.buyerName || req.body.buyer_name;
+        const buyerEmail = req.body.buyerEmail || req.body.buyer_email;
+        const invoiceAmount = req.body.invoiceAmount || req.body.amount;
+        const dueDate = req.body.dueDate || req.body.due_date;
+        const deliveryDate = req.body.deliveryDate || req.body.delivery_date;
+        const invoiceDesc = req.body.invoiceDesc || req.body.description;
+        const issuerName = req.body.issuerName || req.body.issuer_name || 'InvoiceX 등록기업';
+        const currency = req.body.currency || 'KRW';
+
+        requireInvoiceFields({ buyerName, buyerEmail, invoiceAmount, dueDate, deliveryDate, invoiceDesc, issuerName });
+
+        const amount = normalizeInvoiceAmount(invoiceAmount);
+        if (amount <= 0) {
+            return res.status(400).json({ message: 'Invoice amount must be a positive number.' });
+        }
+
+        const publicId = generateInvoicePublicId();
+        const docUrl = req.file ? await uploadInvoiceDocument(publicId, req.file) : null;
+
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .insert({
+                public_id: publicId,
+                issuer_name: issuerName,
+                buyer_name: buyerName,
+                buyer_email: buyerEmail,
+                amount,
+                currency,
+                due_date: dueDate,
+                delivery_date: deliveryDate,
+                description: invoiceDesc,
+                file_name: req.file?.originalname || null,
+                file_mime_type: req.file?.mimetype || null,
+                file_size_bytes: req.file?.size || null,
+                doc_url: docUrl,
+                status: 'needs_review',
+                admin_approval: 'none',
+                passport_issued: false
+            })
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to create invoice.', error);
+        return res.status(201).json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Invoice registration failed.', error);
+    }
+});
+
+app.get('/api/invoices', async (req, res) => {
+    try {
+        const statuses = String(req.query.status || '')
+            .split(',')
+            .map((status) => status.trim())
+            .filter(Boolean);
+
+        let query = getSupabase().from('invoices').select('*').order('created_at', { ascending: false });
+        if (statuses.length) query = query.in('status', statuses);
+
+        const { data, error } = await query;
+        if (error) return dbError(res, 'Failed to load invoices.', error);
+        return res.json({ invoices: (data || []).map(publicInvoice) });
+    } catch (error) {
+        return dbError(res, 'Failed to load invoices.', error);
+    }
+});
+
+app.get('/api/invoices/:publicId', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .select('*')
+            .eq('public_id', publicId)
+            .single();
+
+        if (error) return dbError(res, 'Failed to load invoice.', error, 404);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to load invoice.', error);
+    }
+});
+
+app.patch('/api/invoices/:publicId/status', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const status = req.body.status;
+        const adminApproval = req.body.adminApproval || req.body.admin_approval;
+
+        if (!INVOICE_STATUSES.has(status)) {
+            return res.status(400).json({ message: `Unsupported invoice status: ${status}` });
+        }
+
+        const patch = { status };
+        if (adminApproval) patch.admin_approval = adminApproval;
+        if (status === 'admin_pending' && !adminApproval) patch.admin_approval = 'pending';
+        if (status === 'rejected' && !adminApproval) patch.admin_approval = 'none';
+        if (req.body.rejectReason) patch.admin_memo = req.body.rejectReason;
+
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .update(patch)
+            .eq('public_id', publicId)
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to update invoice status.', error);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to update invoice status.', error);
+    }
+});
+
+app.get('/api/admin/invoices', async (req, res) => {
+    try {
+        const statuses = String(req.query.status || 'admin_pending')
+            .split(',')
+            .map((status) => status.trim())
+            .filter(Boolean);
+
+        let query = getSupabase().from('invoices').select('*').order('updated_at', { ascending: false });
+        if (statuses.length) query = query.in('status', statuses);
+
+        const { data, error } = await query;
+        if (error) return dbError(res, 'Failed to load admin invoices.', error);
+        return res.json({ invoices: (data || []).map(publicInvoice) });
+    } catch (error) {
+        return dbError(res, 'Failed to load admin invoices.', error);
+    }
+});
+
+app.post('/api/admin/invoices/:publicId/passport', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .update({
+                passport_issued: true,
+                risk_grade: req.body.riskGrade || req.body.risk_grade || 'A'
+            })
+            .eq('public_id', publicId)
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to issue Risk Passport.', error);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to issue Risk Passport.', error);
+    }
+});
+
+app.post('/api/admin/invoices/:publicId/approve-rwa', async (req, res) => {
+    try {
+        const publicId = cleanInvoicePublicId(req.params.publicId);
+        const { data: current, error: fetchError } = await getSupabase()
+            .from('invoices')
+            .select('*')
+            .eq('public_id', publicId)
+            .single();
+
+        if (fetchError) return dbError(res, 'Failed to load invoice for RWA approval.', fetchError, 404);
+        if (!current.passport_issued) {
+            return res.status(400).json({ message: 'Risk Passport must be issued before Invoice RWA approval.' });
+        }
+
+        const { data, error } = await getSupabase()
+            .from('invoices')
+            .update({
+                status: 'rwa_approved',
+                admin_approval: 'approved',
+                admin_memo: req.body.memo || current.admin_memo || null
+            })
+            .eq('public_id', publicId)
+            .select('*')
+            .single();
+
+        if (error) return dbError(res, 'Failed to approve Invoice RWA.', error);
+        return res.json({ invoice: publicInvoice(data) });
+    } catch (error) {
+        return dbError(res, 'Failed to approve Invoice RWA.', error);
+    }
+});
+
+app.post('/api/xrpl/testnet/wallet', authenticateToken, async (req, res) => {
+    try {
+        const amount = parsePositiveXrp(req.body.amount_xrp, '100');
+        const result = await withXrplClient((client) => client.fundWallet(null, {
+            amount,
+            usageContext: 'InvoiceX demo testnet wallet'
+        }));
+
+        return res.status(201).json({
+            message: 'XRPL Testnet wallet funded.',
+            wallet: publicTestnetWallet(result.wallet, result.balance),
+            balance_xrp: result.balance,
+            faucet: 'XRPL Testnet'
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to create XRPL Testnet wallet.', error);
+    }
+});
+
+app.post('/api/xrpl/testnet/wallet/fund', authenticateToken, async (req, res) => {
+    try {
+        const seed = String(req.body.seed || '').trim();
+        const amount = parsePositiveXrp(req.body.amount_xrp, '20');
+
+        if (!seed) {
+            return res.status(400).json({ message: 'seed is required for demo faucet funding.' });
+        }
+
+        const wallet = xrpl.Wallet.fromSeed(seed);
+        const result = await withXrplClient((client) => client.fundWallet(wallet, {
+            amount,
+            usageContext: 'InvoiceX demo testnet faucet refill'
+        }));
+
+        return res.json({
+            message: 'XRPL Testnet wallet funded.',
+            wallet: publicTestnetWallet(result.wallet, result.balance),
+            balance_xrp: result.balance,
+            faucet: 'XRPL Testnet'
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to fund XRPL Testnet wallet.', error);
+    }
+});
+
+app.get('/api/xrpl/testnet/accounts/:address/balance', authenticateToken, async (req, res) => {
+    try {
+        const address = String(req.params.address || '').trim();
+        if (!xrpl.isValidClassicAddress(address)) {
+            return res.status(400).json({ message: 'A valid XRPL classic address is required.' });
+        }
+
+        const balance = await withXrplClient((client) => client.getXrpBalance(address));
+        return res.json({
+            address,
+            balance_xrp: balance,
+            network: 'XRPL_TESTNET'
+        });
+    } catch (error) {
+        return dbError(res, 'Failed to load XRPL Testnet balance.', error);
+    }
+});
+
+app.post('/api/xrpl/testnet/payments', authenticateToken, async (req, res) => {
+    try {
+        const seed = String(req.body.source_seed || '').trim();
+        const destination = String(req.body.destination_address || '').trim();
+        const amountXrp = parsePositiveXrp(req.body.amount_xrp, '1');
+
+        if (!seed) {
+            return res.status(400).json({ message: 'source_seed is required for demo Testnet payment.' });
+        }
+
+        if (!xrpl.isValidClassicAddress(destination)) {
+            return res.status(400).json({ message: 'A valid destination_address is required.' });
+        }
+
+        const sourceWallet = xrpl.Wallet.fromSeed(seed);
+        const tx = {
+            TransactionType: 'Payment',
+            Account: sourceWallet.classicAddress,
+            Destination: destination,
+            Amount: xrpl.xrpToDrops(amountXrp)
+        };
+
+        if (req.body.memo) {
+            tx.Memos = [{ Memo: { MemoData: hexMemo(req.body.memo) } }];
+        }
+
+        const result = await withXrplClient((client) => client.submitAndWait(tx, { wallet: sourceWallet }));
+        const txResult = result.result.meta?.TransactionResult;
+
+        if (txResult !== 'tesSUCCESS') {
+            return res.status(502).json({
+                message: 'XRPL Testnet payment was not successful.',
+                status: txResult,
+                raw: result.result
+            });
+        }
+
+        return res.json({
+            message: 'XRPL Testnet payment succeeded.',
+            status: txResult,
+            tx_hash: result.result.hash,
+            ledger_index: result.result.ledger_index,
+            amount_xrp: amountXrp,
+            source_address: sourceWallet.classicAddress,
+            destination_address: destination,
+            network: 'XRPL_TESTNET'
+        });
+    } catch (error) {
+        return dbError(res, 'XRPL Testnet payment failed.', error);
+    }
 });
 
 app.post('/api/auth/signup', async (req, res) => {
@@ -269,6 +745,10 @@ app.post('/api/auth/signup', async (req, res) => {
 
         if (!email || !password || !roleType || !companyName) {
             return res.status(400).json({ message: 'email, password, role_type, and company_name are required.' });
+        }
+
+        if (!PUBLIC_SIGNUP_ROLES.has(roleType)) {
+            return res.status(403).json({ message: 'This role cannot be selected during public signup.' });
         }
 
         const { data: existingUser, error: lookupError } = await getSupabase()
@@ -395,7 +875,8 @@ async function myPageHandler(req, res) {
     try {
         const user = await getCurrentUser(req.user.userId);
         const wallet = await getUserWallet(req.user.userId);
-        return res.json(shapeMyPage(user, wallet));
+        const latestKybVerification = await getLatestKybVerification(user.company_id);
+        return res.json(shapeMyPage(user, wallet, latestKybVerification));
     } catch (error) {
         return dbError(res, 'Failed to load my page.', error);
     }
@@ -504,8 +985,7 @@ async function submitKybHandler(req, res) {
         const companyId = req.user.companyId;
         if (!companyId) return res.status(400).json({ message: 'Company information is missing.' });
         const submittedAt = new Date().toISOString();
-        // Demo-only: auto-approve KYB so the hackathon flow can proceed without an admin reviewer.
-        const kybStatus = DEMO_AUTO_APPROVE_KYB ? 'APPROVED' : 'PENDING';
+        const kybStatus = 'PENDING';
 
         const metadata = {
             representative_name: req.body.representative_name || req.body.representative || null,
@@ -513,15 +993,14 @@ async function submitKybHandler(req, res) {
             business_type: req.body.business_type || req.body.company_type || null,
             contact_email: req.body.contact_email || req.body.email || null,
             document_url: req.body.document_url || null,
-            submitted_by: req.user.userId,
-            demo_auto_approved: DEMO_AUTO_APPROVE_KYB
+            submitted_by: req.user.userId
         };
 
         const { data: company, error: companyError } = await getSupabase()
             .from('companies')
             .update({
                 kyb_status: kybStatus,
-                badge_status: DEMO_AUTO_APPROVE_KYB
+                badge_status: false
             })
             .eq('company_id', companyId)
             .select()
@@ -538,7 +1017,7 @@ async function submitKybHandler(req, res) {
                 status: kybStatus,
                 provider_ref_id: JSON.stringify(metadata),
                 submitted_at: submittedAt,
-                approved_at: DEMO_AUTO_APPROVE_KYB ? submittedAt : null
+                approved_at: null
             }])
             .select()
             .single();
@@ -546,12 +1025,10 @@ async function submitKybHandler(req, res) {
         if (verificationError) return dbError(res, 'Failed to create KYB verification.', verificationError);
 
         return res.status(201).json({
-            message: DEMO_AUTO_APPROVE_KYB
-                ? 'KYB verification submitted and demo-approved.'
-                : 'KYB verification submitted.',
-            demo_auto_approved: DEMO_AUTO_APPROVE_KYB,
+            message: 'KYB verification submitted and is waiting for admin approval.',
+            demo_auto_approved: false,
             kyb_status: kybStatus,
-            has_badge: DEMO_AUTO_APPROVE_KYB,
+            has_badge: false,
             company,
             verification
         });
@@ -580,8 +1057,8 @@ app.get('/api/kyb/me', authenticateToken, async (req, res) => {
         return res.json({
             company: user.companies || null,
             verification,
-            kyb_status: user.companies?.kyb_status || verification?.status || 'NOT_SUBMITTED',
-            has_badge: Boolean(user.companies?.badge_status)
+            kyb_status: verification?.status || user.companies?.kyb_status || 'NOT_SUBMITTED',
+            has_badge: (verification?.status || user.companies?.kyb_status) === 'APPROVED' && Boolean(user.companies?.badge_status)
         });
     } catch (error) {
         return dbError(res, 'Failed to load KYB status.', error);
