@@ -37,6 +37,11 @@
         border-color: #bfdbfe;
         background: #eff6ff;
       }
+
+      .upload-invalid {
+        border-color: #ef4444 !important;
+        background: #fff7f7 !important;
+      }
     </style>
   </head>
 
@@ -96,7 +101,7 @@
                 사업자등록증 사본
               </label>
 
-              <div
+              <div data-required-label="사업자등록증 사본"
                 class="upload-area relative flex h-[48px] w-full cursor-pointer items-center justify-center rounded-[6px]">
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png"
                   class="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
@@ -112,7 +117,7 @@
                 법인인감증명서 <span class="font-bold">(최근 3개월 이내)</span>
               </label>
 
-              <div
+              <div data-required-label="법인인감증명서"
                 class="upload-area relative flex h-[48px] w-full cursor-pointer items-center justify-center rounded-[6px]">
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png"
                   class="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
@@ -128,7 +133,7 @@
                 법인등기부등본 <span class="font-bold">(전부사항증명서)</span>
               </label>
 
-              <div
+              <div data-required-label="법인등기부등본"
                 class="upload-area relative flex h-[48px] w-full cursor-pointer items-center justify-center rounded-[6px]">
                 <input type="file" accept=".pdf,.jpg,.jpeg,.png"
                   class="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
@@ -177,9 +182,101 @@
       </section>
     </main>
 
+    <div id="modal-error" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4">
+      <div class="absolute inset-0 bg-gray-900 bg-opacity-40" onclick="closeModal('modal-error')"></div>
+      <div class="relative z-10 w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50">
+          <svg class="h-6 w-6 text-red-500" fill="none" stroke="currentColor" stroke-width="2.5"
+            viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
+            </path>
+          </svg>
+        </div>
+        <h3 class="mb-2 text-lg font-bold text-[#0F172A]">필수 서류가 부족합니다</h3>
+        <p class="mb-4 text-sm text-[#64748B]">아래 서류를 모두 첨부한 뒤 다시 인증 요청해 주세요.</p>
+        <ul id="error-list"
+          class="mb-6 space-y-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4 text-sm text-[#475569]"></ul>
+        <button type="button" onclick="closeModal('modal-error')"
+          class="h-10 w-full rounded-xl bg-[#0F172A] text-sm font-bold text-white hover:bg-black">
+          확인
+        </button>
+      </div>
+    </div>
+
     <script src="../assets/js/api.js"></script>
     <script>
-      document.querySelectorAll(".upload-area").forEach((area) => {
+      const uploadAreas = Array.from(document.querySelectorAll(".upload-area"));
+
+      function openModal(id) {
+        document.getElementById(id).classList.remove("hidden");
+      }
+
+      function closeModal(id) {
+        document.getElementById(id).classList.add("hidden");
+      }
+
+      function clearUploadError(area) {
+        area.classList.remove("upload-invalid");
+      }
+
+      function collectValidationErrors() {
+        const errors = [];
+
+        uploadAreas.forEach((area) => {
+          const input = area.querySelector('input[type="file"]');
+          clearUploadError(area);
+
+          if (!input.files || input.files.length === 0) {
+            area.classList.add("upload-invalid");
+            errors.push({
+              label: area.dataset.requiredLabel || "증빙 서류",
+              el: area
+            });
+          }
+        });
+
+        return errors;
+      }
+
+      function showValidationErrors(errors) {
+        const list = document.getElementById("error-list");
+        list.innerHTML = "";
+
+        errors.forEach((error) => {
+          const item = document.createElement("li");
+          item.className = "flex items-start gap-2";
+
+          const bullet = document.createElement("span");
+          bullet.className = "font-bold text-red-500";
+          bullet.textContent = "•";
+
+          const text = document.createElement("span");
+          text.textContent = error.label;
+
+          item.append(bullet, text);
+          list.appendChild(item);
+        });
+
+        openModal("modal-error");
+
+        const firstInvalid = errors[0]?.el;
+        if (firstInvalid) {
+          setTimeout(() => {
+            firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 100);
+        }
+      }
+
+      function selectedDocumentUrl() {
+        const filenames = uploadAreas
+          .map((area) => area.querySelector('input[type="file"]')?.files?.[0]?.name)
+          .filter(Boolean);
+
+        return `demo://kyb-documents?files=${encodeURIComponent(filenames.join(","))}`;
+      }
+
+      uploadAreas.forEach((area) => {
         const input = area.querySelector('input[type="file"]');
         const text = area.querySelector("p");
 
@@ -202,6 +299,7 @@
             text.textContent = files[0].name;
             text.classList.remove("text-[#94A3B8]");
             text.classList.add("text-[#2563EB]", "font-bold");
+            clearUploadError(area);
           }
         });
 
@@ -211,6 +309,7 @@
             text.textContent = file.name;
             text.classList.remove("text-[#94A3B8]");
             text.classList.add("text-[#2563EB]", "font-bold");
+            clearUploadError(area);
           }
         });
       });
@@ -305,12 +404,18 @@
             return;
           }
 
+          const errors = collectValidationErrors();
+          if (errors.length) {
+            showValidationErrors(errors);
+            return;
+          }
+
           submitBtn.disabled = true;
           submitBtn.textContent = "심사 요청 중...";
           submitBtn.classList.add("cursor-wait", "opacity-80");
 
           await InvoiceXApi.submitKyb({
-            document_url: "demo://kyb-documents",
+            document_url: selectedDocumentUrl(),
             business_type: roleParam
           });
 
