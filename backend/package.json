@@ -1,0 +1,21 @@
+{
+  "name": "invoicex-backend",
+  "version": "1.0.0",
+  "private": true,
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "check": "node --check src/server.js",
+    "test": "npm run check"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^2.0.2",
+    "xrpl": "^4.6.0"
+  }
+}
