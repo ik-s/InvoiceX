@@ -449,11 +449,20 @@
         next.disabled = !hasOverflow || atEnd;
       }
 
-      function renderRows(targetId, rows) {
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderRows(targetId, rows, truncateDetails = false) {
         document.getElementById(targetId).innerHTML = rows.map(([title, detail]) => `
-        <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] px-4 py-3">
-          <p class="text-[13px] font-bold text-[#0f172a]">${title}</p>
-          <p class="mt-1 text-[13px] leading-5 text-[#64748b]">${detail}</p>
+        <div class="min-w-0 rounded-lg border border-[#e5e8f0] bg-[#f8fafc] px-4 py-3">
+          <p class="text-[13px] font-bold text-[#0f172a]">${escapeHtml(title)}</p>
+          <p class="mt-1 text-[13px] leading-5 text-[#64748b] ${truncateDetails ? "truncate" : ""}" title="${escapeHtml(detail)}">${escapeHtml(detail)}</p>
         </div>
       `).join("");
       }
@@ -512,7 +521,7 @@
         document.getElementById("rejectBtn").disabled = item.status !== "PENDING";
         renderChecks(item.checks);
         renderRows("submittedInfo", item.submitted);
-        renderRows("documents", item.documents);
+        renderRows("documents", item.documents, true);
         renderRows("owners", item.owners);
         renderRows("purpose", item.purpose);
       }

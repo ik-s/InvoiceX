@@ -192,9 +192,9 @@
             <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <svg class="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
             </div>
-            <h3 class="text-lg fw-bold text-gray-900 mb-1">관리자 승인 대기 상태로 이동했습니다.</h3>
-            <p class="text-xs text-gray-400 mb-6">관리자 최종 승인 후 마켓에 등록됩니다.</p>
-            <button onclick="goToAdminQueue()" class="w-full h-10 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition">관리자 검증 대기열로 이동</button>
+            <h3 class="text-lg fw-bold text-gray-900 mb-1">인보이스 검토가 완료되었습니다.</h3>
+            <p class="text-xs text-gray-400 mb-6">관리자 최종 승인 후 자동으로 마켓에 등록됩니다.</p>
+            <button onclick="closeModal('modal-approve-success')" class="w-full h-10 bg-blue-600 text-white text-sm fw-bold rounded-xl hover:bg-blue-700 transition">확인</button>
         </div>
     </div>
 
@@ -504,14 +504,6 @@
             renderLists();
             closeModal('modal-approve-summary');
             openModal('modal-approve-success');
-        }
-
-        function goToAdminQueue() {
-            if (currentInvoiceId) {
-                window.location.href = `admin-risk-agent.html?invoice=${encodeURIComponent(currentInvoiceId)}`;
-                return;
-            }
-            window.location.href = 'admin-risk-agent.html';
         }
 
         window.onload = () => {
