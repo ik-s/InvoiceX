@@ -19,12 +19,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET;
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY;
 const INVOICE_STORAGE_BUCKET = process.env.INVOICE_STORAGE_BUCKET || 'invoice-documents';
 const XRPL_TESTNET_URL = process.env.XRPL_TESTNET_URL || 'wss://s.altnet.rippletest.net:51233';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-    console.warn('[config] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required for database access.');
+    console.warn('[config] SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY (or legacy SUPABASE_KEY) are required for database access.');
 }
 
 if (!JWT_SECRET) {
@@ -330,14 +330,18 @@ function cleanInvoicePublicId(raw) {
 
 function publicInvoice(row) {
     if (!row) return null;
+    const publicId = row.public_id || row.invoice_number || row.invoice_id || row.id;
+    const amount = row.amount ?? row.invoice_amount;
+
     return {
-        id: row.public_id,
-        public_id: row.public_id,
-        uuid: row.id,
-        issuer_name: row.issuer_name,
-        buyer_name: row.buyer_name,
+        id: publicId,
+        public_id: publicId,
+        uuid: row.id || row.invoice_id,
+        issuer_name: row.issuer_name || 'InvoiceX 등록기업',
+        buyer_name: row.buyer_name || row.payer_company_name,
         buyer_email: row.buyer_email,
-        amount: row.amount,
+        amount,
+        invoice_amount: amount,
         currency: row.currency,
         due_date: row.due_date,
         delivery_date: row.delivery_date,
@@ -458,13 +462,17 @@ app.post('/api/invoices', upload.single('document'), async (req, res) => {
             .from('invoices')
             .insert({
                 public_id: publicId,
+                invoice_number: publicId,
                 issuer_name: issuerName,
                 buyer_name: buyerName,
                 buyer_email: buyerEmail,
+                payer_company_name: buyerName,
                 amount,
+                invoice_amount: amount,
                 currency,
                 due_date: dueDate,
                 delivery_date: deliveryDate,
+                delivery_completed: true,
                 description: invoiceDesc,
                 file_name: req.file?.originalname || null,
                 file_mime_type: req.file?.mimetype || null,
