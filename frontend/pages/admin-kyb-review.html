@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InvoiceX Admin - KYB Review</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet" />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: #f6f8fb;
+        color: #0f172a;
+        font-family: Inter, Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      textarea {
+        font: inherit;
+      }
+
+      .panel {
+        border: 1px solid #e5e8f0;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      }
+
+      .field {
+        width: 100%;
+        min-height: 44px;
+        border-radius: 8px;
+        border: 1px solid #dbe2ef;
+        padding: 10px 12px;
+        outline: none;
+        background: #fff;
+        color: #0f172a;
+      }
+
+      .field:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+      }
+
+      .queue-scroll {
+        scroll-snap-type: x mandatory;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      .queue-scroll::-webkit-scrollbar {
+        display: none;
+      }
+
+      .queue-card {
+        flex: 0 0 320px;
+        scroll-snap-align: start;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .queue-card:hover {
+        transform: translateY(-3px);
+        border-color: #2563eb;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.08);
+      }
+
+      .queue-nav-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 9999px;
+        border: 1px solid #e5e8f0;
+        background: #fff;
+        color: #94a3b8;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+      }
+
+      .queue-nav-btn:hover:not(:disabled) {
+        background: #f8fafc;
+        color: #2563eb;
+      }
+
+      .queue-nav-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.45;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="border-b border-[#e5e8f0] bg-white">
+      <div class="mx-auto flex max-w-[1440px] items-center justify-between gap-4 px-6 py-4">
+        <div class="flex items-center gap-6">
+          <a href="start.html" class="text-[24px] font-extrabold text-[#2563eb]">InvoiceX</a>
+          <nav class="flex flex-wrap gap-2 text-[13px] font-bold">
+            <a href="admin-kyb-review.html" class="rounded-lg bg-[#2563eb] px-4 py-2 text-white">KYB Review</a>
+            <a href="admin-risk-agent.html"
+              class="rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[#475569] hover:bg-[#f8fafc]">Invoice
+              Review</a>
+          </nav>
+        </div>
+        <span class="hidden text-[22px] font-extrabold text-[#2563eb] sm:inline-flex">Admin</span>
+      </div>
+    </header>
+
+    <main class="mx-auto max-w-[1440px] px-6 py-5">
+      <section class="panel p-5">
+        <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+          <div>
+            <p class="text-[12px] font-bold uppercase tracking-[0.14em] text-[#2563eb]">KYB Queue</p>
+            <h1 class="mt-1 text-[28px] font-extrabold">KYB 인증 검토 대기열</h1>
+          </div>
+          <div class="grid w-full gap-3 sm:grid-cols-4 xl:w-[520px]">
+            <div class="rounded-lg bg-[#eff6ff] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">전체 요청</p>
+              <p id="statTotal" class="mt-1 text-[22px] font-extrabold text-[#2563eb]">0</p>
+            </div>
+            <div class="rounded-lg bg-[#f0fdf4] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">승인 완료</p>
+              <p id="statApproved" class="mt-1 text-[22px] font-extrabold text-[#16a34a]">0</p>
+            </div>
+            <div class="rounded-lg bg-[#fff7ed] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">심사 대기</p>
+              <p id="statPending" class="mt-1 text-[22px] font-extrabold text-[#d97706]">0</p>
+            </div>
+            <div class="rounded-lg bg-[#fef2f2] px-4 py-3">
+              <p class="text-[11px] font-bold text-[#64748b]">반려</p>
+              <p id="statRejected" class="mt-1 text-[22px] font-extrabold text-[#ef4444]">0</p>
+            </div>
+          </div>
+        </div>
+        <div class="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div class="flex flex-wrap gap-2">
+          <button class="filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white"
+            data-filter="all">전체</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="review">심사 대기</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="done">승인 완료</button>
+          <button
+            class="filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]"
+            data-filter="rejected">반려</button>
+          </div>
+          <div class="flex gap-1 self-end lg:self-auto">
+          <button id="queuePrev" type="button"
+            class="queue-nav-btn"
+            aria-label="이전 KYB 요청">‹</button>
+          <button id="queueNext" type="button"
+            class="queue-nav-btn"
+            aria-label="다음 KYB 요청">›</button>
+          </div>
+        </div>
+        <div class="mt-4 overflow-hidden">
+          <div id="kybQueue" class="queue-scroll flex gap-4 overflow-x-auto overflow-y-visible px-1 pb-3 pt-2"></div>
+        </div>
+      </section>
+
+      <section class="mt-5 grid gap-5 xl:grid-cols-[1fr_320px]">
+        <div class="space-y-5">
+          <section class="panel p-5">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p class="text-[12px] font-bold uppercase tracking-[0.14em] text-[#64748b]">Selected KYB Request</p>
+                <h2 id="companyTitle" class="mt-1 text-[25px] font-extrabold"></h2>
+                <p id="companySubtitle" class="mt-1 text-[14px] leading-6 text-[#64748b]"></p>
+              </div>
+              <span id="recommendation" class="w-fit rounded-full px-4 py-2 text-[13px] font-bold"></span>
+            </div>
+
+            <div class="mt-4 grid gap-3 md:grid-cols-4">
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">사업자등록번호</p>
+                <p id="businessNumber" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">대표자</p>
+                <p id="representative" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">업종</p>
+                <p id="industry" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+              <div class="rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-3">
+                <p class="text-[12px] font-bold text-[#94a3b8]">제출 권한</p>
+                <p id="authority" class="mt-1 text-[14px] font-bold"></p>
+              </div>
+            </div>
+          </section>
+
+          <section class="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+            <div class="panel p-5">
+              <div class="mb-4 flex items-center justify-between gap-3">
+                <h3 class="text-[18px] font-extrabold">Agent 1차 검토 결과</h3>
+                <button id="rerunAgentBtn"
+                  class="h-[38px] rounded-lg border border-[#dbe2ef] bg-white px-3 text-[12px] font-bold text-[#475569] hover:bg-[#f8fafc]">재검토</button>
+              </div>
+              <p id="agentSummary"
+                class="rounded-lg border border-[#dbeafe] bg-[#eff6ff] p-4 text-[14px] leading-7 text-[#334155]"></p>
+              <div id="agentChecks" class="mt-3 space-y-3"></div>
+            </div>
+
+            <div class="grid gap-5 lg:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
+              <div class="panel p-5">
+                <h3 class="text-[17px] font-extrabold">신청 정보</h3>
+                <div id="submittedInfo" class="mt-4 space-y-3"></div>
+              </div>
+              <div class="panel p-5">
+                <h3 class="text-[17px] font-extrabold">제출 서류</h3>
+                <div id="documents" class="mt-4 space-y-3"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel p-5">
+            <h3 class="text-[17px] font-extrabold">실소유자 및 거래 목적</h3>
+            <div class="mt-4 grid gap-4 lg:grid-cols-2">
+              <div id="owners" class="space-y-3"></div>
+              <div id="purpose" class="space-y-3"></div>
+            </div>
+          </section>
+        </div>
+
+        <aside class="panel h-fit p-5">
+          <h3 class="text-[18px] font-extrabold">Admin 결정</h3>
+          <label class="mt-4 block">
+            <span class="mb-2 block text-[12px] font-bold text-[#64748b]">Admin Memo</span>
+            <textarea id="adminMemo" class="field min-h-[112px]" placeholder="승인 근거 또는 보완 요청 사유"></textarea>
+          </label>
+          <label class="mt-4 flex cursor-pointer gap-3 rounded-lg border border-[#e5e8f0] bg-[#f8fafc] p-4">
+            <input id="adminConfirm" type="checkbox" class="mt-1 h-4 w-4 accent-[#2563eb]" />
+            <span class="text-[13px] leading-5 text-[#475569]">Agent 근거와 제출 서류를 확인했습니다.</span>
+          </label>
+          <div class="mt-4 space-y-3">
+            <button id="approveBtn" disabled
+              class="h-[48px] w-full rounded-lg bg-[#2563eb] text-[15px] font-bold text-white hover:bg-[#1d4ed8] disabled:cursor-not-allowed disabled:bg-[#94a3b8]">KYB
+              승인</button>
+            <button id="supplementBtn"
+              class="h-[44px] w-full rounded-lg border border-[#d97706] bg-white text-[14px] font-bold text-[#d97706] hover:bg-[#fff7ed]">보완
+              요청</button>
+            <button id="rejectBtn"
+              class="h-[44px] w-full rounded-lg border border-[#ef4444] bg-white text-[14px] font-bold text-[#ef4444] hover:bg-[#fef2f2]">KYB
+              반려</button>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script src="../assets/js/api.js"></script>
+    <script>
+      let kybRequests = {
+        hanbit: {
+          requestId: "#KYB-7742", name: "(주)한빛테크", subtitle: "인보이스 조기정산을 신청한 SME입니다.", businessNumber: "123-45-67890", representative: "김한빛", industry: "제조 / 정밀부품", authority: "재무팀 위임장 확인",
+          recommendation: "승인 추천", tone: "approve", filter: "approve",
+          summary: "법인명, 사업자등록번호, 대표자, 주소, 실소유자, 제출 권한이 제출 서류와 일치합니다.",
+          checks: [["법인 실재성", "PASS", "사업자등록증과 등기부등본의 법인명 및 등록번호가 일치합니다."], ["대표자/권한", "PASS", "대표자 정보와 제출 담당자의 위임장이 확인되었습니다."], ["실소유자", "PASS", "25% 이상 보유자가 확인되었고 다층 지배 구조가 없습니다."], ["위험 신호", "PASS", "고위험 업종, 제재, 문서 불일치 신호가 없습니다."]],
+          submitted: [["본점 주소", "서울시 강남구 테헤란로 123"], ["주요 사업장", "경기도 화성시 정밀부품단지"], ["담당자", "이수민 과장 / finance@hanbit.example"], ["예상 거래", "월 2~4건, 건당 3천만~7천만원"]],
+          documents: [["사업자등록증", "OCR 일치"], ["법인등기부등본", "대표자/주소 일치"], ["법인인감증명서", "최근 3개월 이내"], ["실소유자 확인서", "김한빛 64%, 박서연 18%"], ["위임장/재직증명", "제출 권한 확인"]],
+          owners: [["김한빛", "64% / 직접 지분 보유"], ["박서연", "18% / 개인 주주"]],
+          purpose: [["서비스 목적", "인보이스 조기정산 및 Risk Passport 발급"], ["자금 출처", "영업매출채권 / Buyer 지급 예정금"], ["운영 국가", "KR"], ["위험 메모", "특이사항 없음"]]
+        },
+        smart: {
+          requestId: "#KYB-7745", name: "(주)스마트솔루션", subtitle: "인보이스 조기정산을 신청한 SME입니다.", businessNumber: "987-65-43210", representative: "박지민", industry: "서비스 / IT", authority: "재직증명 확인, 위임장 보완 필요",
+          recommendation: "관리자 확인", tone: "review", filter: "review",
+          summary: "법인 기본 정보는 대체로 일치하지만 법인 주주를 통한 최종 자연인 실소유자 확인과 제출 위임장 보완이 필요합니다.",
+          checks: [["법인 실재성", "PASS", "사업자등록번호와 법인명은 제출 서류와 일치합니다."], ["대표자/권한", "REVIEW", "제출 담당자의 재직은 확인되지만 위임장 서명이 필요합니다."], ["실소유자", "REVIEW", "Smart Holdings의 최종 자연인 실소유자 확인이 필요합니다."], ["문서 유효성", "REVIEW", "법인인감증명서 발급일이 내부 기준보다 오래되었습니다."]],
+          submitted: [["본점 주소", "서울시 서초구 강남대로 456"], ["주요 사업장", "본점과 동일"], ["담당자", "최영호 차장 / ops@smart.example"], ["예상 거래", "월 1~2건, 건당 2천만~4천만원"]],
+          documents: [["사업자등록증", "OCR 일치"], ["법인등기부등본", "대표자 일치"], ["법인인감증명서", "발급일 확인 필요"], ["실소유자 확인서", "법인 주주 확인 필요"], ["위임장/재직증명", "위임장 서명 보완 필요"]],
+          owners: [["박지민", "38% / 직접 지분 보유"], ["Smart Holdings", "41% / 법인 주주"]],
+          purpose: [["서비스 목적", "인보이스 조기정산"], ["자금 출처", "용역 매출채권 / Buyer 지급 예정금"], ["운영 국가", "KR"], ["위험 메모", "법인 주주 실소유자 보완 필요"]]
+        },
+        green: {
+          requestId: "#KYB-7748", name: "(주)그린파츠", subtitle: "인보이스 조기정산을 신청한 SME입니다.", businessNumber: "456-78-90123", representative: "이민수", industry: "제조 / 자동차 부품", authority: "대표자 직접 제출",
+          recommendation: "승인 추천", tone: "approve", filter: "approve",
+          summary: "신청 정보와 제출 서류가 일치합니다. 대표자 직접 제출 건이며 실소유자와 거래 목적 기준의 추가 위험 신호가 없습니다.",
+          checks: [["법인 실재성", "PASS", "등록번호, 법인명, 주소가 일치합니다."], ["대표자/권한", "PASS", "대표자 직접 제출 건입니다."], ["실소유자", "PASS", "25% 이상 보유자가 확인되었습니다."], ["위험 신호", "PASS", "제재, 고위험 업종, 문서 불일치 신호가 없습니다."]],
+          submitted: [["본점 주소", "경기도 성남시 분당구 판교로 789"], ["주요 사업장", "경기도 안산시 부품산업단지"], ["담당자", "김소연 과장 / admin@greenparts.example"], ["예상 거래", "월 1~3건, 건당 1천만~2천만원"]],
+          documents: [["사업자등록증", "OCR 일치"], ["법인등기부등본", "주소 일치"], ["법인인감증명서", "유효기간 정상"], ["실소유자 확인서", "이민수 72%"], ["대표자 신분 확인", "대표자 일치"]],
+          owners: [["이민수", "72% / 직접 지분 보유"]],
+          purpose: [["서비스 목적", "인보이스 조기정산 및 Buyer 확인 연계"], ["자금 출처", "자동차 부품 납품 매출채권"], ["운영 국가", "KR"], ["위험 메모", "특이사항 없음"]]
+        },
+        bluecore: {
+          requestId: "#KYB-7739", name: "(주)블루코어", subtitle: "인보이스 조기정산을 신청한 SME입니다.", businessNumber: "221-88-10492", representative: "정도윤", industry: "도매 / 산업 기자재", authority: "대표자 직접 제출",
+          recommendation: "검토 완료", tone: "done", filter: "done",
+          summary: "법인 정보와 제출 서류가 일치하며 Admin 승인까지 완료된 KYB입니다.",
+          checks: [["법인 실재성", "PASS", "사업자등록증과 등기부등본의 법인명 및 등록번호가 일치합니다."], ["대표자/권한", "PASS", "대표자 직접 제출 건입니다."], ["실소유자", "PASS", "25% 이상 보유자가 확인되었습니다."], ["위험 신호", "PASS", "고위험 업종, 제재, 문서 불일치 신호가 없습니다."]],
+          submitted: [["본점 주소", "서울시 영등포구 국제금융로 24"], ["주요 사업장", "인천시 남동구 산업단지"], ["담당자", "정도윤 대표 / admin@bluecore.example"], ["예상 거래", "월 1~2건, 건당 2천만~5천만원"]],
+          documents: [["사업자등록증", "OCR 일치"], ["법인등기부등본", "대표자/주소 일치"], ["법인인감증명서", "유효기간 정상"], ["실소유자 확인서", "정도윤 81%"], ["대표자 신분 확인", "대표자 일치"]],
+          owners: [["정도윤", "81% / 직접 지분 보유"]],
+          purpose: [["서비스 목적", "인보이스 조기정산"], ["자금 출처", "산업 기자재 납품 매출채권"], ["운영 국가", "KR"], ["위험 메모", "Admin 승인 완료"]]
+        }
+      };
+
+      const toneClasses = { approve: "bg-[#dcfce7] text-[#16a34a]", review: "bg-[#ffedd5] text-[#d97706]", done: "bg-[#dbeafe] text-[#2563eb]", rejected: "bg-[#fee2e2] text-[#ef4444]" };
+      const checkTone = { PASS: "bg-[#dcfce7] text-[#16a34a]", REVIEW: "bg-[#ffedd5] text-[#d97706]" };
+      let selectedKey = "hanbit";
+      let activeFilter = "all";
+
+      function toKybCard(verification) {
+        const company = verification.company || {};
+        const meta = verification.meta || {};
+        const status = verification.status || company.kyb_status || "PENDING";
+        const tone = status === "APPROVED" ? "done" : status === "REJECTED" ? "rejected" : "review";
+        const filter = status === "APPROVED" ? "done" : status === "REJECTED" ? "rejected" : "review";
+        const submittedAt = verification.submitted_at ? new Date(verification.submitted_at).toLocaleString("ko-KR") : "-";
+
+        return {
+          verificationId: verification.verification_id,
+          status,
+          requestId: `#KYB-${String(verification.verification_id).slice(0, 8)}`,
+          name: company.company_name || "Unknown Company",
+          subtitle: "InvoiceX KYB verification request",
+          businessNumber: company.business_number || "-",
+          representative: meta.representative_name || "-",
+          industry: meta.business_type || company.company_type || "-",
+          authority: meta.contact_email || "-",
+          recommendation: status === "APPROVED" ? "승인 완료" : status === "REJECTED" ? "반려" : "심사 대기",
+          tone,
+          filter,
+          summary: status === "PENDING" ? "제출된 KYB 요청입니다. Admin 검토 후 승인 또는 반려 처리할 수 있습니다." : `현재 KYB 상태: ${status}`,
+          checks: [["KYB Status", status === "PENDING" ? "REVIEW" : "PASS", `현재 상태: ${status}`]],
+          submitted: [["회사명", company.company_name || "-"], ["사업자번호", company.business_number || "-"], ["제출일", submittedAt], ["담당자", meta.contact_email || "-"]],
+          documents: [["제출 문서", meta.document_url || "demo://kyb-documents"]],
+          owners: [[meta.representative_name || "대표자", "KYB 제출 정보 기준"]],
+          purpose: [["서비스 목적", "InvoiceX 공통 데모 KYB"], ["역할", company.company_type || "-"], ["운영 국가", "KR"], ["메모", verification.rejected_reason || "-"]]
+        };
+      }
+
+      async function loadKybRequestsFromApi() {
+        if (!InvoiceXApi.token()) {
+          location.href = "login.html";
+          return;
+        }
+
+        kybRequests = {};
+        selectedKey = null;
+
+        try {
+          const data = await InvoiceXApi.adminKybList();
+          const rows = data.verifications || [];
+          kybRequests = Object.fromEntries(rows.map((item) => [item.verification_id, toKybCard(item)]));
+          selectedKey = Object.keys(kybRequests)[0] || null;
+        } catch (error) {
+          console.error(error);
+          alert(error.message || "KYB 검토 목록을 불러오지 못했습니다.");
+        }
+      }
+
+      async function decideSelectedKyb(action) {
+        const item = kybRequests[selectedKey];
+        if (!item?.verificationId) {
+          alert(`${item?.name || "선택된 KYB"} 처리 완료 (데모)`);
+          return;
+        }
+
+        if (item.status !== "PENDING") {
+          alert("이미 처리된 KYB 요청입니다.");
+          return;
+        }
+
+        const memo = document.getElementById("adminMemo").value.trim();
+        if (action === "approve") {
+          await InvoiceXApi.adminApproveKyb(item.verificationId, { reason: memo });
+          alert(`${item.name} KYB가 승인되었습니다.`);
+        } else {
+          await InvoiceXApi.adminRejectKyb(item.verificationId, { reason: memo || "Rejected by admin." });
+          alert(`${item.name} KYB를 반려 처리했습니다.`);
+        }
+
+        await loadKybRequestsFromApi();
+        renderQueue();
+        renderRequest();
+      }
+
+      function visibleRequests() {
+        return Object.entries(kybRequests).filter(([, item]) => activeFilter === "all" || item.filter === activeFilter);
+      }
+
+      function updateStats() {
+        const items = Object.values(kybRequests);
+        document.getElementById("statTotal").textContent = String(items.length);
+        document.getElementById("statApproved").textContent = String(items.filter((item) => item.status === "APPROVED").length);
+        document.getElementById("statPending").textContent = String(items.filter((item) => item.status === "PENDING").length);
+        document.getElementById("statRejected").textContent = String(items.filter((item) => item.status === "REJECTED").length);
+      }
+
+      function renderQueue() {
+        updateStats();
+        const requests = visibleRequests();
+        const queue = document.getElementById("kybQueue");
+
+        if (!requests.length) {
+          queue.innerHTML = `
+            <div class="w-full rounded-lg border border-dashed border-[#dbe2ef] bg-[#f8fafc] p-8 text-center">
+              <p class="text-[15px] font-extrabold text-[#0f172a]">표시할 KYB 요청이 없습니다</p>
+              <p class="mt-2 text-[13px] text-[#64748b]">사용자가 KYB 서류를 제출하면 이 대기열에 표시됩니다.</p>
+            </div>
+          `;
+          updateQueueButtons();
+          return;
+        }
+
+        queue.innerHTML = requests.map(([key, item]) => {
+          const selected = key === selectedKey;
+          return `
+          <button type="button" data-key="${key}" class="kyb-card queue-card rounded-lg border ${selected ? "border-[#2563eb]" : "border-[#e5e8f0]"} bg-white p-5 text-left shadow-sm">
+            <div class="flex items-start justify-between gap-3">
+              <span class="rounded-full ${toneClasses[item.tone]} px-3 py-1 text-[11px] font-bold">${item.recommendation}</span>
+              <span class="text-[12px] font-bold text-[#94a3b8]">${item.requestId}</span>
+            </div>
+            <p class="mt-4 text-[17px] font-extrabold ${selected ? "text-[#0f172a]" : "text-[#475569]"}">${item.name}</p>
+            <p class="mt-3 text-[13px] font-semibold text-[#64748b]">${item.industry}</p>
+          </button>
+        `;
+        }).join("");
+        document.querySelectorAll(".kyb-card").forEach((card) => {
+          card.addEventListener("click", () => {
+            selectedKey = card.dataset.key;
+            renderQueue();
+            renderRequest();
+          });
+        });
+        updateQueueButtons();
+      }
+
+      function updateQueueButtons() {
+        const queue = document.getElementById("kybQueue");
+        const prev = document.getElementById("queuePrev");
+        const next = document.getElementById("queueNext");
+        const hasOverflow = queue.scrollWidth > queue.clientWidth + 2;
+        const atStart = queue.scrollLeft <= 2;
+        const atEnd = queue.scrollLeft + queue.clientWidth >= queue.scrollWidth - 2;
+
+        prev.disabled = !hasOverflow || atStart;
+        next.disabled = !hasOverflow || atEnd;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderRows(targetId, rows, truncateDetails = false) {
+        document.getElementById(targetId).innerHTML = rows.map(([title, detail]) => `
+        <div class="min-w-0 rounded-lg border border-[#e5e8f0] bg-[#f8fafc] px-4 py-3">
+          <p class="text-[13px] font-bold text-[#0f172a]">${escapeHtml(title)}</p>
+          <p class="mt-1 text-[13px] leading-5 text-[#64748b] ${truncateDetails ? "truncate" : ""}" title="${escapeHtml(detail)}">${escapeHtml(detail)}</p>
+        </div>
+      `).join("");
+      }
+
+      function renderChecks(rows) {
+        document.getElementById("agentChecks").innerHTML = rows.map(([title, status, detail]) => `
+        <div class="rounded-lg border border-[#e5e8f0] bg-white p-4">
+          <div class="flex items-center justify-between gap-3">
+            <p class="text-[13px] font-extrabold text-[#0f172a]">${title}</p>
+            <span class="rounded-full ${checkTone[status]} px-3 py-1 text-[11px] font-bold">${status}</span>
+          </div>
+          <p class="mt-2 text-[13px] leading-5 text-[#64748b]">${detail}</p>
+        </div>
+      `).join("");
+      }
+
+      function renderRequest() {
+        const item = kybRequests[selectedKey];
+        if (!item) {
+          document.getElementById("companyTitle").textContent = "선택된 KYB 요청 없음";
+          document.getElementById("companySubtitle").textContent = "사용자가 KYB 서류를 제출하면 검토 상세가 표시됩니다.";
+          document.getElementById("businessNumber").textContent = "-";
+          document.getElementById("representative").textContent = "-";
+          document.getElementById("industry").textContent = "-";
+          document.getElementById("authority").textContent = "-";
+          document.getElementById("recommendation").textContent = "대기열 없음";
+          document.getElementById("recommendation").className = "w-fit rounded-full px-4 py-2 text-[13px] font-bold bg-[#f1f5f9] text-[#64748b]";
+          document.getElementById("agentSummary").textContent = "검토할 KYB 요청이 없습니다.";
+          document.getElementById("adminMemo").value = "";
+          document.getElementById("adminConfirm").checked = false;
+          document.getElementById("adminConfirm").disabled = true;
+          document.getElementById("approveBtn").disabled = true;
+          document.getElementById("supplementBtn").disabled = true;
+          document.getElementById("rejectBtn").disabled = true;
+          renderChecks([]);
+          renderRows("submittedInfo", []);
+          renderRows("documents", []);
+          renderRows("owners", []);
+          renderRows("purpose", []);
+          return;
+        }
+        document.getElementById("companyTitle").textContent = item.name;
+        document.getElementById("companySubtitle").textContent = item.subtitle;
+        document.getElementById("businessNumber").textContent = item.businessNumber;
+        document.getElementById("representative").textContent = item.representative;
+        document.getElementById("industry").textContent = item.industry;
+        document.getElementById("authority").textContent = item.authority;
+        document.getElementById("recommendation").textContent = item.recommendation;
+        document.getElementById("recommendation").className = `w-fit rounded-full px-4 py-2 text-[13px] font-bold ${toneClasses[item.tone]}`;
+        document.getElementById("agentSummary").textContent = item.summary;
+        document.getElementById("adminMemo").value = "";
+        document.getElementById("adminConfirm").checked = false;
+        document.getElementById("adminConfirm").disabled = item.status !== "PENDING";
+        document.getElementById("approveBtn").disabled = true;
+        document.getElementById("supplementBtn").disabled = item.status !== "PENDING";
+        document.getElementById("rejectBtn").disabled = item.status !== "PENDING";
+        renderChecks(item.checks);
+        renderRows("submittedInfo", item.submitted);
+        renderRows("documents", item.documents, true);
+        renderRows("owners", item.owners);
+        renderRows("purpose", item.purpose);
+      }
+
+      document.querySelectorAll(".filter-btn").forEach((button) => {
+        button.addEventListener("click", () => {
+          activeFilter = button.dataset.filter;
+          document.querySelectorAll(".filter-btn").forEach((item) => {
+            item.className = "filter-btn rounded-lg border border-[#dbe2ef] bg-white px-4 py-2 text-[13px] font-bold text-[#475569]";
+          });
+          button.className = "filter-btn rounded-lg bg-[#2563eb] px-4 py-2 text-[13px] font-bold text-white";
+          if (!visibleRequests().some(([key]) => key === selectedKey)) selectedKey = visibleRequests()[0]?.[0] || null;
+          renderQueue();
+          renderRequest();
+        });
+      });
+
+      document.getElementById("adminConfirm").addEventListener("change", (event) => {
+        const item = kybRequests[selectedKey];
+        document.getElementById("approveBtn").disabled = !event.target.checked || item?.status !== "PENDING";
+      });
+      document.getElementById("queuePrev").addEventListener("click", () => {
+        document.getElementById("kybQueue").scrollBy({ left: -336, behavior: "smooth" });
+      });
+      document.getElementById("queueNext").addEventListener("click", () => {
+        document.getElementById("kybQueue").scrollBy({ left: 336, behavior: "smooth" });
+      });
+      document.getElementById("kybQueue").addEventListener("scroll", updateQueueButtons);
+      window.addEventListener("resize", updateQueueButtons);
+      document.getElementById("rerunAgentBtn").addEventListener("click", () => alert(`${kybRequests[selectedKey].requestId} Agent 재검토를 실행했습니다. 데모에서는 현재 결과를 유지합니다.`));
+      document.getElementById("approveBtn").addEventListener("click", async () => {
+        try {
+          await decideSelectedKyb("approve");
+        } catch (error) {
+          console.error(error);
+          alert(error.message || "KYB 승인 처리에 실패했습니다.");
+        }
+      });
+      document.getElementById("supplementBtn").addEventListener("click", () => alert(`${kybRequests[selectedKey].name}에 보완 요청을 전송했습니다. (데모)`));
+      document.getElementById("rejectBtn").addEventListener("click", async () => {
+        try {
+          await decideSelectedKyb("reject");
+        } catch (error) {
+          console.error(error);
+          alert(error.message || "KYB 반려 처리에 실패했습니다.");
+        }
+      });
+
+      async function initAdminKybReview() {
+        await loadKybRequestsFromApi();
+        renderQueue();
+        renderRequest();
+      }
+
+      initAdminKybReview();
+    </script>
+  </body>
+
+</html>
