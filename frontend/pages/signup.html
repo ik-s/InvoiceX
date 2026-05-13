@@ -25,49 +25,6 @@
       h1 {
         line-height: 1.2;
       }
-
-      .form-alert {
-        display: none;
-        margin-bottom: 16px;
-        border: 1px solid #fecaca;
-        border-radius: 12px;
-        background: #fef2f2;
-        color: #b91c1c;
-        font-size: 12px;
-        font-weight: 700;
-        line-height: 1.45;
-        padding: 12px 14px;
-      }
-
-      .form-alert.show {
-        display: block;
-      }
-
-      .field-error {
-        border-color: #ef4444 !important;
-        background: #fff7f7 !important;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
-      }
-
-      .field-message {
-        display: none;
-        margin-top: 6px;
-        color: #dc2626;
-        font-size: 11px;
-        font-weight: 700;
-        line-height: 1.45;
-      }
-
-      .field-message.show {
-        display: block;
-      }
-
-      .role-option-error {
-        border-color: #ef4444 !important;
-        background: #fff7f7 !important;
-        color: #dc2626 !important;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.08) !important;
-      }
     </style>
   </head>
 
@@ -96,7 +53,7 @@
         </section>
 
         <!-- Form -->
-        <form action="#" method="post" class="flex flex-col" novalidate>
+        <form action="#" method="post" class="flex flex-col">
 
           <!-- Input Area -->
           <div class="grid grid-cols-2 gap-x-6 gap-y-5 max-md:grid-cols-1">
@@ -207,181 +164,12 @@
     <script>
       const signupForm = document.querySelector('form');
       const requestVerification = document.querySelector('#requestVerification');
-      const fields = {
-        email: document.querySelector('#email-signup'),
-        emailVerification: document.querySelector('#email-verification'),
-        password: document.querySelector('#password-signup'),
-        passwordConfirm: document.querySelector('#password-confirm'),
-        companyName: document.querySelector('#company-name')
-      };
-      const roleOptions = document.querySelectorAll('.role-option');
-      const roleGroup = document.querySelector('input[name="role"]')?.closest('.grid');
-      const formAlert = document.createElement('p');
-
-      formAlert.className = 'form-alert';
-      formAlert.setAttribute('role', 'alert');
-      signupForm.prepend(formAlert);
-
-      function isValidEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-      }
-
-      function isValidPassword(password) {
-        return password.length >= 10 && /[A-Za-z]/.test(password) && /\d/.test(password);
-      }
-
-      function messageFor(key) {
-        let message = signupForm.querySelector(`[data-error-for="${key}"]`);
-
-        if (!message) {
-          message = document.createElement('p');
-          message.className = 'field-message';
-          message.dataset.errorFor = key;
-
-          const anchor = key === 'role' ? roleGroup : fields[key];
-          anchor.insertAdjacentElement('afterend', message);
-        }
-
-        return message;
-      }
-
-      function showFormError(message) {
-        formAlert.textContent = message;
-        formAlert.classList.add('show');
-      }
-
-      function clearFormError() {
-        formAlert.textContent = '';
-        formAlert.classList.remove('show');
-      }
-
-      function clearFormErrorIfNoErrors() {
-        if (!signupForm.querySelector('.field-message.show')) {
-          clearFormError();
-        }
-      }
-
-      function setFieldError(key, message) {
-        const errorMessage = messageFor(key);
-        errorMessage.textContent = message;
-        errorMessage.classList.add('show');
-
-        if (key === 'role') {
-          roleOptions.forEach(option => option.classList.add('role-option-error'));
-          return;
-        }
-
-        fields[key].classList.add('field-error');
-        fields[key].setAttribute('aria-invalid', 'true');
-      }
-
-      function clearFieldError(key) {
-        const errorMessage = signupForm.querySelector(`[data-error-for="${key}"]`);
-        if (errorMessage) {
-          errorMessage.textContent = '';
-          errorMessage.classList.remove('show');
-        }
-
-        if (key === 'role') {
-          roleOptions.forEach(option => option.classList.remove('role-option-error'));
-          return;
-        }
-
-        fields[key].classList.remove('field-error');
-        fields[key].removeAttribute('aria-invalid');
-      }
-
-      function clearAllErrors() {
-        clearFormError();
-        ['email', 'emailVerification', 'password', 'passwordConfirm', 'companyName', 'role']
-          .forEach(clearFieldError);
-      }
-
-      function focusFirstError(errorKeys) {
-        const firstError = errorKeys[0];
-        if (!firstError) return;
-
-        if (firstError === 'role') {
-          roleGroup?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          return;
-        }
-
-        fields[firstError].focus();
-      }
-
-      function validateSignupForm() {
-        clearAllErrors();
-
-        const email = fields.email.value.trim();
-        const emailVerification = fields.emailVerification.value.trim();
-        const password = fields.password.value.trim();
-        const passwordConfirm = fields.passwordConfirm.value.trim();
-        const companyName = fields.companyName.value.trim();
-        const role = document.querySelector('input[name="role"]:checked');
-        const errorKeys = [];
-
-        if (!email) {
-          setFieldError('email', '이메일 주소를 입력해주세요.');
-          errorKeys.push('email');
-        } else if (!isValidEmail(email)) {
-          setFieldError('email', '올바른 이메일 형식으로 입력해주세요.');
-          errorKeys.push('email');
-        }
-
-        if (!emailVerification) {
-          setFieldError('emailVerification', '이메일 인증번호를 입력해주세요.');
-          errorKeys.push('emailVerification');
-        }
-
-        if (!password) {
-          setFieldError('password', '비밀번호를 입력해주세요.');
-          errorKeys.push('password');
-        } else if (!isValidPassword(password)) {
-          setFieldError('password', '비밀번호는 영문과 숫자를 포함해 10자 이상이어야 합니다.');
-          errorKeys.push('password');
-        }
-
-        if (!passwordConfirm) {
-          setFieldError('passwordConfirm', '비밀번호 확인을 입력해주세요.');
-          errorKeys.push('passwordConfirm');
-        } else if (password && password !== passwordConfirm) {
-          setFieldError('passwordConfirm', '비밀번호가 일치하지 않습니다.');
-          errorKeys.push('passwordConfirm');
-        }
-
-        if (!role) {
-          setFieldError('role', '역할을 선택해주세요.');
-          errorKeys.push('role');
-        }
-
-        if (!companyName) {
-          setFieldError('companyName', '기업명을 입력해주세요.');
-          errorKeys.push('companyName');
-        }
-
-        if (errorKeys.length > 0) {
-          showFormError('회원가입 조건을 확인해주세요. 빨간색으로 표시된 항목을 수정하면 다시 시도할 수 있습니다.');
-          focusFirstError(errorKeys);
-          return null;
-        }
-
-        return { email, emailVerification, password, passwordConfirm, role, companyName };
-      }
 
       requestVerification.addEventListener('click', function () {
-        const email = fields.email.value.trim();
-        clearFieldError('email');
-        clearFormErrorIfNoErrors();
+        const email = document.querySelector('#email-signup').value.trim();
 
         if (!email) {
-          setFieldError('email', '이메일 주소를 먼저 입력해주세요.');
-          fields.email.focus();
-          return;
-        }
-
-        if (!isValidEmail(email)) {
-          setFieldError('email', '올바른 이메일 형식으로 입력해주세요.');
-          fields.email.focus();
+          alert('이메일 주소를 먼저 입력해주세요.');
           return;
         }
 
@@ -391,55 +179,62 @@
       signupForm.addEventListener('submit', async function (event) {
         event.preventDefault();
 
-        const validated = validateSignupForm();
-        if (!validated) return;
+        const email = document.querySelector('#email-signup').value.trim();
+        const emailVerification = document.querySelector('#email-verification').value.trim();
+        const password = document.querySelector('#password-signup').value.trim();
+        const passwordConfirm = document.querySelector('#password-confirm').value.trim();
+        const role = document.querySelector('input[name="role"]:checked');
+        const companyName = document.querySelector('#company-name').value.trim();
+
+        if (!email || !emailVerification || !password || !passwordConfirm || !companyName) {
+          alert('모든 필드를 입력해주세요.');
+          return;
+        }
+
+        if (password !== passwordConfirm) {
+          alert('비밀번호가 일치하지 않습니다.');
+          return;
+        }
+
+        if (!role) {
+          alert('역할을 선택해주세요.');
+          return;
+        }
 
         try {
           const signupData = {
-            email: validated.email,
-            emailVerification: validated.emailVerification,
-            role: validated.role.value,
-            companyName: validated.companyName
+            email,
+            emailVerification,
+            role: role.value,
+            companyName
           };
 
           await InvoiceXApi.signup({
-            email: validated.email,
-            password: validated.password,
-            user_name: validated.email.split('@')[0],
-            role_type: validated.role.value,
-            company_name: validated.companyName
+            email,
+            password,
+            user_name: email.split('@')[0],
+            role_type: role.value,
+            company_name: companyName
           });
 
           localStorage.setItem('invoiceXSignupData', JSON.stringify(signupData));
-          localStorage.setItem('ix_user_role', InvoiceXApi.clientRole(validated.role.value));
+          localStorage.setItem('ix_user_role', InvoiceXApi.clientRole(role.value));
 
           alert('회원가입이 완료되었습니다. 로그인해주세요.');
           window.location.href = 'login.html';
         } catch (error) {
           console.error(error);
-          const message = error.message || '회원가입에 실패했습니다.';
-          showFormError(message);
-
-          if (error.status === 409 || /email|account/i.test(message)) {
-            setFieldError('email', '이미 가입된 이메일입니다. 다른 이메일을 입력해주세요.');
-            fields.email.focus();
-          } else if (/role/i.test(message)) {
-            setFieldError('role', '선택할 수 없는 역할입니다.');
-          } else if (/company/i.test(message)) {
-            setFieldError('companyName', '기업명 정보를 확인해주세요.');
-            fields.companyName.focus();
-          }
+          alert(error.message || '회원가입에 실패했습니다.');
         }
       });
 
       // 역할 선택 시각적 효과
+      const roleOptions = document.querySelectorAll('.role-option');
+
       roleOptions.forEach(option => {
         const radio = option.querySelector('input[type="radio"]');
 
         option.addEventListener('click', function () {
-          clearFieldError('role');
-          clearFormErrorIfNoErrors();
-
           roleOptions.forEach(opt => {
             opt.classList.remove('border-[#2563eb]', 'bg-[#2563eb]', 'text-white');
             opt.classList.add('border-[#d9dee8]', 'bg-[#f9fafc]', 'text-[#a5adbb]');
@@ -449,13 +244,6 @@
 
           option.classList.remove('border-[#d9dee8]', 'bg-[#f9fafc]', 'text-[#a5adbb]');
           option.classList.add('border-[#2563eb]', 'bg-[#2563eb]', 'text-white');
-        });
-      });
-
-      Object.entries(fields).forEach(([key, field]) => {
-        field.addEventListener('input', function () {
-          clearFieldError(key);
-          clearFormErrorIfNoErrors();
         });
       });
     </script>
