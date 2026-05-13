@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InvoiceX - 로그인</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Pretendard -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css"
+  />
+
+  <style>
+    * {
+      font-family: "Pretendard", sans-serif;
+      letter-spacing: -0.02em;
+    }
+
+    body {
+      font-weight: 500;
+      line-height: 1.5;
+    }
+
+    h1 {
+      line-height: 1.2;
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-[#f6f8fc] text-[#171923]">
+  <!-- Header -->
+  <header class="flex h-[39px] w-full items-center justify-center border-b border-[#e5e8f0] bg-white">
+    <a
+      href="start.html"
+      class="text-[14px] font-bold tracking-[-0.02em] text-[#2563eb] no-underline"
+    >
+      InvoiceX
+    </a>
+  </header>
+
+  <!-- Login Main -->
+  <main class="flex min-h-[calc(100vh-39px)] items-center justify-center px-6 py-10">
+    <article class="w-full max-w-[920px] rounded-2xl border border-[#e1e5ee] bg-white px-10 py-10 shadow-[0_10px_28px_rgba(22,31,51,0.04)] max-sm:px-6">
+      
+      <!-- Title -->
+      <section class="mb-6 text-center">
+        <h1 class="mb-2 text-[28px] font-bold leading-[1.2] tracking-[-0.02em] text-[#151923]">
+          로그인
+        </h1>
+
+        <p class="text-[14px] font-medium leading-[1.5] tracking-[-0.02em] text-[#7b8494]">
+          InvoiceX 서비스 이용을 위해 로그인하세요.
+        </p>
+      </section>
+
+      <!-- Form -->
+      <form action="#" method="post" class="flex flex-col">
+        
+        <!-- Email Field -->
+        <div class="mb-4">
+          <label
+            for="email"
+            class="mb-2 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]"
+          >
+            이메일 주소
+          </label>
+
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="example@invoicex.io"
+            required
+            class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] font-medium text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
+          />
+        </div>
+
+        <!-- Password Field -->
+        <div class="mb-5">
+          <label
+            for="password"
+            class="mb-2 block text-[12px] font-bold tracking-[-0.02em] text-[#242936]"
+          >
+            비밀번호
+          </label>
+
+          <input
+            id="password"
+            name="password"
+            type="password"
+            placeholder="비밀번호를 입력하세요"
+            required
+            class="h-12 w-full rounded-lg border border-[#d9dee8] bg-[#f9fafc] px-4 text-[13px] font-medium text-[#2c3340] outline-none placeholder:text-[#a5adbb] transition-colors duration-200 focus:border-[#536be8] focus:bg-white focus:ring-1 focus:ring-[#536be8]/50"
+          />
+        </div>
+
+        <!-- Options -->
+        <div class="mb-6 flex items-center justify-between gap-2 max-sm:flex-col max-sm:items-start">
+          <label class="flex cursor-pointer items-center gap-2 text-[11px] font-medium text-[#7c8492]">
+            <input
+              type="checkbox"
+              id="remember"
+              name="remember"
+              class="h-4 w-4 cursor-pointer rounded border-[#d9dee8] accent-[#2563eb]"
+            />
+            로그인 상태 유지
+          </label>
+
+          <a
+            href="#"
+            class="text-[11px] font-bold text-[#4b5fe5] no-underline transition-colors hover:text-[#3d4db8]"
+          >
+            비밀번호를 잊으셨나요?
+          </a>
+        </div>
+
+        <!-- Login Button -->
+        <button
+          type="submit"
+          class="mb-4 h-12 w-full rounded-lg bg-[#2563eb] text-[14px] font-bold text-white shadow-[0_4px_12px_rgba(37,99,235,0.25)] transition-all duration-200 hover:bg-[#1d4ed8] hover:shadow-[0_6px_16px_rgba(37,99,235,0.3)] active:bg-[#1e40af]"
+        >
+          로그인하기
+        </button>
+
+        <!-- Divider -->
+        <div class="mb-4 flex items-center gap-3">
+          <div class="h-px flex-1 bg-[#e4e7ef]"></div>
+          <span class="text-[11px] font-medium text-[#a3aab7]">또는</span>
+          <div class="h-px flex-1 bg-[#e4e7ef]"></div>
+        </div>
+
+        <!-- Signup Link -->
+        <p class="m-0 text-center text-[12px] font-medium text-[#7d8594]">
+          계정이 없으신가요?
+          <a
+            href="signup.html"
+            class="font-bold text-[#4b5fe5] no-underline transition-colors hover:text-[#3d4db8]"
+          >
+            회원가입
+          </a>
+        </p>
+      </form>
+    </article>
+  </main>
+
+  <script src="../assets/js/api.js"></script>
+  <script>
+    const loginForm = document.querySelector('form');
+    const roleRouteMap = {
+      invoice: 'registrar',
+      rwa: 'funder',
+      payment: 'payer'
+    };
+
+    loginForm.addEventListener('submit', async function(event) {
+      event.preventDefault();
+
+      const email = document.querySelector('#email').value.trim();
+      const password = document.querySelector('#password').value.trim();
+      const remember = document.querySelector('#remember').checked;
+
+      if (!email || !password) {
+        alert('이메일과 비밀번호를 모두 입력해주세요.');
+        return;
+      }
+
+      try {
+        const data = await InvoiceXApi.login({ email, password });
+
+        if (remember) {
+          localStorage.setItem("ix_remember_login", "true");
+        } else {
+          localStorage.removeItem("ix_remember_login");
+        }
+
+        const signupData = JSON.parse(localStorage.getItem("invoiceXSignupData") || "{}");
+        if (signupData.role && !data.role) {
+          localStorage.setItem("ix_user_role", roleRouteMap[signupData.role] || signupData.role);
+        }
+
+        window.location.href = data.redirect_to || InvoiceXApi.redirectForRole(data.role || data.user?.role);
+      } catch (error) {
+        console.error(error);
+        alert(error.message || '로그인에 실패했습니다.');
+      }
+    });
+  </script>
+</body>
+</html>
