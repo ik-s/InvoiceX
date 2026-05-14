@@ -79,9 +79,6 @@ JWT_SECRET=replace_with_a_long_random_secret
 
 SUPABASE_URL=https://your-project-ref.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-
-INVOICE_STORAGE_BUCKET=invoice-documents
-XRPL_TESTNET_URL=wss://s.altnet.rippletest.net:51233
 ```
 
 ### 환경 변수 설명
@@ -92,8 +89,6 @@ XRPL_TESTNET_URL=wss://s.altnet.rippletest.net:51233
 | `JWT_SECRET` | 필수 | 로그인 토큰 서명에 사용합니다. 긴 랜덤 문자열을 사용하세요. |
 | `SUPABASE_URL` | 필수 | Supabase 프로젝트 URL입니다. |
 | `SUPABASE_SERVICE_ROLE_KEY` | 필수 | 백엔드 전용 Supabase service role key입니다. 프론트엔드에 노출하면 안 됩니다. |
-| `INVOICE_STORAGE_BUCKET` | 선택 | 인보이스 첨부파일을 저장할 Supabase Storage 버킷입니다. 기본값은 `invoice-documents`입니다. |
-| `XRPL_TESTNET_URL` | 선택 | XRPL Testnet websocket endpoint입니다. 기본값은 `wss://s.altnet.rippletest.net:51233`입니다. |
 
 기존 로컬 환경에서 `SUPABASE_KEY`를 사용하던 경우가 있을 수 있습니다. 현재 백엔드에서는 `SUPABASE_SERVICE_ROLE_KEY` 사용을 권장합니다.
 
